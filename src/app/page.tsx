@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Starfield from "@/components/Starfield";
 import ZodiacWheel from "@/components/ZodiacWheel";
-import { calculateNatalChart, NatalChart, SIGNS, SIGN_SYMBOLS } from "@/lib/astro";
+import BottomSheet from "@/components/BottomSheet";
+import ElementBalance from "@/components/results/ElementBalance";
+import HousesMap from "@/components/results/HousesMap";
+import { calculateNatalChart, NatalChart, PlanetPosition, SIGNS, SIGN_SYMBOLS } from "@/lib/astro";
+import { houseDescriptions, planetInHouse } from "@/data/interpretations";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -17,12 +21,12 @@ interface FormData {
   lieu: string;
   latitude: number;
   longitude: number;
-  tone: number;     // 1=scientifique, 10=ésotérique
-  depth: number;    // 1=concis, 10=approfondi
-  focus: number;    // 1=pratique, 10=introspectif
+  tone: number;
+  depth: number;
+  focus: number;
 }
 
-// ─── City database (major francophone cities) ─────────────────────
+// ─── City database ────────────────────────────────────────────────
 const CITIES: { name: string; lat: number; lon: number }[] = [
   { name: "Paris, France", lat: 48.8566, lon: 2.3522 },
   { name: "Montréal, Québec", lat: 45.5017, lon: -73.5673 },
@@ -63,33 +67,34 @@ const CITIES: { name: string; lat: number; lon: number }[] = [
   { name: "Gatineau, Québec", lat: 45.4765, lon: -75.7013 },
   { name: "Laval, Québec", lat: 45.6066, lon: -73.7124 },
   { name: "Saguenay, Québec", lat: 48.4279, lon: -71.0548 },
-  { name: "Chicoutimi, Québec", lat: 48.4279, lon: -71.0548 },
+];
+
+// ─── Results tab definition ───────────────────────────────────────
+const RESULT_TABS = [
+  { id: "portrait", label: "Portrait", icon: "✦" },
+  { id: "planets", label: "Planètes", icon: "☉" },
+  { id: "elements", label: "Éléments", icon: "🔥" },
+  { id: "houses", label: "Maisons", icon: "🏠" },
+  { id: "aspects", label: "Aspects", icon: "△" },
 ];
 
 // ─── Page ────────────────────────────────────────────────────────
 export default function Home() {
-  const [step, setStep] = useState(0); // 0=hero, 1-5=form steps, 6=loading, 7=results
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>({
-    prenom: "",
-    jour: 15,
-    mois: 6,
-    annee: 1990,
-    heure: 12,
-    minute: 0,
-    hasTime: true,
-    lieu: "",
-    latitude: 48.8566,
-    longitude: 2.3522,
-    tone: 5,
-    depth: 5,
-    focus: 5,
+    prenom: "", jour: 15, mois: 6, annee: 1990,
+    heure: 12, minute: 0, hasTime: true,
+    lieu: "", latitude: 48.8566, longitude: 2.3522,
+    tone: 5, depth: 5, focus: 5,
   });
   const [chart, setChart] = useState<NatalChart | null>(null);
   const [citySuggestions, setCitySuggestions] = useState<typeof CITIES>([]);
-  const [expandedPlanet, setExpandedPlanet] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("portrait");
+  const [selectedPlanet, setSelectedPlanet] = useState<PlanetPosition | null>(null);
+  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Lazy-load interpretations
   useEffect(() => {
     import("@/data/interpretations").then((mod) => {
       setInterpretations(mod as unknown as Record<string, unknown>);
@@ -98,10 +103,7 @@ export default function Home() {
 
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
-    if (query.length < 2) {
-      setCitySuggestions([]);
-      return;
-    }
+    if (query.length < 2) { setCitySuggestions([]); return; }
     const q = query.toLowerCase();
     setCitySuggestions(CITIES.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6));
   }, []);
@@ -127,14 +129,12 @@ export default function Home() {
     setTimeout(() => {
       const c = calculateNatalChart(
         form.annee, form.mois, form.jour,
-        form.hasTime ? form.heure : 12,
-        form.hasTime ? form.minute : 0,
-        form.latitude, form.longitude,
-        form.hasTime
+        form.hasTime ? form.heure : 12, form.hasTime ? form.minute : 0,
+        form.latitude, form.longitude, form.hasTime
       );
       setChart(c);
-      setTimeout(() => setStep(7), 2000);
-    }, 1500);
+      setTimeout(() => setStep(7), 2500);
+    }, 1000);
   };
 
   const getInterp = (planet: string, sign: string, house?: number): string => {
@@ -142,89 +142,82 @@ export default function Home() {
     const mod = interpretations as {
       planetInSign: Record<string, Record<string, string>>;
       planetInHouse: Record<string, Record<number, string>>;
-      getInterpretation?: (planet: string, sign: string, house: number | undefined, prefs: {tone: number; depth: number; focus: number}) => string;
+      getInterpretation?: (p: string, s: string, h: number | undefined, prefs: { tone: number; depth: number; focus: number }) => string;
     };
-    if (mod.getInterpretation) {
-      return mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus });
-    }
+    if (mod.getInterpretation) return mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus });
     let text = mod.planetInSign?.[planet]?.[sign] || "";
-    if (house && mod.planetInHouse?.[planet]?.[house]) {
-      text += " " + mod.planetInHouse[planet][house];
-    }
+    if (house && mod.planetInHouse?.[planet]?.[house]) text += "\n\n" + mod.planetInHouse[planet][house];
     return text;
   };
 
   const getAspectInterp = (type: string, p1: string, p2: string): string => {
     if (!interpretations) return "";
-    const mod = interpretations as {
-      aspectInterpretations: Record<string, Record<string, string>>;
-    };
-    const key1 = `${p1}-${p2}`;
-    const key2 = `${p2}-${p1}`;
-    return mod.aspectInterpretations?.[type]?.[key1] || mod.aspectInterpretations?.[type]?.[key2] || "";
+    const mod = interpretations as { aspectInterpretations: Record<string, Record<string, string>> };
+    return mod.aspectInterpretations?.[type]?.[`${p1}-${p2}`] || mod.aspectInterpretations?.[type]?.[`${p2}-${p1}`] || "";
+  };
+
+  const scrollToTab = (tabId: string) => {
+    setActiveTab(tabId);
+    sectionRefs.current[tabId]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // ─── Render ──────────────────────────────────────────────────────
   return (
     <main className="relative min-h-screen">
       <Starfield />
-
       <div className="relative z-10">
+
         {/* ═══ HERO ═══ */}
         {step === 0 && (
           <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
             <div className="animate-fade-in-up">
-              <div className="text-6xl mb-6 opacity-60">✦</div>
-              <h1 className="font-cinzel text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] bg-clip-text text-transparent">
+              <div className="text-5xl md:text-6xl mb-6 opacity-60">✦</div>
+              <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] bg-clip-text text-transparent leading-tight">
                 Ciel Natal
               </h1>
-              <p className="text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-xl mx-auto mb-2 font-light">
+              <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
                 Qu&apos;est-ce que le ciel racontait
               </p>
-              <p className="text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-xl mx-auto mb-10 font-light">
+              <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-10 font-light">
                 quand tu es né(e)&nbsp;?
               </p>
               <button
                 onClick={() => setStep(1)}
-                className="px-8 py-4 rounded-full bg-gradient-to-r from-[var(--color-accent-lavender)] to-purple-500 text-white font-medium text-lg hover:scale-105 transition-transform glow-lavender"
+                className="px-8 py-4 rounded-full bg-gradient-to-r from-[var(--color-accent-lavender)] to-purple-500 text-white font-medium text-lg active:scale-95 transition-transform glow-lavender"
               >
                 Découvrir ma carte
               </button>
-            </div>
-            <div className="absolute bottom-8 animate-bounce opacity-40">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 5v14M5 12l7 7 7-7" />
-              </svg>
             </div>
           </section>
         )}
 
         {/* ═══ FORM STEPS ═══ */}
         {step >= 1 && step <= 5 && (
-          <section className="min-h-screen flex items-center justify-center px-4">
-            <div className="glass p-8 md:p-12 max-w-lg w-full glow-lavender step-enter">
-              {/* Progress dots */}
-              <div className="flex justify-center gap-2 mb-8">
+          <section className="min-h-screen flex items-center justify-center px-4 py-8">
+            <div className="glass p-6 sm:p-8 md:p-12 max-w-lg w-full glow-lavender step-enter">
+              {/* Progress bar */}
+              <div className="flex gap-1.5 mb-8">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <div
-                    key={s}
-                    className={`w-2.5 h-2.5 rounded-full transition-all ${s === step ? "bg-[var(--color-accent-lavender)] scale-125" : s < step ? "bg-[var(--color-accent-gold)]" : "bg-[var(--color-text-secondary)] opacity-30"}`}
-                  />
+                  <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-gold)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
+                      style={{ width: s <= step ? "100%" : "0%" }}
+                    />
+                  </div>
                 ))}
               </div>
 
               {/* Step 1: Prénom */}
               {step === 1 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
                     Comment t&apos;appelles-tu&nbsp;?
                   </h2>
-                  <p className="text-sm text-center text-[var(--color-text-secondary)] mb-8">
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
                     Ton prénom personnalisera toute ta lecture.
                   </p>
                   <input
-                    type="text"
-                    value={form.prenom}
+                    type="text" value={form.prenom}
                     onChange={(e) => setForm({ ...form, prenom: e.target.value })}
                     placeholder="Ton prénom"
                     className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-5 py-4 text-lg text-center text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
@@ -234,31 +227,26 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Step 2: Date de naissance */}
+              {/* Step 2: Date */}
               {step === 2 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
                     Quand es-tu né(e)&nbsp;?
                   </h2>
-                  <p className="text-sm text-center text-[var(--color-text-secondary)] mb-8">
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
                     La position des astres change chaque jour.
                   </p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <div>
                       <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Jour</label>
-                      <input
-                        type="number" min={1} max={31} value={form.jour}
+                      <input type="number" min={1} max={31} value={form.jour}
                         onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) || 1 })}
-                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                      />
+                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-2 sm:px-3 py-3 sm:py-4 text-base sm:text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
                     </div>
                     <div>
                       <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Mois</label>
-                      <select
-                        value={form.mois}
-                        onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
-                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition appearance-none"
-                      >
+                      <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
+                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-1 sm:px-3 py-3 sm:py-4 text-base sm:text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition appearance-none">
                         {["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"].map((m, i) => (
                           <option key={i} value={i + 1} className="bg-[var(--color-space-deep)]">{m}</option>
                         ))}
@@ -266,55 +254,47 @@ export default function Home() {
                     </div>
                     <div>
                       <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Année</label>
-                      <input
-                        type="number" min={1900} max={2026} value={form.annee}
+                      <input type="number" min={1900} max={2026} value={form.annee}
                         onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) || 1990 })}
-                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                      />
+                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-2 sm:px-3 py-3 sm:py-4 text-base sm:text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Heure de naissance */}
+              {/* Step 3: Heure */}
               {step === 3 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
                     À quelle heure&nbsp;?
                   </h2>
-                  <p className="text-sm text-center text-[var(--color-text-secondary)] mb-8">
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
                     L&apos;heure exacte détermine ton Ascendant et tes maisons.
                   </p>
                   <label className="flex items-center justify-center gap-3 mb-6 cursor-pointer">
-                    <input
-                      type="checkbox" checked={form.hasTime}
+                    <input type="checkbox" checked={form.hasTime}
                       onChange={(e) => setForm({ ...form, hasTime: e.target.checked })}
-                      className="w-4 h-4 accent-[var(--color-accent-lavender)]"
-                    />
+                      className="w-5 h-5 accent-[var(--color-accent-lavender)]" />
                     <span className="text-sm text-[var(--color-text-secondary)]">Je connais mon heure de naissance</span>
                   </label>
                   {form.hasTime ? (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Heure</label>
-                        <input
-                          type="number" min={0} max={23} value={form.heure}
+                        <input type="number" min={0} max={23} value={form.heure}
                           onChange={(e) => setForm({ ...form, heure: parseInt(e.target.value) || 0 })}
-                          className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                        />
+                          className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
                       </div>
                       <div>
                         <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Minute</label>
-                        <input
-                          type="number" min={0} max={59} value={form.minute}
+                        <input type="number" min={0} max={59} value={form.minute}
                           onChange={(e) => setForm({ ...form, minute: parseInt(e.target.value) || 0 })}
-                          className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                        />
+                          className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
                       </div>
                     </div>
                   ) : (
                     <div className="glass p-4 text-sm text-[var(--color-text-secondary)] text-center">
-                      Sans heure exacte, ta lecture n&apos;inclura pas l&apos;Ascendant ni les maisons astrologiques. Les positions planétaires resteront précises.
+                      Sans heure exacte, ta lecture n&apos;inclura pas l&apos;Ascendant ni les maisons astrologiques.
                     </div>
                   )}
                 </div>
@@ -323,29 +303,23 @@ export default function Home() {
               {/* Step 4: Lieu */}
               {step === 4 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
                     Où es-tu né(e)&nbsp;?
                   </h2>
-                  <p className="text-sm text-center text-[var(--color-text-secondary)] mb-8">
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
                     Le lieu affine le calcul de ton Ascendant.
                   </p>
                   <div className="relative">
-                    <input
-                      type="text"
-                      value={form.lieu}
+                    <input type="text" value={form.lieu}
                       onChange={(e) => handleCitySearch(e.target.value)}
                       placeholder="Cherche ta ville..."
                       className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-5 py-4 text-lg text-center text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                      autoFocus
-                    />
+                      autoFocus />
                     {citySuggestions.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-2 glass overflow-hidden z-20">
                         {citySuggestions.map((city) => (
-                          <button
-                            key={city.name}
-                            onClick={() => selectCity(city)}
-                            className="w-full px-4 py-3 text-left hover:bg-white/10 transition text-[var(--color-text-primary)] text-sm border-b border-[var(--color-glass-border)] last:border-0"
-                          >
+                          <button key={city.name} onClick={() => selectCity(city)}
+                            className="w-full px-4 py-3 text-left active:bg-white/10 transition text-[var(--color-text-primary)] text-sm border-b border-[var(--color-glass-border)] last:border-0">
                             {city.name}
                           </button>
                         ))}
@@ -358,74 +332,37 @@ export default function Home() {
               {/* Step 5: Préférences */}
               {step === 5 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
                     Personnalise ta lecture
                   </h2>
-                  <p className="text-sm text-center text-[var(--color-text-secondary)] mb-8">
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
                     Ajuste ces curseurs selon tes préférences.
                   </p>
-                  <div className="space-y-8">
-                    {/* Tone slider */}
-                    <div>
-                      <div className="flex justify-between text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
-                        <span>🔬 Scientifique</span>
-                        <span>Ésotérique 🔮</span>
-                      </div>
-                      <input
-                        type="range" min={1} max={10} value={form.tone}
-                        onChange={(e) => setForm({ ...form, tone: parseInt(e.target.value) })}
-                      />
-                      <div className="text-center text-xs text-[var(--color-accent-lavender)] mt-1 font-mono">{form.tone}/10</div>
-                    </div>
-                    {/* Depth slider */}
-                    <div>
-                      <div className="flex justify-between text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
-                        <span>⚡ Concis</span>
-                        <span>Approfondi 📖</span>
-                      </div>
-                      <input
-                        type="range" min={1} max={10} value={form.depth}
-                        onChange={(e) => setForm({ ...form, depth: parseInt(e.target.value) })}
-                      />
-                      <div className="text-center text-xs text-[var(--color-accent-lavender)] mt-1 font-mono">{form.depth}/10</div>
-                    </div>
-                    {/* Focus slider */}
-                    <div>
-                      <div className="flex justify-between text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
-                        <span>🎯 Pratique</span>
-                        <span>Introspectif 🧘</span>
-                      </div>
-                      <input
-                        type="range" min={1} max={10} value={form.focus}
-                        onChange={(e) => setForm({ ...form, focus: parseInt(e.target.value) })}
-                      />
-                      <div className="text-center text-xs text-[var(--color-accent-lavender)] mt-1 font-mono">{form.focus}/10</div>
-                    </div>
+                  <div className="space-y-7">
+                    <SliderField label1="🔬 Scientifique" label2="Ésotérique 🔮" value={form.tone}
+                      onChange={(v) => setForm({ ...form, tone: v })} />
+                    <SliderField label1="⚡ Concis" label2="Approfondi 📖" value={form.depth}
+                      onChange={(v) => setForm({ ...form, depth: v })} />
+                    <SliderField label1="🎯 Pratique" label2="Introspectif 🧘" value={form.focus}
+                      onChange={(v) => setForm({ ...form, focus: v })} />
                   </div>
                 </div>
               )}
 
-              {/* Navigation */}
+              {/* Nav buttons */}
               <div className="flex justify-between mt-10">
-                <button
-                  onClick={() => setStep(step - 1)}
-                  className="px-5 py-2.5 rounded-xl text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
-                >
+                <button onClick={() => setStep(step - 1)}
+                  className="px-5 py-2.5 rounded-xl text-sm text-[var(--color-text-secondary)] active:text-[var(--color-text-primary)] transition">
                   ← Retour
                 </button>
                 {step < 5 ? (
-                  <button
-                    onClick={() => canAdvance() && setStep(step + 1)}
-                    disabled={!canAdvance()}
-                    className="px-6 py-2.5 rounded-xl bg-[var(--color-accent-lavender)] text-[var(--color-space-deep)] font-medium text-sm hover:bg-opacity-90 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
+                  <button onClick={() => canAdvance() && setStep(step + 1)} disabled={!canAdvance()}
+                    className="px-6 py-2.5 rounded-xl bg-[var(--color-accent-lavender)] text-[var(--color-space-deep)] font-medium text-sm active:scale-95 transition disabled:opacity-30">
                     Suivant →
                   </button>
                 ) : (
-                  <button
-                    onClick={doCalculation}
-                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] text-[var(--color-space-deep)] font-bold text-sm hover:scale-105 transition-transform glow-lavender"
-                  >
+                  <button onClick={doCalculation}
+                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] text-[var(--color-space-deep)] font-bold text-sm active:scale-95 transition-transform glow-lavender">
                     ✦ Calculer ma carte
                   </button>
                 )}
@@ -437,217 +374,320 @@ export default function Home() {
         {/* ═══ LOADING ═══ */}
         {step === 6 && (
           <section className="min-h-screen flex items-center justify-center px-4">
-            <div className="text-center animate-fade-in-up">
-              <div className="text-6xl mb-8 animate-pulse-glow">✦</div>
+            <div className="text-center animate-fade-in-up max-w-xs mx-auto">
+              <div className="text-5xl mb-8 animate-pulse-glow">✦</div>
               <LoadingMessages />
+              <div className="mt-6 h-1 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] animate-progress" />
+              </div>
             </div>
           </section>
         )}
 
         {/* ═══ RESULTS ═══ */}
         {step === 7 && chart && (
-          <section className="min-h-screen py-12 px-4">
-            <div className="max-w-3xl mx-auto space-y-8 animate-fade-in-up">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="text-4xl mb-3 opacity-60">✦</div>
-                <h1 className="font-cinzel text-3xl md:text-4xl text-[var(--color-accent-lavender)] mb-2">
-                  Le Ciel de {form.prenom}
-                </h1>
-                <p className="text-[var(--color-text-secondary)] text-sm">
-                  {form.jour}/{form.mois}/{form.annee}
-                  {form.hasTime && ` à ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}`}
-                  {" — "}{form.lieu}
-                </p>
-              </div>
+          <section className="min-h-screen pb-24">
+            {/* Header */}
+            <div className="text-center pt-8 pb-4 px-4">
+              <div className="text-3xl mb-2 opacity-50">✦</div>
+              <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-accent-lavender)] mb-1">
+                Le Ciel de {form.prenom}
+              </h1>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                {form.jour}/{form.mois}/{form.annee}
+                {form.hasTime && ` · ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}`}
+                {" · "}{form.lieu}
+              </p>
+            </div>
 
-              {/* Zodiac Wheel */}
-              <div className="glass p-6 glow-lavender">
-                <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} />
+            {/* Sticky tab navigation */}
+            <div className="sticky top-0 z-30 bg-[var(--color-space-deep)]/90 backdrop-blur-md border-b border-[var(--color-glass-border)]">
+              <div className="tab-nav flex overflow-x-auto px-4 py-2 gap-1 max-w-3xl mx-auto">
+                {RESULT_TABS.map((tab) => (
+                  <button key={tab.id} onClick={() => scrollToTab(tab.id)}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? "bg-[var(--color-accent-lavender)]/20 text-[var(--color-accent-lavender)] border border-[var(--color-accent-lavender)]/30"
+                        : "text-[var(--color-text-secondary)] active:bg-white/5"
+                    }`}>
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Big Three */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {(() => {
-                  const sun = chart.planets[0];
-                  const moon = chart.planets[1];
-                  const asc = chart.ascendant;
-                  const bigThree = [
-                    { label: "Soleil", icon: "☉", data: sun, color: "#ffd700" },
-                    { label: "Lune", icon: "☽", data: moon, color: "#c9a0ff" },
-                    ...(asc ? [{ label: "Ascendant", icon: "↑", data: asc, color: "#60a5fa" }] : []),
-                  ];
-                  return bigThree.map((item) => (
-                    <div key={item.label} className="glass p-5 text-center">
-                      <div className="text-3xl mb-2" style={{ color: item.color }}>{item.icon}</div>
-                      <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1">{item.label}</div>
-                      <div className="font-cinzel text-lg text-[var(--color-text-primary)]">
-                        {SIGN_SYMBOLS[item.data.signIndex]} {item.data.sign}
-                      </div>
-                      <div className="text-xs text-[var(--color-text-secondary)] font-mono mt-1">
-                        {item.data.degree}°
-                        {item.data.house ? ` · Maison ${item.data.house}` : ""}
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </div>
+            <div className="max-w-3xl mx-auto px-4 space-y-6 mt-6">
 
-              {/* Portrait cosmique */}
-              <div className="glass p-8">
-                <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-4">
-                  ✦ Ton Portrait Cosmique
-                </h2>
-                <div className="text-[var(--color-text-primary)] leading-relaxed space-y-4">
-                  <p>
-                    {form.prenom}, ton Soleil en {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}
-                  </p>
-                  <p>
-                    Ta Lune en {chart.planets[1].sign} {getCosmicPortraitMoon(chart.planets[1].sign)}
-                  </p>
-                  {chart.ascendant && (
-                    <p>
-                      Avec un Ascendant {chart.ascendant.sign}, {getCosmicPortraitAsc(chart.ascendant.sign)}
-                    </p>
-                  )}
+              {/* ─── PORTRAIT TAB ─── */}
+              <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-16">
+                {/* Zodiac Wheel */}
+                <div className="glass p-4 sm:p-6 glow-lavender mb-4">
+                  <ZodiacWheel
+                    planets={chart.planets}
+                    ascendant={chart.ascendant}
+                    selectedPlanet={selectedPlanet?.name}
+                    onTapPlanet={(p) => setSelectedPlanet(p)}
+                  />
+                </div>
+
+                {/* Big Three — horizontal scroll on mobile */}
+                <div className="flex gap-3 overflow-x-auto pb-2 tab-nav mb-4">
+                  {(() => {
+                    const items = [
+                      { label: "Soleil", icon: "☉", data: chart.planets[0], color: "#ffd700" },
+                      { label: "Lune", icon: "☽", data: chart.planets[1], color: "#c9a0ff" },
+                      ...(chart.ascendant ? [{ label: "Ascendant", icon: "↑", data: chart.ascendant, color: "#60a5fa" }] : []),
+                    ];
+                    return items.map((item) => (
+                      <button key={item.label}
+                        className="flex-shrink-0 glass p-4 min-w-[130px] text-center touch-card"
+                        onClick={() => setSelectedPlanet(item.data)}>
+                        <div className="text-2xl mb-1" style={{ color: item.color }}>{item.icon}</div>
+                        <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-0.5">{item.label}</div>
+                        <div className="font-cinzel text-sm text-[var(--color-text-primary)]">
+                          {SIGN_SYMBOLS[item.data.signIndex]} {item.data.sign}
+                        </div>
+                        <div className="text-[10px] text-[var(--color-text-secondary)] font-mono mt-0.5">
+                          {item.data.degree}°{item.data.house ? ` · M${item.data.house}` : ""}
+                        </div>
+                      </button>
+                    ));
+                  })()}
+                </div>
+
+                {/* Cosmic portrait text */}
+                <div className="glass p-5 sm:p-6">
+                  <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3">
+                    ✦ Ton Portrait Cosmique
+                  </h2>
+                  <div className="text-sm text-[var(--color-text-primary)] leading-relaxed space-y-3">
+                    <p>{form.prenom}, ton Soleil en {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</p>
+                    <p>Ta Lune en {chart.planets[1].sign} {getCosmicPortraitMoon(chart.planets[1].sign)}</p>
+                    {chart.ascendant && <p>Avec un Ascendant {chart.ascendant.sign}, {getCosmicPortraitAsc(chart.ascendant.sign)}</p>}
+                  </div>
                 </div>
               </div>
 
-              {/* Planets detail */}
-              <div className="glass p-8">
-                <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-6">
-                  ✦ Tes Planètes
+              {/* ─── PLANETS TAB ─── */}
+              <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-16">
+                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
+                  <span>☉</span> Tes Planètes
                 </h2>
-                <div className="space-y-3">
+                <div className="stagger-in space-y-2">
                   {chart.planets.map((planet) => (
-                    <div key={planet.name} className="border border-[var(--color-glass-border)] rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => setExpandedPlanet(expandedPlanet === planet.name ? null : planet.name)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl text-[var(--color-accent-gold)]">{planet.symbol}</span>
-                          <span className="font-medium">{planet.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-[var(--color-text-secondary)]">
+                    <button key={planet.name} onClick={() => setSelectedPlanet(planet)}
+                      className="w-full glass flex items-center justify-between p-4 touch-card text-left">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl text-[var(--color-accent-gold)]">{planet.symbol}</span>
+                        <div>
+                          <span className="text-sm font-medium">{planet.name}</span>
+                          <span className="text-xs text-[var(--color-text-secondary)] ml-2">
                             {SIGN_SYMBOLS[planet.signIndex]} {planet.sign}
                           </span>
-                          {planet.house && (
-                            <span className="text-[var(--color-text-secondary)] font-mono text-xs">
-                              M{planet.house}
-                            </span>
-                          )}
-                          <span className="text-[var(--color-text-secondary)] text-xs">
-                            {expandedPlanet === planet.name ? "▲" : "▼"}
-                          </span>
                         </div>
-                      </button>
-                      {expandedPlanet === planet.name && (
-                        <div className="px-4 pb-4 text-sm text-[var(--color-text-primary)] leading-relaxed border-t border-[var(--color-glass-border)] pt-4">
-                          {getInterp(planet.name, planet.sign, planet.house) || (
-                            <span className="text-[var(--color-text-secondary)] italic">
-                              {planet.name} en {planet.sign}
-                              {planet.house ? ` (Maison ${planet.house})` : ""} —
-                              une énergie qui colore ta manière d&apos;exprimer les qualités de {planet.sign} dans ta vie.
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {planet.house && <span className="text-[10px] font-mono text-[var(--color-text-secondary)]">M{planet.house}</span>}
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-text-secondary)] opacity-40">
+                          <path d="M6 4l4 4-4 4" />
+                        </svg>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </div>
 
-              {/* Aspects */}
-              {chart.aspects.length > 0 && (
-                <div className="glass p-8">
-                  <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-6">
-                    ✦ Tes Aspects
+              {/* ─── ELEMENTS TAB ─── */}
+              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16">
+                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
+                  <span>🔥</span> Éléments & Modalités
+                </h2>
+                <div className="glass p-5">
+                  <ElementBalance planets={chart.planets} />
+                </div>
+              </div>
+
+              {/* ─── HOUSES TAB ─── */}
+              {chart.ascendant && (
+                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16">
+                  <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
+                    <span>🏠</span> Tes 12 Maisons
                   </h2>
-                  <div className="space-y-3">
-                    {chart.aspects.slice(0, form.depth >= 7 ? undefined : 10).map((aspect, i) => {
-                      const aspectColors: Record<string, string> = {
-                        Conjonction: "#c9a0ff",
-                        Trigone: "#34d399",
-                        Sextile: "#60a5fa",
-                        Carre: "#ef4444",
-                        Opposition: "#fbbf24",
-                      };
-                      const aspectSymbols: Record<string, string> = {
-                        Conjonction: "☌",
-                        Trigone: "△",
-                        Sextile: "⚹",
-                        Carre: "□",
-                        Opposition: "☍",
-                      };
-                      return (
-                        <div key={i} className="border border-[var(--color-glass-border)] rounded-xl overflow-hidden">
-                          <button
-                            onClick={() => setExpandedPlanet(expandedPlanet === `aspect-${i}` ? null : `aspect-${i}`)}
-                            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition"
-                          >
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-[var(--color-accent-gold)]">{aspect.symbol1}</span>
-                              <span>{aspect.planet1}</span>
-                              <span style={{ color: aspectColors[aspect.type] || "#c9a0ff" }} className="text-lg mx-1">
-                                {aspectSymbols[aspect.type] || "·"}
-                              </span>
-                              <span>{aspect.planet2}</span>
-                              <span className="text-[var(--color-accent-gold)]">{aspect.symbol2}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: `${aspectColors[aspect.type]}20`, color: aspectColors[aspect.type] }}>
-                                {aspect.type}
-                              </span>
-                              <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">
-                                orbe {aspect.orb}°
-                              </span>
-                            </div>
-                          </button>
-                          {expandedPlanet === `aspect-${i}` && (
-                            <div className="px-4 pb-4 text-sm text-[var(--color-text-primary)] leading-relaxed border-t border-[var(--color-glass-border)] pt-4">
-                              {getAspectInterp(aspect.type, aspect.planet1, aspect.planet2) || (
-                                <span className="text-[var(--color-text-secondary)] italic">
-                                  {getDefaultAspectText(aspect.type, aspect.planet1, aspect.planet2)}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div className="glass p-5">
+                    <HousesMap planets={chart.planets} onTapHouse={(h) => setSelectedHouse(h)} />
                   </div>
                 </div>
               )}
 
-              {/* Closing */}
-              <div className="glass p-8 text-center">
-                <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-4">
-                  ✦ Un Mot de Clôture
+              {/* ─── ASPECTS TAB ─── */}
+              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16">
+                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
+                  <span>△</span> Tes Aspects
                 </h2>
-                <p className="text-[var(--color-text-primary)] leading-relaxed max-w-xl mx-auto mb-4">
-                  {form.prenom}, cette carte est un miroir, pas une sentence. Elle reflète des tendances, des potentiels et des invitations — pas des certitudes. Tu restes l&apos;auteur·e de ton histoire, et le ciel n&apos;est qu&apos;un éclairage parmi d&apos;autres pour mieux te comprendre.
+                {chart.aspects.length > 0 ? (
+                  <div className="space-y-2">
+                    {chart.aspects.slice(0, form.depth >= 7 ? undefined : 12).map((aspect, i) => {
+                      const colors: Record<string, string> = {
+                        Conjonction: "#c9a0ff", Trigone: "#34d399", Sextile: "#60a5fa", Carre: "#ef4444", Opposition: "#fbbf24",
+                      };
+                      const symbols: Record<string, string> = {
+                        Conjonction: "☌", Trigone: "△", Sextile: "⚹", Carre: "□", Opposition: "☍",
+                      };
+                      const interp = getAspectInterp(aspect.type, aspect.planet1, aspect.planet2);
+                      return (
+                        <button key={i}
+                          className="w-full glass p-4 touch-card text-left"
+                          onClick={() => interp && setSelectedPlanet({
+                            name: `${aspect.planet1} ${symbols[aspect.type]} ${aspect.planet2}`,
+                            symbol: symbols[aspect.type] || "·",
+                            longitude: 0, sign: aspect.type, signIndex: 0, degree: 0,
+                          } as PlanetPosition & { _aspectInterp?: string })}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-[var(--color-accent-gold)]">{aspect.symbol1}</span>
+                              <span>{aspect.planet1}</span>
+                              <span style={{ color: colors[aspect.type] }} className="text-lg mx-0.5">{symbols[aspect.type]}</span>
+                              <span>{aspect.planet2}</span>
+                              <span className="text-[var(--color-accent-gold)]">{aspect.symbol2}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: `${colors[aspect.type]}15`, color: colors[aspect.type] }}>
+                                {aspect.type}
+                              </span>
+                              <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
+                            </div>
+                          </div>
+                          {interp && (
+                            <p className="text-xs text-[var(--color-text-secondary)] mt-2 line-clamp-2">{interp}</p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="glass p-5 text-sm text-[var(--color-text-secondary)] text-center">
+                    Aucun aspect majeur détecté dans ta carte.
+                  </div>
+                )}
+              </div>
+
+              {/* ─── CLOSING ─── */}
+              <div className="glass p-6 text-center">
+                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3">✦ Un Mot de Clôture</h2>
+                <p className="text-sm text-[var(--color-text-primary)] leading-relaxed max-w-md mx-auto mb-3">
+                  {form.prenom}, cette carte est un miroir, pas une sentence. Elle reflète des tendances, des potentiels et des invitations — pas des certitudes.
                 </p>
-                <p className="text-xs text-[var(--color-text-secondary)] italic">
+                <p className="text-[10px] text-[var(--color-text-secondary)] italic">
                   L&apos;astrologie est un outil de réflexion personnelle, pas un substitut à un avis médical, psychologique ou financier.
                 </p>
               </div>
 
               {/* Restart */}
-              <div className="text-center pb-12">
-                <button
-                  onClick={() => { setStep(0); setChart(null); setExpandedPlanet(null); }}
-                  className="px-6 py-3 rounded-xl border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent-lavender)] transition text-sm"
-                >
+              <div className="text-center pb-8">
+                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setActiveTab("portrait"); }}
+                  className="px-6 py-3 rounded-xl border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] active:text-[var(--color-text-primary)] transition text-sm">
                   ← Calculer une autre carte
                 </button>
               </div>
             </div>
+
+            {/* ═══ BOTTOM SHEETS ═══ */}
+
+            {/* Planet detail sheet */}
+            <BottomSheet
+              isOpen={!!selectedPlanet}
+              onClose={() => setSelectedPlanet(null)}
+              title={selectedPlanet ? `${selectedPlanet.name}` : ""}
+              icon={selectedPlanet?.symbol}
+              iconColor="#ffd700"
+            >
+              {selectedPlanet && (
+                <div className="space-y-4">
+                  {/* Planet header info */}
+                  <div className="flex items-center gap-4 pb-3 border-b border-[var(--color-glass-border)]">
+                    <div className="text-center">
+                      <div className="text-3xl text-[var(--color-accent-gold)]">{selectedPlanet.symbol}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{selectedPlanet.name}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)]">
+                        {SIGN_SYMBOLS[selectedPlanet.signIndex]} {selectedPlanet.sign} · {selectedPlanet.degree}°
+                        {selectedPlanet.house ? ` · Maison ${selectedPlanet.house}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Interpretation */}
+                  <div className="text-sm text-[var(--color-text-primary)] leading-relaxed whitespace-pre-line">
+                    {getInterp(selectedPlanet.name, selectedPlanet.sign, selectedPlanet.house) || (
+                      <span className="text-[var(--color-text-secondary)] italic">
+                        {selectedPlanet.name} en {selectedPlanet.sign} — une énergie qui colore ta manière d&apos;exprimer les qualités de ce signe dans ta vie.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </BottomSheet>
+
+            {/* House detail sheet */}
+            <BottomSheet
+              isOpen={!!selectedHouse}
+              onClose={() => setSelectedHouse(null)}
+              title={selectedHouse ? `Maison ${selectedHouse} — ${houseDescriptions[selectedHouse]?.domain}` : ""}
+              icon={selectedHouse ? ["👤", "💎", "💬", "🏠", "🎨", "⚙️", "🤝", "🔮", "🌍", "🏔️", "👥", "🌙"][selectedHouse - 1] : undefined}
+            >
+              {selectedHouse && (
+                <div className="space-y-4">
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {houseDescriptions[selectedHouse]?.description}
+                  </p>
+                  {/* Planets in this house */}
+                  {chart.planets.filter((p) => p.house === selectedHouse).length > 0 ? (
+                    <div>
+                      <h4 className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-2">Planètes dans cette maison</h4>
+                      <div className="space-y-3">
+                        {chart.planets.filter((p) => p.house === selectedHouse).map((p) => (
+                          <div key={p.name}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[var(--color-accent-gold)]">{p.symbol}</span>
+                              <span className="text-sm font-medium">{p.name} en {p.sign}</span>
+                            </div>
+                            <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">
+                              {planetInHouse[p.name]?.[selectedHouse] || `${p.name} dans ta Maison ${selectedHouse} apporte son énergie au domaine de ${houseDescriptions[selectedHouse]?.domain?.toLowerCase()}.`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--color-text-secondary)] italic">
+                      Aucune planète dans cette maison. L&apos;énergie de cette maison s&apos;exprime à travers le signe qui la gouverne.
+                    </p>
+                  )}
+                </div>
+              )}
+            </BottomSheet>
+
           </section>
         )}
       </div>
     </main>
+  );
+}
+
+// ─── Slider Field ─────────────────────────────────────────────────
+function SliderField({ label1, label2, value, onChange }: { label1: string; label2: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <div className="flex justify-between text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
+        <span>{label1}</span>
+        <span>{label2}</span>
+      </div>
+      <input type="range" min={1} max={10} value={value} onChange={(e) => onChange(parseInt(e.target.value))} />
+      <div className="text-center text-xs text-[var(--color-accent-lavender)] mt-1 font-mono">{value}/10</div>
+    </div>
   );
 }
 
@@ -660,21 +700,14 @@ function LoadingMessages() {
     "Tissage de ton portrait cosmique...",
   ];
   const [idx, setIdx] = useState(0);
-
   useEffect(() => {
-    const timer = setInterval(() => {
-      setIdx((i) => (i < messages.length - 1 ? i + 1 : i));
-    }, 800);
+    const timer = setInterval(() => setIdx((i) => Math.min(i + 1, messages.length - 1)), 800);
     return () => clearInterval(timer);
   }, []);
-
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {messages.map((msg, i) => (
-        <p
-          key={i}
-          className={`text-sm transition-all duration-500 ${i <= idx ? "text-[var(--color-text-primary)] opacity-100" : "text-[var(--color-text-secondary)] opacity-20"}`}
-        >
+        <p key={i} className={`text-xs transition-all duration-500 ${i <= idx ? "text-[var(--color-text-primary)] opacity-100" : "text-[var(--color-text-secondary)] opacity-20"}`}>
           {i < idx ? "✓" : i === idx ? "◌" : "·"} {msg}
         </p>
       ))}
@@ -682,68 +715,57 @@ function LoadingMessages() {
   );
 }
 
-// ─── Cosmic Portrait Helpers ──────────────────────────────────────
+// ─── Portrait Helpers ─────────────────────────────────────────────
 function getCosmicPortraitSun(sign: string): string {
-  const texts: Record<string, string> = {
-    Belier: "illumine une nature audacieuse et pionnière. Tu portes en toi une énergie d'initiation — un besoin viscéral de tracer ta propre voie, d'oser avant de calculer. Cette flamme intérieure est ton moteur le plus puissant.",
-    Taureau: "révèle une nature profondément ancrée et sensorielle. Tu construis avec patience, tu apprécies la beauté tangible du monde, et ta persévérance est une force tranquille que beaucoup t'envient.",
-    Gemeaux: "dévoile un esprit vif, curieux et multiple. Tu as soif d'apprendre, de connecter les idées, de communiquer. Ta richesse réside dans ta capacité à voir les situations sous plusieurs angles à la fois.",
-    Cancer: "baigne ta personnalité dans une sensibilité intuitive et protectrice. Tu ressens profondément les émotions — les tiennes et celles des autres — et ta capacité à créer un espace sûr est un don précieux.",
-    Lion: "rayonne d'une chaleur naturelle et d'une générosité authentique. Tu as besoin de créer, de briller, d'inspirer — non par vanité, mais parce que l'expression de soi est ta manière d'exister pleinement.",
-    Vierge: "affine ton regard sur le monde avec une précision et une intelligence analytique remarquables. Tu cherches à être utile, à améliorer, à comprendre les mécanismes subtils de la vie quotidienne.",
-    Balance: "cherche l'harmonie et la justesse dans chaque interaction. Tu possèdes un sens esthétique développé et une capacité rare à voir les deux côtés d'une situation avec une élégance naturelle.",
-    Scorpion: "plonge ta conscience dans les profondeurs de l'expérience humaine. Tu ne te contentes jamais de la surface — ta lucidité et ton intensité émotionnelle sont des outils de transformation puissants.",
-    Sagittaire: "ouvre grands les horizons de ta conscience. Tu es animé·e par une quête de sens, d'aventure et de vérité qui te pousse toujours plus loin — géographiquement, intellectuellement, spirituellement.",
-    Capricorne: "ancre ta volonté dans la durée et la structure. Tu as une maturité naturelle, une capacité à construire des fondations solides et une ambition qui se mesure sur le long terme.",
-    Verseau: "souffle un vent d'originalité et de vision. Tu penses au-delà des conventions, tu questionnes les normes, et ta liberté intellectuelle est une source d'innovation pour toi et pour les autres.",
-    Poissons: "dissout les frontières entre toi et le monde avec une empathie et une imagination sans limites. Tu perçois des nuances invisibles aux autres, et ta sensibilité est une forme de sagesse.",
+  const t: Record<string, string> = {
+    Belier: "illumine une nature audacieuse et pionnière. Tu portes en toi une énergie d'initiation — un besoin viscéral de tracer ta propre voie.",
+    Taureau: "révèle une nature profondément ancrée et sensorielle. Tu construis avec patience, tu apprécies la beauté tangible du monde.",
+    Gemeaux: "dévoile un esprit vif, curieux et multiple. Tu as soif d'apprendre, de connecter les idées, de communiquer.",
+    Cancer: "baigne ta personnalité dans une sensibilité intuitive et protectrice. Tu ressens profondément les émotions — les tiennes et celles des autres.",
+    Lion: "rayonne d'une chaleur naturelle et d'une générosité authentique. Tu as besoin de créer, de briller, d'inspirer.",
+    Vierge: "affine ton regard sur le monde avec une précision et une intelligence analytique remarquables.",
+    Balance: "cherche l'harmonie et la justesse dans chaque interaction. Tu possèdes un sens esthétique développé et une capacité rare à voir les deux côtés.",
+    Scorpion: "plonge ta conscience dans les profondeurs de l'expérience humaine. Tu ne te contentes jamais de la surface.",
+    Sagittaire: "ouvre grands les horizons de ta conscience. Tu es animé·e par une quête de sens, d'aventure et de vérité.",
+    Capricorne: "ancre ta volonté dans la durée et la structure. Tu as une maturité naturelle et une ambition qui se mesure sur le long terme.",
+    Verseau: "souffle un vent d'originalité et de vision. Tu penses au-delà des conventions, tu questionnes les normes.",
+    Poissons: "dissout les frontières entre toi et le monde avec une empathie et une imagination sans limites.",
   };
-  return texts[sign] || "colore ta personnalité d'une énergie unique et riche.";
+  return t[sign] || "colore ta personnalité d'une énergie unique.";
 }
 
 function getCosmicPortraitMoon(sign: string): string {
-  const texts: Record<string, string> = {
-    Belier: "révèle un monde émotionnel spontané et direct. Tes réactions sont vives, ton besoin d'authenticité immédiat. Tu te ressources dans l'action et le mouvement.",
-    Taureau: "parle d'un besoin profond de stabilité et de douceur. Tu te ressources dans le confort, les plaisirs simples, et la sécurité émotionnelle que procure ce qui est familier.",
-    Gemeaux: "dépeint une vie intérieure animée et changeante. Tu as besoin de stimulation mentale pour te sentir en équilibre, et le dialogue est ta manière naturelle de traiter tes émotions.",
-    Cancer: "amplifie ta sensibilité naturelle et ton intuition. Tu ressens les ambiances comme un sismographe, et ton besoin de nourrir et d'être nourri·e est au coeur de ton équilibre.",
-    Lion: "met en lumière un besoin d'être vu·e et apprécié·e dans ton authenticité. Tu as un coeur généreux qui s'épanouit dans la chaleur des liens et la reconnaissance sincère.",
-    Vierge: "traduit un besoin d'ordre émotionnel et de clarté intérieure. Tu analyses tes sentiments avec finesse, et tu te ressources dans les routines bien huilées et le sentiment d'utilité.",
-    Balance: "aspire à l'harmonie relationnelle avant tout. Tu as besoin de beauté autour de toi, de relations équilibrées, et ton bien-être est intimement lié à la qualité de tes liens.",
-    Scorpion: "révèle une vie émotionnelle d'une profondeur remarquable. La confiance se construit lentement chez toi, non par méfiance, mais parce que tu cherches l'authenticité absolue.",
-    Sagittaire: "colore ta vie émotionnelle d'optimisme et de soif de liberté. Tu as besoin d'espace intérieur, de sens et d'aventure pour maintenir ton équilibre émotionnel.",
-    Capricorne: "confère à tes émotions une maturité et une réserve qui cachent une grande profondeur. Tu te ressources dans la structure, l'accomplissement et la solitude choisie.",
-    Verseau: "donne à ta vie émotionnelle une qualité détachée et originale. Tu as besoin de liberté intérieure, d'espace pour tes idées, et tu traites tes émotions avec une lucidité inhabituelle.",
-    Poissons: "ouvre les portes d'une sensibilité sans frontières. Tu absorbes les émotions ambiantes comme une éponge, et ton monde intérieur est riche d'images, de rêves et d'intuitions.",
+  const t: Record<string, string> = {
+    Belier: "révèle un monde émotionnel spontané et direct. Tes réactions sont vives, ton besoin d'authenticité immédiat.",
+    Taureau: "parle d'un besoin profond de stabilité et de douceur. Tu te ressources dans le confort et la sécurité du familier.",
+    Gemeaux: "dépeint une vie intérieure animée et changeante. Tu as besoin de stimulation mentale pour te sentir en équilibre.",
+    Cancer: "amplifie ta sensibilité naturelle et ton intuition. Tu ressens les ambiances comme un sismographe.",
+    Lion: "met en lumière un besoin d'être vu·e et apprécié·e dans ton authenticité. Tu as un coeur généreux.",
+    Vierge: "traduit un besoin d'ordre émotionnel et de clarté intérieure. Tu te ressources dans les routines et le sentiment d'utilité.",
+    Balance: "aspire à l'harmonie relationnelle avant tout. Tu as besoin de beauté autour de toi et de relations équilibrées.",
+    Scorpion: "révèle une vie émotionnelle d'une profondeur remarquable. La confiance se construit lentement chez toi.",
+    Sagittaire: "colore ta vie émotionnelle d'optimisme et de soif de liberté. Tu as besoin d'espace pour ton équilibre.",
+    Capricorne: "confère à tes émotions une maturité et une réserve qui cachent une grande profondeur.",
+    Verseau: "donne à ta vie émotionnelle une qualité détachée et originale. Tu traites tes émotions avec une lucidité inhabituelle.",
+    Poissons: "ouvre les portes d'une sensibilité sans frontières. Tu absorbes les émotions ambiantes comme une éponge.",
   };
-  return texts[sign] || "enrichit ton monde intérieur d'une dimension émotionnelle unique.";
+  return t[sign] || "enrichit ton monde intérieur d'une dimension unique.";
 }
 
 function getCosmicPortraitAsc(sign: string): string {
-  const texts: Record<string, string> = {
-    Belier: "tu arrives dans le monde avec une énergie directe et magnétique. Les autres te perçoivent comme quelqu'un de courageux et d'initiative.",
-    Taureau: "tu te présentes au monde avec une présence calme et rassurante. On te perçoit comme quelqu'un de fiable, de sensuel et d'ancré.",
-    Gemeaux: "tu projettes une image vive, communicative et adaptable. Ta curiosité visible attire naturellement les échanges et les connexions.",
-    Cancer: "tu te montres au monde avec une douceur protectrice et une intuition visible. Les gens sentent ta capacité à les accueillir.",
-    Lion: "tu entres dans une pièce avec une présence chaude et lumineuse. Ta dignité naturelle et ta générosité sont immédiatement perceptibles.",
-    Vierge: "tu te présentes avec une élégance discrète et une intelligence attentive. Les gens remarquent ta précision et ton souci du détail.",
-    Balance: "tu projettes une image d'harmonie et de grâce naturelle. Ta diplomatie et ton sens esthétique sont tes premières cartes de visite.",
-    Scorpion: "tu arrives avec une intensité magnétique qui ne passe pas inaperçue. Ton regard perçant et ta profondeur intriguent et fascinent.",
-    Sagittaire: "tu rayonnes d'un enthousiasme et d'une ouverture d'esprit contagieux. On te perçoit comme aventurier·ère et inspirant·e.",
-    Capricorne: "tu te présentes avec une dignité mature et une aura de compétence. On te prend au sérieux naturellement et on respecte ta réserve.",
-    Verseau: "tu projettes une originalité et une indépendance qui te distinguent. Les gens sentent en toi quelqu'un qui pense différemment.",
-    Poissons: "tu arrives dans le monde avec une douceur éthérée et une empathie visible. Les gens se sentent compris en ta présence.",
+  const t: Record<string, string> = {
+    Belier: "tu arrives dans le monde avec une énergie directe et magnétique.",
+    Taureau: "tu te présentes au monde avec une présence calme et rassurante.",
+    Gemeaux: "tu projettes une image vive, communicative et adaptable.",
+    Cancer: "tu te montres au monde avec une douceur protectrice et intuitive.",
+    Lion: "tu entres dans une pièce avec une présence chaude et lumineuse.",
+    Vierge: "tu te présentes avec une élégance discrète et une intelligence attentive.",
+    Balance: "tu projettes une image d'harmonie et de grâce naturelle.",
+    Scorpion: "tu arrives avec une intensité magnétique qui ne passe pas inaperçue.",
+    Sagittaire: "tu rayonnes d'un enthousiasme et d'une ouverture d'esprit contagieux.",
+    Capricorne: "tu te présentes avec une dignité mature et une aura de compétence.",
+    Verseau: "tu projettes une originalité et une indépendance qui te distinguent.",
+    Poissons: "tu arrives dans le monde avec une douceur éthérée et une empathie visible.",
   };
-  return texts[sign] || "tu te présentes au monde avec une énergie unique qui te distingue.";
-}
-
-function getDefaultAspectText(type: string, p1: string, p2: string): string {
-  const typeTexts: Record<string, string> = {
-    Conjonction: `La fusion entre ${p1} et ${p2} dans ta carte crée une concentration d'énergie puissante. Ces deux forces agissent ensemble, amplifiant mutuellement leur expression.`,
-    Trigone: `L'harmonie naturelle entre ${p1} et ${p2} indique un flux d'énergie fluide et créatif. C'est un talent inné qui soutient ton expression personnelle.`,
-    Sextile: `La connexion bienveillante entre ${p1} et ${p2} offre des opportunités de croissance. C'est une ressource que tu peux activer consciemment.`,
-    Carre: `La tension créative entre ${p1} et ${p2} est une source de dynamisme et de croissance. Ce défi intérieur t'invite à intégrer deux besoins apparemment contradictoires.`,
-    Opposition: `La polarité entre ${p1} et ${p2} crée un jeu d'équilibre permanent. L'apprentissage consiste à honorer les deux côtés plutôt qu'à choisir un camp.`,
-  };
-  return typeTexts[type] || `L'aspect entre ${p1} et ${p2} colore leur interaction d'une nuance particulière dans ta carte.`;
+  return t[sign] || "tu te présentes au monde avec une énergie unique.";
 }
