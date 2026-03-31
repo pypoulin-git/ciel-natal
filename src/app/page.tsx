@@ -3,11 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Starfield from "@/components/Starfield";
 import ZodiacWheel from "@/components/ZodiacWheel";
-import GlassModal from "@/components/BottomSheet";
 import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
-import { calculateNatalChart, NatalChart, PlanetPosition, SIGN_SYMBOLS } from "@/lib/astro";
-import { houseDescriptions, planetInHouse } from "@/data/interpretations";
+import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -114,11 +112,28 @@ export default function Home() {
   const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
   const [cityLoading, setCityLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("portrait");
-  const [selectedPlanet, setSelectedPlanet] = useState<PlanetPosition | null>(null);
-  const [aspectModalData, setAspectModalData] = useState<{ title: string; subtitle: string; text: string } | null>(null);
+  const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
+  const [expandedPlanets, setExpandedPlanets] = useState<Set<string>>(new Set());
+  const [expandedAspects, setExpandedAspects] = useState<Set<number>>(new Set());
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const togglePlanet = (name: string) => {
+    setExpandedPlanets((prev) => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+  };
+
+  const toggleAspect = (i: number) => {
+    setExpandedAspects((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  };
 
   useEffect(() => {
     import("@/data/interpretations").then((mod) => {
@@ -398,59 +413,79 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="sticky top-0 z-30 bg-[var(--color-space-deep)]/95 backdrop-blur-xl border-b border-white/5">
-              <div className="tab-nav flex overflow-x-auto px-4 py-2.5 gap-1 max-w-3xl mx-auto">
+            <nav className="sticky top-0 z-30 backdrop-blur-2xl bg-[var(--color-space-deep)]/80" style={{ borderBottom: "1px solid rgba(201,160,255,0.06)" }}>
+              <div className="tab-nav flex overflow-x-auto max-w-3xl mx-auto">
                 {RESULT_TABS.map((tab) => (
                   <button key={tab.id} onClick={() => scrollToTab(tab.id)}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap btn-hover ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 text-[11px] font-medium tracking-wide uppercase transition-all whitespace-nowrap relative ${
                       activeTab === tab.id
-                        ? "bg-white/10 text-[var(--color-text-primary)] border border-white/10"
-                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5"
+                        ? "text-[var(--color-accent-lavender)]"
+                        : "text-[var(--color-text-secondary)]/60 hover:text-[var(--color-text-secondary)]"
                     }`}>
-                    <span className="opacity-60">{tab.icon}</span>
                     <span>{tab.label}</span>
+                    {activeTab === tab.id && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-full bg-[var(--color-accent-lavender)]" />
+                    )}
                   </button>
                 ))}
               </div>
-            </div>
+            </nav>
 
             <div className="max-w-3xl mx-auto px-4 space-y-8 mt-6">
 
               {/* PORTRAIT */}
-              <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-16">
+              <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-14">
                 <div className="glass p-4 sm:p-6 mb-6">
-                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet?.name} onTapPlanet={(p) => setSelectedPlanet(p)} />
-                  <p className="text-[10px] text-center text-[var(--color-text-secondary)] mt-3 opacity-60">Touche une planète pour voir son interprétation</p>
+                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} onTapPlanet={(p) => { setSelectedPlanet(p.name); togglePlanet(p.name); }} />
                 </div>
 
-                <div className="space-y-3 mb-6">
+                {/* Big Three — full width expand/collapse */}
+                <div className="space-y-2 mb-6">
                   {[
                     { label: "Soleil", desc: "Ton identité profonde", data: chart.planets[0], glyph: "☉" },
                     { label: "Lune", desc: "Ton monde émotionnel", data: chart.planets[1], glyph: "☽" },
                     ...(chart.ascendant ? [{ label: "Ascendant", desc: "Ta façade au monde", data: chart.ascendant, glyph: "AC" }] : []),
-                  ].map((item) => (
-                    <button key={item.label} className="w-full glass p-5 flex items-center gap-5 text-left btn-hover group"
-                      onClick={() => setSelectedPlanet(item.data)}>
-                      <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 group-hover:border-[var(--color-accent-lavender)]/20 transition">
-                        <span className="text-xl font-mono text-[var(--color-accent-lavender)]">{item.glyph}</span>
+                  ].map((item) => {
+                    const isOpen = expandedPlanets.has(item.data.name);
+                    return (
+                      <div key={item.label} className="glass overflow-hidden">
+                        <button className="w-full p-5 flex items-center gap-5 text-left btn-hover group"
+                          onClick={() => togglePlanet(item.data.name)}>
+                          <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 group-hover:border-[var(--color-accent-lavender)]/20 transition">
+                            <span className="text-xl text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{item.glyph}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-0.5">{item.label}</div>
+                            <div className="font-cinzel text-lg text-[var(--color-text-primary)]">{item.data.sign}</div>
+                            <div className="text-xs text-[var(--color-text-secondary)]">{item.desc}</div>
+                          </div>
+                          <div className="text-right flex-shrink-0 mr-2">
+                            <div className="text-xs font-mono text-[var(--color-text-secondary)]">{item.data.degree}°</div>
+                            {item.data.house && <div className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-50">M{item.data.house}</div>}
+                          </div>
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"
+                            className={`text-[var(--color-text-secondary)] opacity-40 transition-transform duration-300 flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}>
+                            <path d="M3 5l4 4 4-4" />
+                          </svg>
+                        </button>
+                        <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
+                          <div className="px-5 pb-5 pt-0 text-sm text-[var(--color-text-primary)]/80 leading-relaxed border-t border-white/5">
+                            <div className="pt-4">
+                              {getInterp(item.data.name, item.data.sign, item.data.house) || (
+                                <span className="text-[var(--color-text-secondary)]">{item.data.name} en {item.data.sign} colore ta manière d&apos;exprimer les qualités de ce signe.</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-0.5">{item.label}</div>
-                        <div className="font-cinzel text-lg text-[var(--color-text-primary)]">{item.data.sign}</div>
-                        <div className="text-xs text-[var(--color-text-secondary)]">{item.desc}</div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-xs font-mono text-[var(--color-text-secondary)]">{item.data.degree}°</div>
-                        {item.data.house && <div className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-50">M{item.data.house}</div>}
-                      </div>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-secondary)] opacity-30 group-hover:opacity-60 transition"><path d="M6 4l4 4-4 4" /></svg>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
 
+                {/* Cosmic Portrait */}
                 <div className="glass p-6">
                   <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                    <span className="text-[var(--color-accent-lavender)] opacity-60">✦</span> Ton Portrait Cosmique
+                    <span className="text-[var(--color-accent-lavender)] opacity-40">✦</span> Ton Portrait Cosmique
                   </h2>
                   <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed space-y-4">
                     <p>{form.prenom}, ton Soleil en {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</p>
@@ -461,38 +496,55 @@ export default function Home() {
               </div>
 
               {/* PLANETS */}
-              <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-16">
+              <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-60">☉</span> Tes Planètes
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">☉</span> Tes Planètes
                 </h2>
                 <p className="text-xs text-[var(--color-text-secondary)] mb-4">Chaque planète colore un aspect de ta personnalité.</p>
-                <div className="stagger-in space-y-2">
-                  {chart.planets.map((planet) => (
-                    <button key={planet.name} onClick={() => setSelectedPlanet(planet)}
-                      className="w-full glass flex items-center justify-between p-4 text-left btn-hover group">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-[var(--color-accent-lavender)]/20 transition">
-                          <span className="text-base font-mono text-[var(--color-accent-lavender)]">{planet.symbol}</span>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-[var(--color-text-primary)]">{planet.name}</span>
-                          <span className="text-xs text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
+                <div className="space-y-2">
+                  {chart.planets.map((planet) => {
+                    const isOpen = expandedPlanets.has(planet.name);
+                    return (
+                      <div key={planet.name} className="glass overflow-hidden">
+                        <button onClick={() => togglePlanet(planet.name)}
+                          className="w-full flex items-center justify-between p-4 text-left btn-hover group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-[var(--color-accent-lavender)]/20 transition">
+                              <span className="text-base text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{planet.symbol}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-[var(--color-text-primary)]">{planet.name}</span>
+                              <span className="text-xs text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-[var(--color-text-secondary)]">{planet.degree}°</span>
+                            {planet.house && <span className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-50">M{planet.house}</span>}
+                            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"
+                              className={`text-[var(--color-text-secondary)] opacity-40 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
+                              <path d="M2 4l4 4 4-4" />
+                            </svg>
+                          </div>
+                        </button>
+                        <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
+                          <div className="px-4 pb-4 text-sm text-[var(--color-text-primary)]/80 leading-relaxed border-t border-white/5">
+                            <div className="pt-3 whitespace-pre-line">
+                              {getInterp(planet.name, planet.sign, planet.house) || (
+                                <span className="text-[var(--color-text-secondary)]">{planet.name} en {planet.sign} colore ta manière d&apos;exprimer les qualités de ce signe.</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-[var(--color-text-secondary)]">{planet.degree}°</span>
-                        {planet.house && <span className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-50">M{planet.house}</span>}
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-secondary)] opacity-30 group-hover:opacity-60 transition"><path d="M5 3l4 4-4 4" /></svg>
-                      </div>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* ELEMENTS */}
-              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16">
+              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-60">◆</span> Éléments et Modalités
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">◆</span> Éléments et Modalités
                 </h2>
                 <p className="text-xs text-[var(--color-text-secondary)] mb-4">L&apos;équilibre des forces dans ta carte natale.</p>
                 <div className="glass p-5">
@@ -502,9 +554,9 @@ export default function Home() {
 
               {/* HOUSES */}
               {chart.ascendant && (
-                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16">
+                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-14">
                   <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                    <span className="text-[var(--color-accent-lavender)] opacity-60">⌂</span> Tes 12 Maisons
+                    <span className="text-[var(--color-accent-lavender)] opacity-40">⌂</span> Tes 12 Maisons
                   </h2>
                   <p className="text-xs text-[var(--color-text-secondary)] mb-4">Les domaines de vie activés par tes planètes.</p>
                   <HousesMap planets={chart.planets} />
@@ -512,9 +564,9 @@ export default function Home() {
               )}
 
               {/* ASPECTS */}
-              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16">
+              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-60">△</span> Tes Aspects
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">△</span> Tes Aspects
                 </h2>
                 <p className="text-xs text-[var(--color-text-secondary)] mb-4">Les dialogues entre tes planètes — harmonies et tensions.</p>
                 {chart.aspects.length > 0 ? (
@@ -523,28 +575,36 @@ export default function Home() {
                       const interp = getAspectInterp(aspect.type, aspect.planet1, aspect.planet2);
                       const color = ASPECT_COLORS[aspect.type] || "#c9a0ff";
                       const symbol = ASPECT_SYMBOLS[aspect.type] || "·";
+                      const isOpen = expandedAspects.has(i);
                       return (
-                        <button key={i} className="w-full glass p-4 text-left btn-hover group"
-                          onClick={() => setAspectModalData({
-                            title: `${aspect.planet1} ${symbol} ${aspect.planet2}`,
-                            subtitle: `${aspect.type} — orbe ${aspect.orb}°`,
-                            text: interp || `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique dans ta carte, colorant la manière dont ces deux énergies interagissent dans ton expérience de vie.`,
-                          })}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-mono text-[var(--color-accent-lavender)]">{aspect.symbol1}</span>
-                              <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
-                              <span style={{ color }} className="text-lg mx-0.5">{symbol}</span>
-                              <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
-                              <span className="font-mono text-[var(--color-accent-lavender)]">{aspect.symbol2}</span>
+                        <div key={i} className="glass overflow-hidden">
+                          <button className="w-full p-4 text-left btn-hover group" onClick={() => toggleAspect(i)}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{aspect.symbol1}</span>
+                                <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
+                                <span style={{ color }} className="text-lg mx-0.5">{symbol}</span>
+                                <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
+                                <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{aspect.symbol2}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full border font-mono" style={{ borderColor: `${color}30`, color }}>{aspect.type}</span>
+                                <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
+                                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"
+                                  className={`text-[var(--color-text-secondary)] opacity-40 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
+                                  <path d="M2 4l4 4 4-4" />
+                                </svg>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] px-2 py-0.5 rounded-full border font-mono" style={{ borderColor: `${color}30`, color }}>{aspect.type}</span>
-                              <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
+                          </button>
+                          <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
+                            <div className="px-4 pb-4 text-sm text-[var(--color-text-primary)]/80 leading-relaxed border-t border-white/5">
+                              <div className="pt-3">
+                                {interp || `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique dans ta carte, colorant la manière dont ces deux énergies interagissent dans ton expérience de vie.`}
+                              </div>
                             </div>
                           </div>
-                          {interp && <p className="text-xs text-[var(--color-text-secondary)] mt-2 line-clamp-2 group-hover:text-[var(--color-text-primary)]/60 transition">{interp}</p>}
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -583,40 +643,11 @@ export default function Home() {
               </div>
 
               <div className="text-center pb-8">
-                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setAspectModalData(null); setActiveTab("portrait"); }}
+                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setExpandedPlanets(new Set()); setExpandedAspects(new Set()); setActiveTab("portrait"); }}
                   className="btn-ghost px-6 py-3 rounded-xl text-sm">← Calculer une autre carte</button>
               </div>
             </div>
 
-            {/* MODALS */}
-            <GlassModal isOpen={!!selectedPlanet} onClose={() => setSelectedPlanet(null)}
-              title={selectedPlanet?.name || ""} subtitle={selectedPlanet ? `${selectedPlanet.sign} — ${selectedPlanet.degree}°${selectedPlanet.house ? ` — Maison ${selectedPlanet.house}` : ""}` : ""}>
-              {selectedPlanet && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 pb-4 border-b border-white/5">
-                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
-                      <span className="text-2xl font-mono text-[var(--color-accent-lavender)]">{selectedPlanet.symbol}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-[var(--color-text-primary)]">{selectedPlanet.name} en {selectedPlanet.sign}</div>
-                      <div className="text-xs text-[var(--color-text-secondary)] font-mono">{selectedPlanet.degree}°{selectedPlanet.house ? ` — Maison ${selectedPlanet.house}` : ""}</div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed whitespace-pre-line">
-                    {getInterp(selectedPlanet.name, selectedPlanet.sign, selectedPlanet.house) || (
-                      <span className="text-[var(--color-text-secondary)]">{selectedPlanet.name} en {selectedPlanet.sign} colore ta manière d&apos;exprimer les qualités de ce signe dans ta vie quotidienne.</span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </GlassModal>
-
-            <GlassModal isOpen={!!aspectModalData} onClose={() => setAspectModalData(null)}
-              title={aspectModalData?.title || ""} subtitle={aspectModalData?.subtitle}>
-              {aspectModalData && (
-                <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed">{aspectModalData.text}</div>
-              )}
-            </GlassModal>
           </section>
         )}
       </div>
