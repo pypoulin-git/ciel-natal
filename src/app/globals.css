@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space-deep: #0a0a1a;
+  --color-space-card: #12122a;
+  --color-accent-lavender: #c9a0ff;
+  --color-accent-gold: #ffd700;
+  --color-text-primary: #e8e0f0;
+  --color-text-secondary: #8a80a0;
+  --color-glass-border: rgba(201, 160, 255, 0.15);
+  --color-glass-bg: rgba(18, 18, 42, 0.6);
+}
+
+@font-face {
+  font-family: "Cinzel";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/cinzel/v23/8vIU7ww63mVu7gtR-kwKxNvkNOjw-tbnfY3lCA.woff2")
+    format("woff2");
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-space-deep);
+  color: var(--color-text-primary);
+  font-family: "Inter", "DM Sans", system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+.font-cinzel {
+  font-family: "Cinzel", serif;
+}
+
+/* Starfield canvas */
+#starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Glass morphism panel */
+.glass {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 1rem;
+}
+
+/* Accent glow */
+.glow-lavender {
+  box-shadow: 0 0 30px rgba(201, 160, 255, 0.2), 0 0 60px rgba(201, 160, 255, 0.1);
+}
+
+.glow-gold {
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+}
+
+/* Custom slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(201, 160, 255, 0.2), rgba(255, 215, 0, 0.2));
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-accent-lavender);
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(201, 160, 255, 0.5);
+  transition: box-shadow 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 20px rgba(201, 160, 255, 0.8);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-accent-lavender);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 12px rgba(201, 160, 255, 0.5);
+}
+
+/* Fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Pulse glow for loading */
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Smooth step transitions */
+.step-enter {
+  animation: fadeInUp 0.5s ease-out forwards;
+}

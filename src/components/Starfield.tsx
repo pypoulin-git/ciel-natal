@@ -1,0 +1,73 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
+export default function Starfield() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationId: number;
+    const stars: { x: number; y: number; r: number; speed: number; opacity: number; twinkleSpeed: number }[] = [];
+
+    function resize() {
+      canvas!.width = window.innerWidth;
+      canvas!.height = window.innerHeight;
+    }
+
+    function createStars() {
+      stars.length = 0;
+      const count = Math.floor((canvas!.width * canvas!.height) / 4000);
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * canvas!.width,
+          y: Math.random() * canvas!.height,
+          r: Math.random() * 1.5 + 0.3,
+          speed: Math.random() * 0.15 + 0.02,
+          opacity: Math.random(),
+          twinkleSpeed: Math.random() * 0.008 + 0.002,
+        });
+      }
+    }
+
+    function draw() {
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+
+      for (const star of stars) {
+        star.opacity += star.twinkleSpeed;
+        if (star.opacity > 1 || star.opacity < 0.1) {
+          star.twinkleSpeed *= -1;
+        }
+        star.y -= star.speed;
+        if (star.y < -2) {
+          star.y = canvas!.height + 2;
+          star.x = Math.random() * canvas!.width;
+        }
+
+        ctx!.beginPath();
+        ctx!.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(232, 224, 240, ${star.opacity * 0.8})`;
+        ctx!.fill();
+      }
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    resize();
+    createStars();
+    draw();
+
+    window.addEventListener("resize", () => {
+      resize();
+      createStars();
+    });
+
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  return <canvas ref={canvasRef} id="starfield" />;
+}
