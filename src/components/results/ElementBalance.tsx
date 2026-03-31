@@ -15,26 +15,23 @@ const MODALITY_MAP: Record<string, string> = {
 };
 
 const ELEMENT_CONFIG = {
-  Feu: { color: "#f97316", icon: "🔥", desc: "Énergie, passion, initiative" },
-  Terre: { color: "#22c55e", icon: "🌿", desc: "Stabilité, concret, patience" },
-  Air: { color: "#60a5fa", icon: "💨", desc: "Pensée, communication, idées" },
-  Eau: { color: "#8b5cf6", icon: "🌊", desc: "Émotions, intuition, empathie" },
+  Feu: { color: "#f97316", desc: "Energie, passion, initiative" },
+  Terre: { color: "#22c55e", desc: "Stabilite, concret, patience" },
+  Air: { color: "#60a5fa", desc: "Pensee, communication, idees" },
+  Eau: { color: "#8b5cf6", desc: "Emotions, intuition, empathie" },
 };
 
 const MODALITY_CONFIG = {
   Cardinal: { color: "#ef4444", desc: "Initier, lancer, diriger" },
-  Fixe: { color: "#eab308", desc: "Persévérer, stabiliser, ancrer" },
+  Fixe: { color: "#eab308", desc: "Perseverer, stabiliser, ancrer" },
   Mutable: { color: "#06b6d4", desc: "Adapter, transformer, connecter" },
 };
 
 interface Props {
   planets: PlanetPosition[];
-  onTapElement?: (element: string) => void;
 }
 
-export default function ElementBalance({ planets, onTapElement }: Props) {
-  // Count personal planets only (Sun through Saturn) for more meaningful balance
-  const personalPlanets = planets.slice(0, 7);
+export default function ElementBalance({ planets }: Props) {
   const allPlanets = planets;
 
   const elementCount: Record<string, number> = { Feu: 0, Terre: 0, Air: 0, Eau: 0 };
@@ -61,48 +58,72 @@ export default function ElementBalance({ planets, onTapElement }: Props) {
   const dominantMod = Object.entries(modalityCount).sort((a, b) => b[1] - a[1])[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Intro */}
+      <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+        Les quatre elements et trois modalites revelent la dynamique
+        fondamentale de ton theme. Les elements decrivent ta nature
+        energetique, les modalites ta maniere d&apos;agir dans le monde.
+      </p>
+
       {/* Element bars */}
       <div>
-        <h3 className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-4">Répartition des éléments</h3>
-        <div className="space-y-3">
+        <h3 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-5">
+          Elements
+        </h3>
+        <div className="space-y-4 stagger-in">
           {(["Feu", "Terre", "Air", "Eau"] as const).map((el) => {
             const config = ELEMENT_CONFIG[el];
             const count = elementCount[el];
             const pct = Math.round((count / total) * 100);
             return (
-              <button
-                key={el}
-                className="w-full text-left group"
-                onClick={() => onTapElement?.(el)}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">{config.icon}</span>
-                    <span className="text-sm font-medium text-[var(--color-text-primary)]">{el}</span>
-                    <span className="text-[10px] text-[var(--color-text-secondary)] hidden sm:inline">{config.desc}</span>
+              <div key={el}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="block w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.color}50` }}
+                    />
+                    <span className="text-sm text-[var(--color-text-primary)]">{el}</span>
+                    <span className="text-[10px] text-[var(--color-text-secondary)] hidden sm:inline">
+                      {config.desc}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--color-text-secondary)] font-mono">{count}/{total}</span>
-                    <span className="text-xs font-mono" style={{ color: config.color }}>{pct}%</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
+                      {count}/{total}
+                    </span>
+                    <span
+                      className="font-mono text-[11px] font-medium tabular-nums"
+                      style={{ color: config.color }}
+                    >
+                      {pct}%
+                    </span>
                   </div>
                 </div>
-                <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
+                <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"
                     style={{
                       width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${config.color}80, ${config.color})`,
-                      boxShadow: `0 0 8px ${config.color}40`,
+                      background: `linear-gradient(90deg, ${config.color}40, ${config.color}cc)`,
+                      boxShadow: `inset 0 0 4px ${config.color}30, 0 0 6px ${config.color}20`,
                     }}
                   />
                 </div>
-                <div className="flex gap-1 mt-1">
-                  {elementPlanets[el].map((sym, i) => (
-                    <span key={i} className="text-xs opacity-60">{sym}</span>
-                  ))}
-                </div>
-              </button>
+                {elementPlanets[el].length > 0 && (
+                  <div className="flex gap-1.5 mt-1.5">
+                    {elementPlanets[el].map((sym, i) => (
+                      <span
+                        key={i}
+                        className="text-[11px] opacity-40"
+                      >
+                        {sym}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -110,53 +131,89 @@ export default function ElementBalance({ planets, onTapElement }: Props) {
 
       {/* Modality bars */}
       <div>
-        <h3 className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-4">Répartition des modalités</h3>
-        <div className="space-y-3">
+        <h3 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-5">
+          Modalites
+        </h3>
+        <div className="space-y-4 stagger-in">
           {(["Cardinal", "Fixe", "Mutable"] as const).map((mod) => {
             const config = MODALITY_CONFIG[mod];
             const count = modalityCount[mod];
             const pct = Math.round((count / total) * 100);
             return (
               <div key={mod}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[var(--color-text-primary)]">{mod}</span>
-                    <span className="text-[10px] text-[var(--color-text-secondary)]">{config.desc}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="block w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.color}50` }}
+                    />
+                    <span className="text-sm text-[var(--color-text-primary)]">{mod}</span>
+                    <span className="text-[10px] text-[var(--color-text-secondary)]">
+                      {config.desc}
+                    </span>
                   </div>
-                  <span className="text-xs font-mono" style={{ color: config.color }}>{pct}%</span>
+                  <span
+                    className="font-mono text-[11px] font-medium tabular-nums"
+                    style={{ color: config.color }}
+                  >
+                    {pct}%
+                  </span>
                 </div>
-                <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"
                     style={{
                       width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${config.color}80, ${config.color})`,
+                      background: `linear-gradient(90deg, ${config.color}40, ${config.color}cc)`,
+                      boxShadow: `inset 0 0 4px ${config.color}30, 0 0 6px ${config.color}20`,
                     }}
                   />
                 </div>
-                <div className="flex gap-1 mt-1">
-                  {modalityPlanets[mod].map((sym, i) => (
-                    <span key={i} className="text-xs opacity-60">{sym}</span>
-                  ))}
-                </div>
+                {modalityPlanets[mod].length > 0 && (
+                  <div className="flex gap-1.5 mt-1.5">
+                    {modalityPlanets[mod].map((sym, i) => (
+                      <span
+                        key={i}
+                        className="text-[11px] opacity-40"
+                      >
+                        {sym}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Insight text */}
-      <div className="glass p-4 text-sm text-[var(--color-text-primary)] leading-relaxed">
-        <p>
-          Ton thème est dominé par l&apos;élément <strong style={{ color: ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG].color }}>{dominant[0]}</strong> ({dominant[1]} planètes) — {ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.
+      {/* Insight */}
+      <div className="border-l-2 border-[var(--color-accent-lavender)]/30 pl-4 py-1">
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+          Ton theme est domine par l&apos;element{" "}
+          <strong
+            className="font-medium"
+            style={{ color: ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG].color }}
+          >
+            {dominant[0]}
+          </strong>{" "}
+          <span className="font-mono text-[11px]">({dominant[1]})</span>{" "}
+          — {ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.
           {weakest[1] === 0 ? (
-            <> L&apos;absence d&apos;élément {weakest[0]} dans ta carte t&apos;invite à développer consciemment ces qualités : {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.</>
+            <> L&apos;absence de {weakest[0]} t&apos;invite a developper consciemment ces qualites : {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.</>
           ) : weakest[1] <= 1 ? (
-            <> L&apos;élément {weakest[0]} est peu présent — une invitation à explorer {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.</>
+            <> L&apos;element {weakest[0]} est peu present — une invitation a explorer {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.</>
           ) : null}
         </p>
-        <p className="mt-2">
-          Ta modalité dominante est <strong style={{ color: MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].color }}>{dominantMod[0]}</strong> — tu tends naturellement à {MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].desc.toLowerCase()}.
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mt-2">
+          Modalite dominante :{" "}
+          <strong
+            className="font-medium"
+            style={{ color: MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].color }}
+          >
+            {dominantMod[0]}
+          </strong>{" "}
+          — tu tends naturellement a {MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].desc.toLowerCase()}.
         </p>
       </div>
     </div>

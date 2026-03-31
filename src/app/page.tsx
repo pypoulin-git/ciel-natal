@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Starfield from "@/components/Starfield";
 import ZodiacWheel from "@/components/ZodiacWheel";
-import BottomSheet from "@/components/BottomSheet";
+import GlassModal from "@/components/BottomSheet";
 import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
-import { calculateNatalChart, NatalChart, PlanetPosition, SIGNS, SIGN_SYMBOLS } from "@/lib/astro";
+import { calculateNatalChart, NatalChart, PlanetPosition, SIGN_SYMBOLS } from "@/lib/astro";
 import { houseDescriptions, planetInHouse } from "@/data/interpretations";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -26,56 +26,79 @@ interface FormData {
   focus: number;
 }
 
-// ─── City database ────────────────────────────────────────────────
-const CITIES: { name: string; lat: number; lon: number }[] = [
-  { name: "Paris, France", lat: 48.8566, lon: 2.3522 },
-  { name: "Montréal, Québec", lat: 45.5017, lon: -73.5673 },
-  { name: "Lyon, France", lat: 45.764, lon: 4.8357 },
-  { name: "Marseille, France", lat: 43.2965, lon: 5.3698 },
-  { name: "Toulouse, France", lat: 43.6047, lon: 1.4442 },
-  { name: "Québec, Québec", lat: 46.8139, lon: -71.208 },
-  { name: "Bruxelles, Belgique", lat: 50.8503, lon: 4.3517 },
-  { name: "Genève, Suisse", lat: 46.2044, lon: 6.1432 },
-  { name: "Bordeaux, France", lat: 44.8378, lon: -0.5792 },
-  { name: "Lille, France", lat: 50.6292, lon: 3.0573 },
-  { name: "Nice, France", lat: 43.7102, lon: 7.262 },
-  { name: "Nantes, France", lat: 47.2184, lon: -1.5536 },
-  { name: "Strasbourg, France", lat: 48.5734, lon: 7.7521 },
-  { name: "Ottawa, Ontario", lat: 45.4215, lon: -75.6972 },
-  { name: "Toronto, Ontario", lat: 43.6532, lon: -79.3832 },
-  { name: "Vancouver, BC", lat: 49.2827, lon: -123.1207 },
-  { name: "Dakar, Sénégal", lat: 14.7167, lon: -17.4677 },
-  { name: "Tunis, Tunisie", lat: 36.8065, lon: 10.1815 },
-  { name: "Casablanca, Maroc", lat: 33.5731, lon: -7.5898 },
-  { name: "Alger, Algérie", lat: 36.7538, lon: 3.0588 },
-  { name: "Lausanne, Suisse", lat: 46.5197, lon: 6.6323 },
-  { name: "Luxembourg, Luxembourg", lat: 49.6117, lon: 6.13 },
-  { name: "Abidjan, Côte d'Ivoire", lat: 5.3600, lon: -4.0083 },
-  { name: "Kinshasa, RDC", lat: -4.4419, lon: 15.2663 },
-  { name: "Port-au-Prince, Haïti", lat: 18.5944, lon: -72.3074 },
-  { name: "New York, USA", lat: 40.7128, lon: -74.006 },
-  { name: "Los Angeles, USA", lat: 34.0522, lon: -118.2437 },
-  { name: "Londres, UK", lat: 51.5074, lon: -0.1278 },
-  { name: "Berlin, Allemagne", lat: 52.52, lon: 13.405 },
-  { name: "Rome, Italie", lat: 41.9028, lon: 12.4964 },
-  { name: "Madrid, Espagne", lat: 40.4168, lon: -3.7038 },
-  { name: "Lisbonne, Portugal", lat: 38.7223, lon: -9.1393 },
-  { name: "Amsterdam, Pays-Bas", lat: 52.3676, lon: 4.9041 },
-  { name: "Zurich, Suisse", lat: 47.3769, lon: 8.5417 },
-  { name: "Sherbrooke, Québec", lat: 45.4042, lon: -71.8929 },
-  { name: "Trois-Rivières, Québec", lat: 46.3432, lon: -72.5419 },
-  { name: "Gatineau, Québec", lat: 45.4765, lon: -75.7013 },
-  { name: "Laval, Québec", lat: 45.6066, lon: -73.7124 },
-  { name: "Saguenay, Québec", lat: 48.4279, lon: -71.0548 },
+interface CityResult {
+  name: string;
+  lat: number;
+  lon: number;
+  display: string;
+}
+
+// ─── Constants ────────────────────────────────────────────────────
+const MONTHS = [
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
-// ─── Results tab definition ───────────────────────────────────────
 const RESULT_TABS = [
   { id: "portrait", label: "Portrait", icon: "✦" },
   { id: "planets", label: "Planètes", icon: "☉" },
-  { id: "elements", label: "Éléments", icon: "🔥" },
-  { id: "houses", label: "Maisons", icon: "🏠" },
+  { id: "elements", label: "Éléments", icon: "◆" },
+  { id: "houses", label: "Maisons", icon: "⌂" },
   { id: "aspects", label: "Aspects", icon: "△" },
+];
+
+const ASPECT_SYMBOLS: Record<string, string> = {
+  Conjonction: "☌", Trigone: "△", Sextile: "⚹", Carre: "□", Opposition: "☍",
+};
+
+const ASPECT_COLORS: Record<string, string> = {
+  Conjonction: "#c9a0ff", Trigone: "#34d399", Sextile: "#60a5fa", Carre: "#ef4444", Opposition: "#fbbf24",
+};
+
+// ─── Nominatim City Search ────────────────────────────────────────
+async function searchCities(query: string): Promise<CityResult[]> {
+  if (query.length < 2) return [];
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=fr&addressdetails=1`,
+      { headers: { "User-Agent": "CielNatal/1.0" } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data
+      .filter((r: { type: string; class: string }) => r.class === "place" || r.class === "boundary")
+      .map((r: { display_name: string; lat: string; lon: string; address?: { city?: string; town?: string; village?: string; state?: string; country?: string } }) => ({
+        name: r.address?.city || r.address?.town || r.address?.village || r.display_name.split(",")[0],
+        lat: parseFloat(r.lat),
+        lon: parseFloat(r.lon),
+        display: [
+          r.address?.city || r.address?.town || r.address?.village || r.display_name.split(",")[0],
+          r.address?.state,
+          r.address?.country,
+        ].filter(Boolean).join(", "),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+// ─── Slider Config ────────────────────────────────────────────────
+const SLIDER_CONFIG = [
+  {
+    key: "tone" as const,
+    left: { label: "Scientifique", desc: "Approche rationnelle, astronomie, psychologie" },
+    right: { label: "Ésotérique", desc: "Symbolisme, archétypes, dimension spirituelle" },
+  },
+  {
+    key: "depth" as const,
+    left: { label: "Concis", desc: "L'essentiel, direct et clair" },
+    right: { label: "Approfondi", desc: "Analyse détaillée, nuances et subtilités" },
+  },
+  {
+    key: "focus" as const,
+    left: { label: "Pratique", desc: "Conseils concrets, actions au quotidien" },
+    right: { label: "Introspectif", desc: "Réflexion intérieure, exploration psychologique" },
+  },
 ];
 
 // ─── Page ────────────────────────────────────────────────────────
@@ -88,12 +111,14 @@ export default function Home() {
     tone: 5, depth: 5, focus: 5,
   });
   const [chart, setChart] = useState<NatalChart | null>(null);
-  const [citySuggestions, setCitySuggestions] = useState<typeof CITIES>([]);
+  const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("portrait");
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetPosition | null>(null);
-  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
+  const [aspectModalData, setAspectModalData] = useState<{ title: string; subtitle: string; text: string } | null>(null);
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     import("@/data/interpretations").then((mod) => {
@@ -103,13 +128,18 @@ export default function Home() {
 
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
+    if (citySearchTimer.current) clearTimeout(citySearchTimer.current);
     if (query.length < 2) { setCitySuggestions([]); return; }
-    const q = query.toLowerCase();
-    setCitySuggestions(CITIES.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6));
+    setCityLoading(true);
+    citySearchTimer.current = setTimeout(async () => {
+      const results = await searchCities(query);
+      setCitySuggestions(results);
+      setCityLoading(false);
+    }, 350);
   }, []);
 
-  const selectCity = useCallback((city: (typeof CITIES)[0]) => {
-    setForm((f) => ({ ...f, lieu: city.name, latitude: city.lat, longitude: city.lon }));
+  const selectCity = useCallback((city: CityResult) => {
+    setForm((f) => ({ ...f, lieu: city.display, latitude: city.lat, longitude: city.lon }));
     setCitySuggestions([]);
   }, []);
 
@@ -161,7 +191,6 @@ export default function Home() {
     sectionRefs.current[tabId]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // ─── Render ──────────────────────────────────────────────────────
   return (
     <main className="relative min-h-screen">
       <Starfield />
@@ -171,7 +200,7 @@ export default function Home() {
         {step === 0 && (
           <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
             <div className="animate-fade-in-up">
-              <div className="text-5xl md:text-6xl mb-6 opacity-60">✦</div>
+              <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">✦</div>
               <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] bg-clip-text text-transparent leading-tight">
                 Ciel Natal
               </h1>
@@ -181,146 +210,132 @@ export default function Home() {
               <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-10 font-light">
                 quand tu es né(e)&nbsp;?
               </p>
-              <button
-                onClick={() => setStep(1)}
-                className="px-8 py-4 rounded-full bg-gradient-to-r from-[var(--color-accent-lavender)] to-purple-500 text-white font-medium text-lg active:scale-95 transition-transform glow-lavender"
-              >
+              <button onClick={() => setStep(1)}
+                className="btn-primary px-8 py-4 rounded-full text-white font-medium text-lg">
                 Découvrir ma carte
               </button>
             </div>
           </section>
         )}
 
-        {/* ═══ FORM STEPS ═══ */}
+        {/* ═══ FORM ═══ */}
         {step >= 1 && step <= 5 && (
           <section className="min-h-screen flex items-center justify-center px-4 py-8">
             <div className="glass p-6 sm:p-8 md:p-12 max-w-lg w-full glow-lavender step-enter">
-              {/* Progress bar */}
               <div className="flex gap-1.5 mb-8">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-gold)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
-                      style={{ width: s <= step ? "100%" : "0%" }}
-                    />
+                    <div className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-gold)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
+                      style={{ width: s <= step ? "100%" : "0%" }} />
                   </div>
                 ))}
               </div>
 
-              {/* Step 1: Prénom */}
               {step === 1 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
-                    Comment t&apos;appelles-tu&nbsp;?
-                  </h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
-                    Ton prénom personnalisera toute ta lecture.
-                  </p>
-                  <input
-                    type="text" value={form.prenom}
-                    onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                    placeholder="Ton prénom"
-                    className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-5 py-4 text-lg text-center text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                    autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && canAdvance() && setStep(2)}
-                  />
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Comment t&apos;appelles-tu&nbsp;?</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Ton prénom personnalisera toute ta lecture.</p>
+                  <input type="text" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })}
+                    placeholder="Ton prénom" className="glass-input w-full text-lg text-center" autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && canAdvance() && setStep(2)} />
                 </div>
               )}
 
-              {/* Step 2: Date */}
               {step === 2 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
-                    Quand es-tu né(e)&nbsp;?
-                  </h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
-                    La position des astres change chaque jour.
-                  </p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Quand es-tu né(e)&nbsp;?</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">La position des astres change chaque jour.</p>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Jour</label>
-                      <input type="number" min={1} max={31} value={form.jour}
-                        onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) || 1 })}
-                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-2 sm:px-3 py-3 sm:py-4 text-base sm:text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Mois</label>
-                      <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
-                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-1 sm:px-3 py-3 sm:py-4 text-base sm:text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition appearance-none">
-                        {["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"].map((m, i) => (
-                          <option key={i} value={i + 1} className="bg-[var(--color-space-deep)]">{m}</option>
+                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Jour</label>
+                      <select value={form.jour} onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) })}
+                        className="glass-input w-full text-center text-base sm:text-lg appearance-none">
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <option key={d} value={d} className="bg-[var(--color-space-deep)]">{d}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Année</label>
-                      <input type="number" min={1900} max={2026} value={form.annee}
-                        onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) || 1990 })}
-                        className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-2 sm:px-3 py-3 sm:py-4 text-base sm:text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
+                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Mois</label>
+                      <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
+                        className="glass-input w-full text-center text-base sm:text-lg appearance-none">
+                        {MONTHS.map((m, i) => (
+                          <option key={i} value={i + 1} className="bg-[var(--color-space-deep)]">{m.slice(0, 3)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Année</label>
+                      <select value={form.annee} onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) })}
+                        className="glass-input w-full text-center text-base sm:text-lg appearance-none">
+                        {Array.from({ length: 127 }, (_, i) => 2026 - i).map((y) => (
+                          <option key={y} value={y} className="bg-[var(--color-space-deep)]">{y}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Heure */}
               {step === 3 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
-                    À quelle heure&nbsp;?
-                  </h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
-                    L&apos;heure exacte détermine ton Ascendant et tes maisons.
-                  </p>
-                  <label className="flex items-center justify-center gap-3 mb-6 cursor-pointer">
-                    <input type="checkbox" checked={form.hasTime}
-                      onChange={(e) => setForm({ ...form, hasTime: e.target.checked })}
-                      className="w-5 h-5 accent-[var(--color-accent-lavender)]" />
-                    <span className="text-sm text-[var(--color-text-secondary)]">Je connais mon heure de naissance</span>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">À quelle heure&nbsp;?</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">L&apos;heure exacte détermine ton Ascendant et tes maisons.</p>
+                  <label className="flex items-center justify-center gap-3 mb-6 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.hasTime ? "bg-[var(--color-accent-lavender)] border-[var(--color-accent-lavender)]" : "border-[var(--color-text-secondary)] bg-transparent"}`}
+                      onClick={() => setForm({ ...form, hasTime: !form.hasTime })}>
+                      {form.hasTime && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition">Je connais mon heure de naissance</span>
                   </label>
                   {form.hasTime ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Heure</label>
-                        <input type="number" min={0} max={23} value={form.heure}
-                          onChange={(e) => setForm({ ...form, heure: parseInt(e.target.value) || 0 })}
-                          className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="flex-1 max-w-[120px]">
+                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Heure</label>
+                        <select value={form.heure} onChange={(e) => setForm({ ...form, heure: parseInt(e.target.value) })}
+                          className="glass-input w-full text-center text-lg appearance-none">
+                          {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                            <option key={h} value={h} className="bg-[var(--color-space-deep)]">{String(h).padStart(2, "0")}</option>
+                          ))}
+                        </select>
                       </div>
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1 block text-center">Minute</label>
-                        <input type="number" min={0} max={59} value={form.minute}
-                          onChange={(e) => setForm({ ...form, minute: parseInt(e.target.value) || 0 })}
-                          className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-3 py-4 text-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition" />
+                      <span className="text-2xl text-[var(--color-text-secondary)] mt-5 font-light">:</span>
+                      <div className="flex-1 max-w-[120px]">
+                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Minute</label>
+                        <select value={form.minute} onChange={(e) => setForm({ ...form, minute: parseInt(e.target.value) })}
+                          className="glass-input w-full text-center text-lg appearance-none">
+                          {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                            <option key={m} value={m} className="bg-[var(--color-space-deep)]">{String(m).padStart(2, "0")}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   ) : (
-                    <div className="glass p-4 text-sm text-[var(--color-text-secondary)] text-center">
+                    <div className="glass p-4 text-sm text-[var(--color-text-secondary)] text-center border-l-2 border-[var(--color-accent-lavender)]/30">
                       Sans heure exacte, ta lecture n&apos;inclura pas l&apos;Ascendant ni les maisons astrologiques.
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Step 4: Lieu */}
               {step === 4 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
-                    Où es-tu né(e)&nbsp;?
-                  </h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
-                    Le lieu affine le calcul de ton Ascendant.
-                  </p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Où es-tu né(e)&nbsp;?</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Le lieu affine le calcul de ton Ascendant.</p>
                   <div className="relative">
-                    <input type="text" value={form.lieu}
-                      onChange={(e) => handleCitySearch(e.target.value)}
-                      placeholder="Cherche ta ville..."
-                      className="w-full bg-white/10 border border-[var(--color-glass-border)] rounded-xl px-5 py-4 text-lg text-center text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent-lavender)] transition"
-                      autoFocus />
+                    <input type="text" value={form.lieu} onChange={(e) => handleCitySearch(e.target.value)}
+                      placeholder="Cherche ta ville..." className="glass-input w-full text-lg text-center" autoFocus />
+                    {cityLoading && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
+                      </div>
+                    )}
                     {citySuggestions.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-2 glass overflow-hidden z-20">
-                        {citySuggestions.map((city) => (
-                          <button key={city.name} onClick={() => selectCity(city)}
-                            className="w-full px-4 py-3 text-left active:bg-white/10 transition text-[var(--color-text-primary)] text-sm border-b border-[var(--color-glass-border)] last:border-0">
-                            {city.name}
+                        {citySuggestions.map((city, i) => (
+                          <button key={`${city.lat}-${city.lon}-${i}`} onClick={() => selectCity(city)}
+                            className="w-full px-4 py-3 text-left hover:bg-white/5 active:bg-white/10 transition text-[var(--color-text-primary)] text-sm border-b border-[var(--color-glass-border)] last:border-0">
+                            {city.display}
                           </button>
                         ))}
                       </div>
@@ -329,42 +344,26 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Step 5: Préférences */}
               {step === 5 && (
                 <div className="step-enter">
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">
-                    Personnalise ta lecture
-                  </h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">
-                    Ajuste ces curseurs selon tes préférences.
-                  </p>
-                  <div className="space-y-7">
-                    <SliderField label1="🔬 Scientifique" label2="Ésotérique 🔮" value={form.tone}
-                      onChange={(v) => setForm({ ...form, tone: v })} />
-                    <SliderField label1="⚡ Concis" label2="Approfondi 📖" value={form.depth}
-                      onChange={(v) => setForm({ ...form, depth: v })} />
-                    <SliderField label1="🎯 Pratique" label2="Introspectif 🧘" value={form.focus}
-                      onChange={(v) => setForm({ ...form, focus: v })} />
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Personnalise ta lecture</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Ajuste ces curseurs pour une expérience sur mesure.</p>
+                  <div className="space-y-8">
+                    {SLIDER_CONFIG.map((slider) => (
+                      <EnhancedSlider key={slider.key} left={slider.left} right={slider.right} value={form[slider.key]}
+                        onChange={(v) => setForm({ ...form, [slider.key]: v })} />
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Nav buttons */}
               <div className="flex justify-between mt-10">
-                <button onClick={() => setStep(step - 1)}
-                  className="px-5 py-2.5 rounded-xl text-sm text-[var(--color-text-secondary)] active:text-[var(--color-text-primary)] transition">
-                  ← Retour
-                </button>
+                <button onClick={() => setStep(step - 1)} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">← Retour</button>
                 {step < 5 ? (
                   <button onClick={() => canAdvance() && setStep(step + 1)} disabled={!canAdvance()}
-                    className="px-6 py-2.5 rounded-xl bg-[var(--color-accent-lavender)] text-[var(--color-space-deep)] font-medium text-sm active:scale-95 transition disabled:opacity-30">
-                    Suivant →
-                  </button>
+                    className="btn-primary px-6 py-2.5 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed">Suivant →</button>
                 ) : (
-                  <button onClick={doCalculation}
-                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] text-[var(--color-space-deep)] font-bold text-sm active:scale-95 transition-transform glow-lavender">
-                    ✦ Calculer ma carte
-                  </button>
+                  <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">✦ Calculer ma carte</button>
                 )}
               </div>
             </div>
@@ -375,7 +374,7 @@ export default function Home() {
         {step === 6 && (
           <section className="min-h-screen flex items-center justify-center px-4">
             <div className="text-center animate-fade-in-up max-w-xs mx-auto">
-              <div className="text-5xl mb-8 animate-pulse-glow">✦</div>
+              <div className="text-4xl mb-8 animate-pulse-glow text-[var(--color-accent-lavender)]">✦</div>
               <LoadingMessages />
               <div className="mt-6 h-1 rounded-full bg-white/10 overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] animate-progress" />
@@ -387,81 +386,73 @@ export default function Home() {
         {/* ═══ RESULTS ═══ */}
         {step === 7 && chart && (
           <section className="min-h-screen pb-24">
-            {/* Header */}
             <div className="text-center pt-8 pb-4 px-4">
-              <div className="text-3xl mb-2 opacity-50">✦</div>
-              <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-accent-lavender)] mb-1">
-                Le Ciel de {form.prenom}
+              <div className="text-2xl mb-2 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
+              <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-1">
+                Le Ciel de <span className="text-[var(--color-accent-lavender)]">{form.prenom}</span>
               </h1>
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                {form.jour}/{form.mois}/{form.annee}
-                {form.hasTime && ` · ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}`}
-                {" · "}{form.lieu}
+              <p className="text-xs text-[var(--color-text-secondary)] font-mono">
+                {form.jour} {MONTHS[form.mois - 1]} {form.annee}
+                {form.hasTime && ` — ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}`}
+                {" — "}{form.lieu}
               </p>
             </div>
 
-            {/* Sticky tab navigation */}
-            <div className="sticky top-0 z-30 bg-[var(--color-space-deep)]/90 backdrop-blur-md border-b border-[var(--color-glass-border)]">
-              <div className="tab-nav flex overflow-x-auto px-4 py-2 gap-1 max-w-3xl mx-auto">
+            <div className="sticky top-0 z-30 bg-[var(--color-space-deep)]/95 backdrop-blur-xl border-b border-white/5">
+              <div className="tab-nav flex overflow-x-auto px-4 py-2.5 gap-1 max-w-3xl mx-auto">
                 {RESULT_TABS.map((tab) => (
                   <button key={tab.id} onClick={() => scrollToTab(tab.id)}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap btn-hover ${
                       activeTab === tab.id
-                        ? "bg-[var(--color-accent-lavender)]/20 text-[var(--color-accent-lavender)] border border-[var(--color-accent-lavender)]/30"
-                        : "text-[var(--color-text-secondary)] active:bg-white/5"
+                        ? "bg-white/10 text-[var(--color-text-primary)] border border-white/10"
+                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5"
                     }`}>
-                    <span>{tab.icon}</span>
+                    <span className="opacity-60">{tab.icon}</span>
                     <span>{tab.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="max-w-3xl mx-auto px-4 space-y-6 mt-6">
+            <div className="max-w-3xl mx-auto px-4 space-y-8 mt-6">
 
-              {/* ─── PORTRAIT TAB ─── */}
+              {/* PORTRAIT */}
               <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-16">
-                {/* Zodiac Wheel */}
-                <div className="glass p-4 sm:p-6 glow-lavender mb-4">
-                  <ZodiacWheel
-                    planets={chart.planets}
-                    ascendant={chart.ascendant}
-                    selectedPlanet={selectedPlanet?.name}
-                    onTapPlanet={(p) => setSelectedPlanet(p)}
-                  />
+                <div className="glass p-4 sm:p-6 mb-6">
+                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet?.name} onTapPlanet={(p) => setSelectedPlanet(p)} />
+                  <p className="text-[10px] text-center text-[var(--color-text-secondary)] mt-3 opacity-60">Touche une planète pour voir son interprétation</p>
                 </div>
 
-                {/* Big Three — horizontal scroll on mobile */}
-                <div className="flex gap-3 overflow-x-auto pb-2 tab-nav mb-4">
-                  {(() => {
-                    const items = [
-                      { label: "Soleil", icon: "☉", data: chart.planets[0], color: "#ffd700" },
-                      { label: "Lune", icon: "☽", data: chart.planets[1], color: "#c9a0ff" },
-                      ...(chart.ascendant ? [{ label: "Ascendant", icon: "↑", data: chart.ascendant, color: "#60a5fa" }] : []),
-                    ];
-                    return items.map((item) => (
-                      <button key={item.label}
-                        className="flex-shrink-0 glass p-4 min-w-[130px] text-center touch-card"
-                        onClick={() => setSelectedPlanet(item.data)}>
-                        <div className="text-2xl mb-1" style={{ color: item.color }}>{item.icon}</div>
+                <div className="space-y-3 mb-6">
+                  {[
+                    { label: "Soleil", desc: "Ton identité profonde", data: chart.planets[0], glyph: "☉" },
+                    { label: "Lune", desc: "Ton monde émotionnel", data: chart.planets[1], glyph: "☽" },
+                    ...(chart.ascendant ? [{ label: "Ascendant", desc: "Ta façade au monde", data: chart.ascendant, glyph: "AC" }] : []),
+                  ].map((item) => (
+                    <button key={item.label} className="w-full glass p-5 flex items-center gap-5 text-left btn-hover group"
+                      onClick={() => setSelectedPlanet(item.data)}>
+                      <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 group-hover:border-[var(--color-accent-lavender)]/20 transition">
+                        <span className="text-xl font-mono text-[var(--color-accent-lavender)]">{item.glyph}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
                         <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-0.5">{item.label}</div>
-                        <div className="font-cinzel text-sm text-[var(--color-text-primary)]">
-                          {SIGN_SYMBOLS[item.data.signIndex]} {item.data.sign}
-                        </div>
-                        <div className="text-[10px] text-[var(--color-text-secondary)] font-mono mt-0.5">
-                          {item.data.degree}°{item.data.house ? ` · M${item.data.house}` : ""}
-                        </div>
-                      </button>
-                    ));
-                  })()}
+                        <div className="font-cinzel text-lg text-[var(--color-text-primary)]">{item.data.sign}</div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">{item.desc}</div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-xs font-mono text-[var(--color-text-secondary)]">{item.data.degree}°</div>
+                        {item.data.house && <div className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-50">M{item.data.house}</div>}
+                      </div>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-secondary)] opacity-30 group-hover:opacity-60 transition"><path d="M6 4l4 4-4 4" /></svg>
+                    </button>
+                  ))}
                 </div>
 
-                {/* Cosmic portrait text */}
-                <div className="glass p-5 sm:p-6">
-                  <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3">
-                    ✦ Ton Portrait Cosmique
+                <div className="glass p-6">
+                  <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                    <span className="text-[var(--color-accent-lavender)] opacity-60">✦</span> Ton Portrait Cosmique
                   </h2>
-                  <div className="text-sm text-[var(--color-text-primary)] leading-relaxed space-y-3">
+                  <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed space-y-4">
                     <p>{form.prenom}, ton Soleil en {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</p>
                     <p>Ta Lune en {chart.planets[1].sign} {getCosmicPortraitMoon(chart.planets[1].sign)}</p>
                     {chart.ascendant && <p>Avec un Ascendant {chart.ascendant.sign}, {getCosmicPortraitAsc(chart.ascendant.sign)}</p>}
@@ -469,207 +460,163 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* ─── PLANETS TAB ─── */}
+              {/* PLANETS */}
               <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-16">
-                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
-                  <span>☉</span> Tes Planètes
+                <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <span className="text-[var(--color-accent-lavender)] opacity-60">☉</span> Tes Planètes
                 </h2>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">Chaque planète colore un aspect de ta personnalité.</p>
                 <div className="stagger-in space-y-2">
                   {chart.planets.map((planet) => (
                     <button key={planet.name} onClick={() => setSelectedPlanet(planet)}
-                      className="w-full glass flex items-center justify-between p-4 touch-card text-left">
+                      className="w-full glass flex items-center justify-between p-4 text-left btn-hover group">
                       <div className="flex items-center gap-3">
-                        <span className="text-xl text-[var(--color-accent-gold)]">{planet.symbol}</span>
+                        <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-[var(--color-accent-lavender)]/20 transition">
+                          <span className="text-base font-mono text-[var(--color-accent-lavender)]">{planet.symbol}</span>
+                        </div>
                         <div>
-                          <span className="text-sm font-medium">{planet.name}</span>
-                          <span className="text-xs text-[var(--color-text-secondary)] ml-2">
-                            {SIGN_SYMBOLS[planet.signIndex]} {planet.sign}
-                          </span>
+                          <span className="text-sm font-medium text-[var(--color-text-primary)]">{planet.name}</span>
+                          <span className="text-xs text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {planet.house && <span className="text-[10px] font-mono text-[var(--color-text-secondary)]">M{planet.house}</span>}
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-text-secondary)] opacity-40">
-                          <path d="M6 4l4 4-4 4" />
-                        </svg>
+                        <span className="text-[10px] font-mono text-[var(--color-text-secondary)]">{planet.degree}°</span>
+                        {planet.house && <span className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-50">M{planet.house}</span>}
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-secondary)] opacity-30 group-hover:opacity-60 transition"><path d="M5 3l4 4-4 4" /></svg>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* ─── ELEMENTS TAB ─── */}
+              {/* ELEMENTS */}
               <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16">
-                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
-                  <span>🔥</span> Éléments & Modalités
+                <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <span className="text-[var(--color-accent-lavender)] opacity-60">◆</span> Éléments et Modalités
                 </h2>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">L&apos;équilibre des forces dans ta carte natale.</p>
                 <div className="glass p-5">
                   <ElementBalance planets={chart.planets} />
                 </div>
               </div>
 
-              {/* ─── HOUSES TAB ─── */}
+              {/* HOUSES */}
               {chart.ascendant && (
                 <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16">
-                  <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
-                    <span>🏠</span> Tes 12 Maisons
+                  <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                    <span className="text-[var(--color-accent-lavender)] opacity-60">⌂</span> Tes 12 Maisons
                   </h2>
-                  <div className="glass p-5">
-                    <HousesMap planets={chart.planets} onTapHouse={(h) => setSelectedHouse(h)} />
-                  </div>
+                  <p className="text-xs text-[var(--color-text-secondary)] mb-4">Les domaines de vie activés par tes planètes.</p>
+                  <HousesMap planets={chart.planets} />
                 </div>
               )}
 
-              {/* ─── ASPECTS TAB ─── */}
+              {/* ASPECTS */}
               <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16">
-                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3 flex items-center gap-2">
-                  <span>△</span> Tes Aspects
+                <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <span className="text-[var(--color-accent-lavender)] opacity-60">△</span> Tes Aspects
                 </h2>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">Les dialogues entre tes planètes — harmonies et tensions.</p>
                 {chart.aspects.length > 0 ? (
                   <div className="space-y-2">
                     {chart.aspects.slice(0, form.depth >= 7 ? undefined : 12).map((aspect, i) => {
-                      const colors: Record<string, string> = {
-                        Conjonction: "#c9a0ff", Trigone: "#34d399", Sextile: "#60a5fa", Carre: "#ef4444", Opposition: "#fbbf24",
-                      };
-                      const symbols: Record<string, string> = {
-                        Conjonction: "☌", Trigone: "△", Sextile: "⚹", Carre: "□", Opposition: "☍",
-                      };
                       const interp = getAspectInterp(aspect.type, aspect.planet1, aspect.planet2);
+                      const color = ASPECT_COLORS[aspect.type] || "#c9a0ff";
+                      const symbol = ASPECT_SYMBOLS[aspect.type] || "·";
                       return (
-                        <button key={i}
-                          className="w-full glass p-4 touch-card text-left"
-                          onClick={() => interp && setSelectedPlanet({
-                            name: `${aspect.planet1} ${symbols[aspect.type]} ${aspect.planet2}`,
-                            symbol: symbols[aspect.type] || "·",
-                            longitude: 0, sign: aspect.type, signIndex: 0, degree: 0,
-                          } as PlanetPosition & { _aspectInterp?: string })}
-                        >
+                        <button key={i} className="w-full glass p-4 text-left btn-hover group"
+                          onClick={() => setAspectModalData({
+                            title: `${aspect.planet1} ${symbol} ${aspect.planet2}`,
+                            subtitle: `${aspect.type} — orbe ${aspect.orb}°`,
+                            text: interp || `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique dans ta carte, colorant la manière dont ces deux énergies interagissent dans ton expérience de vie.`,
+                          })}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm">
-                              <span className="text-[var(--color-accent-gold)]">{aspect.symbol1}</span>
-                              <span>{aspect.planet1}</span>
-                              <span style={{ color: colors[aspect.type] }} className="text-lg mx-0.5">{symbols[aspect.type]}</span>
-                              <span>{aspect.planet2}</span>
-                              <span className="text-[var(--color-accent-gold)]">{aspect.symbol2}</span>
+                              <span className="font-mono text-[var(--color-accent-lavender)]">{aspect.symbol1}</span>
+                              <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
+                              <span style={{ color }} className="text-lg mx-0.5">{symbol}</span>
+                              <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
+                              <span className="font-mono text-[var(--color-accent-lavender)]">{aspect.symbol2}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: `${colors[aspect.type]}15`, color: colors[aspect.type] }}>
-                                {aspect.type}
-                              </span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full border font-mono" style={{ borderColor: `${color}30`, color }}>{aspect.type}</span>
                               <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
                             </div>
                           </div>
-                          {interp && (
-                            <p className="text-xs text-[var(--color-text-secondary)] mt-2 line-clamp-2">{interp}</p>
-                          )}
+                          {interp && <p className="text-xs text-[var(--color-text-secondary)] mt-2 line-clamp-2 group-hover:text-[var(--color-text-primary)]/60 transition">{interp}</p>}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="glass p-5 text-sm text-[var(--color-text-secondary)] text-center">
-                    Aucun aspect majeur détecté dans ta carte.
-                  </div>
+                  <div className="glass p-5 text-sm text-[var(--color-text-secondary)] text-center">Aucun aspect majeur détecté dans ta carte.</div>
                 )}
               </div>
 
-              {/* ─── CLOSING ─── */}
-              <div className="glass p-6 text-center">
-                <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3">✦ Un Mot de Clôture</h2>
-                <p className="text-sm text-[var(--color-text-primary)] leading-relaxed max-w-md mx-auto mb-3">
-                  {form.prenom}, cette carte est un miroir, pas une sentence. Elle reflète des tendances, des potentiels et des invitations — pas des certitudes.
-                </p>
-                <p className="text-[10px] text-[var(--color-text-secondary)] italic">
-                  L&apos;astrologie est un outil de réflexion personnelle, pas un substitut à un avis médical, psychologique ou financier.
-                </p>
+              {/* CLOSING */}
+              <div className="glass p-8 text-center border-t border-[var(--color-accent-lavender)]/10">
+                <div className="text-2xl mb-4 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
+                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-5">Un dernier mot, {form.prenom}</h2>
+                <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed max-w-lg mx-auto space-y-4 mb-8">
+                  <p>Cette carte est une photographie du ciel au moment précis de ta naissance — un instant unique dans l&apos;histoire du cosmos. Elle ne prédit rien. Elle ne détermine rien. Elle éclaire.</p>
+                  <p>Les planètes dessinent des potentiels, des invitations, des tensions créatrices. C&apos;est toi qui choisis comment les vivre, les transformer, les transcender. Tu es l&apos;auteur·e de ton histoire — le ciel n&apos;en est que la toile de fond.</p>
+                  <p className="text-[var(--color-accent-lavender)]/60 italic">&laquo;&nbsp;Le sage domine les étoiles, les étoiles ne dominent pas le sage.&nbsp;&raquo;</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  <button onClick={() => {
+                      const text = `Mon thème natal : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre le tien sur Ciel Natal !`;
+                      if (navigator.share) { navigator.share({ title: "Mon Ciel Natal", text, url: window.location.href }); }
+                      else { navigator.clipboard.writeText(text + " " + window.location.href); }
+                    }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+                    Partager
+                  </button>
+                  <button onClick={() => {
+                      const text = `Mon thème natal : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}.`;
+                      navigator.clipboard.writeText(text);
+                    }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    Copier
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-secondary)]/60 italic max-w-md mx-auto">L&apos;astrologie est un outil de réflexion personnelle inspiré de traditions millénaires. Elle ne remplace en aucun cas un avis médical, psychologique ou financier.</p>
               </div>
 
-              {/* Restart */}
               <div className="text-center pb-8">
-                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setActiveTab("portrait"); }}
-                  className="px-6 py-3 rounded-xl border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] active:text-[var(--color-text-primary)] transition text-sm">
-                  ← Calculer une autre carte
-                </button>
+                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setAspectModalData(null); setActiveTab("portrait"); }}
+                  className="btn-ghost px-6 py-3 rounded-xl text-sm">← Calculer une autre carte</button>
               </div>
             </div>
 
-            {/* ═══ BOTTOM SHEETS ═══ */}
-
-            {/* Planet detail sheet */}
-            <BottomSheet
-              isOpen={!!selectedPlanet}
-              onClose={() => setSelectedPlanet(null)}
-              title={selectedPlanet ? `${selectedPlanet.name}` : ""}
-              icon={selectedPlanet?.symbol}
-              iconColor="#ffd700"
-            >
+            {/* MODALS */}
+            <GlassModal isOpen={!!selectedPlanet} onClose={() => setSelectedPlanet(null)}
+              title={selectedPlanet?.name || ""} subtitle={selectedPlanet ? `${selectedPlanet.sign} — ${selectedPlanet.degree}°${selectedPlanet.house ? ` — Maison ${selectedPlanet.house}` : ""}` : ""}>
               {selectedPlanet && (
                 <div className="space-y-4">
-                  {/* Planet header info */}
-                  <div className="flex items-center gap-4 pb-3 border-b border-[var(--color-glass-border)]">
-                    <div className="text-center">
-                      <div className="text-3xl text-[var(--color-accent-gold)]">{selectedPlanet.symbol}</div>
+                  <div className="flex items-center gap-4 pb-4 border-b border-white/5">
+                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                      <span className="text-2xl font-mono text-[var(--color-accent-lavender)]">{selectedPlanet.symbol}</span>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium">{selectedPlanet.name}</div>
-                      <div className="text-xs text-[var(--color-text-secondary)]">
-                        {SIGN_SYMBOLS[selectedPlanet.signIndex]} {selectedPlanet.sign} · {selectedPlanet.degree}°
-                        {selectedPlanet.house ? ` · Maison ${selectedPlanet.house}` : ""}
-                      </div>
+                      <div className="text-sm font-medium text-[var(--color-text-primary)]">{selectedPlanet.name} en {selectedPlanet.sign}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)] font-mono">{selectedPlanet.degree}°{selectedPlanet.house ? ` — Maison ${selectedPlanet.house}` : ""}</div>
                     </div>
                   </div>
-                  {/* Interpretation */}
-                  <div className="text-sm text-[var(--color-text-primary)] leading-relaxed whitespace-pre-line">
+                  <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed whitespace-pre-line">
                     {getInterp(selectedPlanet.name, selectedPlanet.sign, selectedPlanet.house) || (
-                      <span className="text-[var(--color-text-secondary)] italic">
-                        {selectedPlanet.name} en {selectedPlanet.sign} — une énergie qui colore ta manière d&apos;exprimer les qualités de ce signe dans ta vie.
-                      </span>
+                      <span className="text-[var(--color-text-secondary)]">{selectedPlanet.name} en {selectedPlanet.sign} colore ta manière d&apos;exprimer les qualités de ce signe dans ta vie quotidienne.</span>
                     )}
                   </div>
                 </div>
               )}
-            </BottomSheet>
+            </GlassModal>
 
-            {/* House detail sheet */}
-            <BottomSheet
-              isOpen={!!selectedHouse}
-              onClose={() => setSelectedHouse(null)}
-              title={selectedHouse ? `Maison ${selectedHouse} — ${houseDescriptions[selectedHouse]?.domain}` : ""}
-              icon={selectedHouse ? ["👤", "💎", "💬", "🏠", "🎨", "⚙️", "🤝", "🔮", "🌍", "🏔️", "👥", "🌙"][selectedHouse - 1] : undefined}
-            >
-              {selectedHouse && (
-                <div className="space-y-4">
-                  <p className="text-sm text-[var(--color-text-secondary)]">
-                    {houseDescriptions[selectedHouse]?.description}
-                  </p>
-                  {/* Planets in this house */}
-                  {chart.planets.filter((p) => p.house === selectedHouse).length > 0 ? (
-                    <div>
-                      <h4 className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-2">Planètes dans cette maison</h4>
-                      <div className="space-y-3">
-                        {chart.planets.filter((p) => p.house === selectedHouse).map((p) => (
-                          <div key={p.name}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[var(--color-accent-gold)]">{p.symbol}</span>
-                              <span className="text-sm font-medium">{p.name} en {p.sign}</span>
-                            </div>
-                            <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">
-                              {planetInHouse[p.name]?.[selectedHouse] || `${p.name} dans ta Maison ${selectedHouse} apporte son énergie au domaine de ${houseDescriptions[selectedHouse]?.domain?.toLowerCase()}.`}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-[var(--color-text-secondary)] italic">
-                      Aucune planète dans cette maison. L&apos;énergie de cette maison s&apos;exprime à travers le signe qui la gouverne.
-                    </p>
-                  )}
-                </div>
+            <GlassModal isOpen={!!aspectModalData} onClose={() => setAspectModalData(null)}
+              title={aspectModalData?.title || ""} subtitle={aspectModalData?.subtitle}>
+              {aspectModalData && (
+                <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed">{aspectModalData.text}</div>
               )}
-            </BottomSheet>
-
+            </GlassModal>
           </section>
         )}
       </div>
@@ -677,28 +624,43 @@ export default function Home() {
   );
 }
 
-// ─── Slider Field ─────────────────────────────────────────────────
-function SliderField({ label1, label2, value, onChange }: { label1: string; label2: string; value: number; onChange: (v: number) => void }) {
+// ─── Enhanced Slider ─────────────────────────────────────────────
+function EnhancedSlider({ left, right, value, onChange }: {
+  left: { label: string; desc: string };
+  right: { label: string; desc: string };
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+
   return (
-    <div>
-      <div className="flex justify-between text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
-        <span>{label1}</span>
-        <span>{label2}</span>
+    <div className={`transition-all ${isDragging ? "scale-[1.01]" : ""}`}>
+      <div className="flex justify-between mb-2">
+        <div className="text-left">
+          <div className={`text-xs font-medium transition-all ${value <= 4 ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>{left.label}</div>
+          <div className={`text-[10px] transition-all max-w-[140px] ${value <= 4 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-secondary)]/40"}`}>{left.desc}</div>
+        </div>
+        <div className="text-right">
+          <div className={`text-xs font-medium transition-all ${value >= 7 ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>{right.label}</div>
+          <div className={`text-[10px] transition-all max-w-[140px] ${value >= 7 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-secondary)]/40"}`}>{right.desc}</div>
+        </div>
       </div>
-      <input type="range" min={1} max={10} value={value} onChange={(e) => onChange(parseInt(e.target.value))} />
-      <div className="text-center text-xs text-[var(--color-accent-lavender)] mt-1 font-mono">{value}/10</div>
+      <input type="range" min={1} max={10} value={value} onChange={(e) => onChange(parseInt(e.target.value))}
+        onMouseDown={() => setIsDragging(true)} onMouseUp={() => setIsDragging(false)}
+        onTouchStart={() => setIsDragging(true)} onTouchEnd={() => setIsDragging(false)} />
+      <div className="flex justify-between px-1 mt-1.5">
+        {Array.from({ length: 10 }, (_, i) => (
+          <div key={i} className={`w-1 h-1 rounded-full transition-all ${i + 1 === value ? "bg-[var(--color-accent-lavender)] scale-150" : "bg-white/10"}`} />
+        ))}
+      </div>
+      <div className="text-center text-[10px] text-[var(--color-text-secondary)] font-mono mt-1">{value}/10</div>
     </div>
   );
 }
 
 // ─── Loading Messages ─────────────────────────────────────────────
 function LoadingMessages() {
-  const messages = [
-    "Calcul des positions planétaires...",
-    "Détermination des maisons astrologiques...",
-    "Analyse des aspects entre les planètes...",
-    "Tissage de ton portrait cosmique...",
-  ];
+  const messages = ["Calcul des positions planétaires...", "Détermination des maisons astrologiques...", "Analyse des aspects entre les planètes...", "Tissage de ton portrait cosmique..."];
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setIdx((i) => Math.min(i + 1, messages.length - 1)), 800);
@@ -707,7 +669,7 @@ function LoadingMessages() {
   return (
     <div className="space-y-2">
       {messages.map((msg, i) => (
-        <p key={i} className={`text-xs transition-all duration-500 ${i <= idx ? "text-[var(--color-text-primary)] opacity-100" : "text-[var(--color-text-secondary)] opacity-20"}`}>
+        <p key={i} className={`text-xs transition-all duration-500 font-mono ${i <= idx ? "text-[var(--color-text-primary)] opacity-100" : "text-[var(--color-text-secondary)] opacity-20"}`}>
           {i < idx ? "✓" : i === idx ? "◌" : "·"} {msg}
         </p>
       ))}

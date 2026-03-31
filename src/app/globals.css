@@ -43,16 +43,87 @@ body {
   pointer-events: none;
 }
 
-/* Glass morphism panel */
+/* ============================================
+   Glass morphism — v3 acrylic aesthetic
+   ============================================ */
 .glass {
   background: var(--color-glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
   border: 1px solid var(--color-glass-border);
   border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Accent glow */
+/* Acrylic noise overlay */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* Glass modal — centered overlay, stronger acrylic */
+.glass-modal {
+  background: rgba(18, 18, 42, 0.75);
+  backdrop-filter: blur(28px) saturate(1.3);
+  -webkit-backdrop-filter: blur(28px) saturate(1.3);
+  border: 1px solid rgba(201, 160, 255, 0.2);
+  border-radius: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(201, 160, 255, 0.08) inset;
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+.glass-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* ============================================
+   Glass input
+   ============================================ */
+.glass-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.glass-input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.glass-input:focus {
+  border-color: rgba(201, 160, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(201, 160, 255, 0.1), 0 0 16px rgba(201, 160, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   Accent glows
+   ============================================ */
 .glow-lavender {
   box-shadow: 0 0 30px rgba(201, 160, 255, 0.2), 0 0 60px rgba(201, 160, 255, 0.1);
 }
@@ -61,7 +132,65 @@ body {
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
 }
 
-/* Custom slider styling */
+/* ============================================
+   Buttons — v3 premium system
+   ============================================ */
+
+/* Hover utility — soft glow + scale */
+.btn-hover {
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.btn-hover:hover {
+  transform: scale(1.02);
+  filter: brightness(1.12);
+  box-shadow: 0 0 18px rgba(201, 160, 255, 0.2);
+}
+
+/* Primary — lavender gradient */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-accent-lavender), #9b6fdf);
+  color: #0a0a1a;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  filter: brightness(1.15);
+  box-shadow: 0 0 24px rgba(201, 160, 255, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  filter: brightness(0.95);
+}
+
+/* Ghost — transparent glass border */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-glass-border);
+  color: var(--color-text-primary);
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(201, 160, 255, 0.25);
+}
+
+/* ============================================
+   Slider — v3 bigger thumb + glow on drag
+   ============================================ */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -75,28 +204,133 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--color-accent-lavender);
   cursor: pointer;
-  box-shadow: 0 0 12px rgba(201, 160, 255, 0.5);
-  transition: box-shadow 0.2s;
+  box-shadow: 0 0 14px rgba(201, 160, 255, 0.5);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 20px rgba(201, 160, 255, 0.8);
+  box-shadow: 0 0 24px rgba(201, 160, 255, 0.8), 0 0 48px rgba(201, 160, 255, 0.3);
+  transform: scale(1.1);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  box-shadow: 0 0 32px rgba(201, 160, 255, 1), 0 0 64px rgba(201, 160, 255, 0.5);
+  animation: sliderPulse 0.8s ease-in-out infinite;
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--color-accent-lavender);
   cursor: pointer;
   border: none;
-  box-shadow: 0 0 12px rgba(201, 160, 255, 0.5);
+  box-shadow: 0 0 14px rgba(201, 160, 255, 0.5);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
+
+input[type="range"]::-moz-range-thumb:hover {
+  box-shadow: 0 0 24px rgba(201, 160, 255, 0.8), 0 0 48px rgba(201, 160, 255, 0.3);
+}
+
+input[type="range"]:active::-moz-range-thumb {
+  box-shadow: 0 0 32px rgba(201, 160, 255, 1), 0 0 64px rgba(201, 160, 255, 0.5);
+}
+
+@keyframes sliderPulse {
+  0%, 100% {
+    box-shadow: 0 0 32px rgba(201, 160, 255, 1), 0 0 64px rgba(201, 160, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(201, 160, 255, 1), 0 0 80px rgba(201, 160, 255, 0.6);
+  }
+}
+
+/* ============================================
+   Accordion — expand/collapse
+   ============================================ */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease-out, opacity 0.25s ease-out;
+  opacity: 0;
+}
+
+.accordion-content.open {
+  opacity: 1;
+  transition: max-height 0.4s ease-in, opacity 0.3s ease-in;
+}
+
+/* ============================================
+   Keyframes — v3 additions
+   ============================================ */
+
+/* Modal entrance */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+/* Accordion height animation */
+@keyframes expandCollapse {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 500px;
+    opacity: 1;
+  }
+}
+
+/* Button hover glow pulse */
+@keyframes hoverGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(201, 160, 255, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(201, 160, 255, 0.3);
+  }
+}
+
+.animate-hover-glow:hover {
+  animation: hoverGlow 1.5s ease-in-out infinite;
+}
+
+/* Tab content slide-in */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* ============================================
+   Existing keyframes — preserved
+   ============================================ */
 
 /* Fade-in animation */
 @keyframes fadeInUp {
