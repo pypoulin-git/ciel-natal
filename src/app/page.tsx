@@ -7,6 +7,7 @@ import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
+import { useLocale } from "@/lib/i18n";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -33,17 +34,14 @@ interface CityResult {
 }
 
 // ─── Constants ────────────────────────────────────────────────────
-const MONTHS = [
+const MONTHS_FR = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
-const RESULT_TABS = [
-  { id: "portrait", label: "Portrait", icon: "✦" },
-  { id: "planets", label: "Planètes", icon: "☉" },
-  { id: "elements", label: "Éléments", icon: "◆" },
-  { id: "houses", label: "Maisons", icon: "⌂" },
-  { id: "aspects", label: "Aspects", icon: "△" },
+const MONTHS_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
 
 const ASPECT_SYMBOLS: Record<string, string> = {
@@ -135,27 +133,26 @@ async function searchCities(query: string): Promise<CityResult[]> {
   return [];
 }
 
-// ─── Slider Config ────────────────────────────────────────────────
-const SLIDER_CONFIG = [
-  {
-    key: "tone" as const,
-    left: { label: "Scientifique", desc: "Approche rationnelle, astronomie, psychologie" },
-    right: { label: "Ésotérique", desc: "Symbolisme, archétypes, dimension spirituelle" },
-  },
-  {
-    key: "depth" as const,
-    left: { label: "Concis", desc: "L'essentiel, direct et clair" },
-    right: { label: "Approfondi", desc: "Analyse détaillée, nuances et subtilités" },
-  },
-  {
-    key: "focus" as const,
-    left: { label: "Pratique", desc: "Conseils concrets, actions au quotidien" },
-    right: { label: "Introspectif", desc: "Réflexion intérieure, exploration psychologique" },
-  },
+// ─── Slider Config Keys ──────────────────────────────────────────
+const SLIDER_KEYS = [
+  { key: "tone" as const, leftKey: "slider.scientific", leftDescKey: "slider.scientific.desc", rightKey: "slider.esoteric", rightDescKey: "slider.esoteric.desc" },
+  { key: "depth" as const, leftKey: "slider.concise", leftDescKey: "slider.concise.desc", rightKey: "slider.detailed", rightDescKey: "slider.detailed.desc" },
+  { key: "focus" as const, leftKey: "slider.practical", leftDescKey: "slider.practical.desc", rightKey: "slider.introspective", rightDescKey: "slider.introspective.desc" },
 ];
 
 // ─── Page ────────────────────────────────────────────────────────
 export default function Home() {
+  const { t, locale } = useLocale();
+  const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_EN;
+  const RESULT_TABS = [
+    { id: "portrait", label: t("results.portrait"), icon: "✦" },
+    { id: "planets", label: t("results.planets"), icon: "☉" },
+    { id: "elements", label: t("results.elements"), icon: "◆" },
+    { id: "houses", label: t("results.houses"), icon: "⌂" },
+    { id: "aspects", label: t("results.aspects"), icon: "△" },
+    { id: "transits", label: t("results.transits"), icon: "◎" },
+  ];
+
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>({
     prenom: "", jour: 15, mois: 6, annee: 1990,
@@ -173,6 +170,9 @@ export default function Home() {
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const [copied, setCopied] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -238,6 +238,71 @@ export default function Home() {
       setTimeout(() => setStep(7), 2500);
     }, 1000);
   };
+
+  // ─── Geolocation ───
+  const detectLocation = useCallback(async () => {
+    if (!navigator.geolocation) return;
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=${locale}`,
+            { headers: { "User-Agent": "CielNatal/1.0" } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const city = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || "";
+            const country = data.address?.country || "";
+            setForm((f) => ({ ...f, lieu: [city, country].filter(Boolean).join(", "), latitude, longitude }));
+          }
+        } catch { /* ignore */ }
+        setGeoLoading(false);
+      },
+      () => setGeoLoading(false),
+      { timeout: 8000 }
+    );
+  }, [locale]);
+
+  // ─── Calculate today's transits ───
+  useEffect(() => {
+    if (step === 7 && chart) {
+      const now = new Date();
+      const transit = calculateNatalChart(
+        now.getFullYear(), now.getMonth() + 1, now.getDate(),
+        now.getHours(), now.getMinutes(),
+        form.latitude, form.longitude, true
+      );
+      setTodayTransits(transit);
+    }
+  }, [step, chart, form.latitude, form.longitude]);
+
+  // ─── Export PDF ───
+  const exportPdf = useCallback(async () => {
+    if (!resultsRef.current) return;
+    const html2canvas = (await import("html2canvas-pro")).default;
+    const { jsPDF } = await import("jspdf");
+    const canvas = await html2canvas(resultsRef.current, {
+      backgroundColor: "#09090f",
+      scale: 2,
+      useCORS: true,
+    });
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const ratio = canvas.width / canvas.height;
+    const imgW = pageW;
+    const imgH = imgW / ratio;
+    let y = 0;
+    while (y < imgH) {
+      if (y > 0) pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, -y, imgW, imgH);
+      y += pageH;
+    }
+    pdf.save(`ciel-natal-${form.prenom.toLowerCase()}.pdf`);
+  }, [form.prenom]);
 
   const getInterp = (planet: string, sign: string, house?: number): string => {
     if (!interpretations) return "";
@@ -341,19 +406,19 @@ export default function Home() {
         {step === 0 && (
           <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
             <div className="animate-fade-in-up">
-              <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">✦</div>
+              <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">&#10022;</div>
               <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
-                Ciel Natal
+                {t("hero.title")}
               </h1>
               <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
-                Qu&apos;est-ce que le ciel racontait
+                {t("hero.subtitle1")}
               </p>
               <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-10 font-light">
-                quand tu es né(e)&nbsp;?
+                {t("hero.subtitle2")}
               </p>
               <button onClick={() => setStep(1)}
                 className="btn-primary px-8 py-4 rounded-full text-white font-medium text-lg">
-                Découvrir ma carte
+                {t("hero.cta")}
               </button>
             </div>
           </section>
@@ -374,21 +439,21 @@ export default function Home() {
 
               {step === 1 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Comment t&apos;appelles-tu&nbsp;?</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Ton prénom personnalisera toute ta lecture.</p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step1.title")}</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step1.subtitle")}</p>
                   <input type="text" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                    placeholder="Ton prénom" className="glass-input w-full text-lg text-center" autoFocus
+                    placeholder={t("form.step1.placeholder")} className="glass-input w-full text-lg text-center" autoFocus
                     onKeyDown={(e) => e.key === "Enter" && canAdvance() && setStep(2)} />
                 </div>
               )}
 
               {step === 2 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Quand es-tu né(e)&nbsp;?</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">La position des astres change chaque jour.</p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step2.title")}</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step2.subtitle")}</p>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Jour</label>
+                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.day")}</label>
                       <select value={form.jour} onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) })}
                         className="glass-input w-full text-center text-base sm:text-lg appearance-none">
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -397,7 +462,7 @@ export default function Home() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Mois</label>
+                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.month")}</label>
                       <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
                         className="glass-input w-full text-center text-base sm:text-lg appearance-none">
                         {MONTHS.map((m, i) => (
@@ -406,7 +471,7 @@ export default function Home() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Année</label>
+                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.year")}</label>
                       <select value={form.annee} onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) })}
                         className="glass-input w-full text-center text-base sm:text-lg appearance-none">
                         {Array.from({ length: 127 }, (_, i) => 2026 - i).map((y) => (
@@ -420,19 +485,19 @@ export default function Home() {
 
               {step === 3 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">À quelle heure&nbsp;?</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">L&apos;heure exacte détermine ton Ascendant et tes maisons.</p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step3.title")}</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step3.subtitle")}</p>
                   <label className="flex items-center justify-center gap-3 mb-6 cursor-pointer group">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.hasTime ? "bg-[var(--color-accent-lavender)] border-[var(--color-accent-lavender)]" : "border-[var(--color-text-secondary)] bg-transparent"}`}
                       onClick={() => setForm({ ...form, hasTime: !form.hasTime })}>
                       {form.hasTime && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </div>
-                    <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition">Je connais mon heure de naissance</span>
+                    <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition">{t("form.step3.knowTime")}</span>
                   </label>
                   {form.hasTime ? (
                     <div className="flex items-center justify-center gap-3">
                       <div className="flex-1 max-w-[120px]">
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Heure</label>
+                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.hour")}</label>
                         <select value={form.heure} onChange={(e) => setForm({ ...form, heure: parseInt(e.target.value) })}
                           className="glass-input w-full text-center text-lg appearance-none">
                           {Array.from({ length: 24 }, (_, i) => i).map((h) => (
@@ -442,7 +507,7 @@ export default function Home() {
                       </div>
                       <span className="text-2xl text-[var(--color-text-secondary)] mt-5 font-light">:</span>
                       <div className="flex-1 max-w-[120px]">
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">Minute</label>
+                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.minute")}</label>
                         <select value={form.minute} onChange={(e) => setForm({ ...form, minute: parseInt(e.target.value) })}
                           className="glass-input w-full text-center text-lg appearance-none">
                           {Array.from({ length: 60 }, (_, i) => i).map((m) => (
@@ -453,7 +518,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="glass p-4 text-sm text-[var(--color-text-secondary)] text-center border-l-2 border-[var(--color-accent-lavender)]/30">
-                      Sans heure exacte, ta lecture n&apos;inclura pas l&apos;Ascendant ni les maisons astrologiques.
+                      {t("form.step3.noTime")}
                     </div>
                   )}
                 </div>
@@ -461,11 +526,16 @@ export default function Home() {
 
               {step === 4 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Où es-tu né(e)&nbsp;?</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Le lieu affine le calcul de ton Ascendant.</p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step4.title")}</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step4.subtitle")}</p>
                   <div className="relative">
                     <input type="text" value={form.lieu} onChange={(e) => handleCitySearch(e.target.value)}
-                      placeholder="Cherche ta ville..." className="glass-input w-full text-lg text-center" autoFocus />
+                      placeholder={t("form.step4.placeholder")} className="glass-input w-full text-lg text-center" autoFocus />
+                    <button type="button" onClick={detectLocation}
+                      className="mt-3 w-full btn-ghost px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-2" disabled={geoLoading}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
+                      {geoLoading ? t("geo.detecting") : t("geo.detect")}
+                    </button>
                     {cityLoading && (
                       <div className="absolute right-4 top-1/2 -translate-y-1/2">
                         <div className="w-4 h-4 border-2 border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
@@ -487,11 +557,14 @@ export default function Home() {
 
               {step === 5 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Personnalise ta lecture</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Ajuste ces curseurs pour une expérience sur mesure.</p>
+                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step5.title")}</h2>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step5.subtitle")}</p>
                   <div className="space-y-8">
-                    {SLIDER_CONFIG.map((slider) => (
-                      <EnhancedSlider key={slider.key} left={slider.left} right={slider.right} value={form[slider.key]}
+                    {SLIDER_KEYS.map((slider) => (
+                      <EnhancedSlider key={slider.key}
+                        left={{ label: t(slider.leftKey), desc: t(slider.leftDescKey) }}
+                        right={{ label: t(slider.rightKey), desc: t(slider.rightDescKey) }}
+                        value={form[slider.key]}
                         onChange={(v) => setForm({ ...form, [slider.key]: v })} />
                     ))}
                   </div>
@@ -499,12 +572,12 @@ export default function Home() {
               )}
 
               <div className="flex justify-between mt-10">
-                <button onClick={() => { setStepDirection("prev"); setStep(step - 1); }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">← Retour</button>
+                <button onClick={() => { setStepDirection("prev"); setStep(step - 1); }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">{t("form.back")}</button>
                 {step < 5 ? (
                   <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setStep(step + 1); } }} disabled={!canAdvance()}
-                    className="btn-primary px-6 py-2.5 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed">Suivant →</button>
+                    className="btn-primary px-6 py-2.5 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed">{t("form.next")}</button>
                 ) : (
-                  <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">Calculer ma carte</button>
+                  <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">{t("form.calculate")}</button>
                 )}
               </div>
             </div>
@@ -530,7 +603,7 @@ export default function Home() {
             <div className="text-center pt-8 pb-4 px-4">
               <div className="text-2xl mb-2 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
               <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-1">
-                Le Ciel de <span className="text-[var(--color-accent-lavender)]">{form.prenom}</span>
+                {t("results.skyOf")} <span className="text-[var(--color-accent-lavender)]">{form.prenom}</span>
               </h1>
               <p className="text-xs text-[var(--color-text-secondary)] font-mono">
                 {form.jour} {MONTHS[form.mois - 1]} {form.annee}
@@ -557,7 +630,7 @@ export default function Home() {
               </div>
             </nav>
 
-            <div className="max-w-3xl mx-auto px-4 space-y-8 mt-6">
+            <div ref={resultsRef} className="max-w-3xl mx-auto px-4 space-y-8 mt-6">
 
               {/* PORTRAIT */}
               <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-14">
@@ -568,9 +641,9 @@ export default function Home() {
                 {/* Big Three — full width expand/collapse */}
                 <div className="space-y-2 mb-6">
                   {[
-                    { label: "Soleil", desc: "Ton identité profonde", data: chart.planets[0], glyph: "☉" },
-                    { label: "Lune", desc: "Ton monde émotionnel", data: chart.planets[1], glyph: "☽" },
-                    ...(chart.ascendant ? [{ label: "Ascendant", desc: "Ta façade au monde", data: chart.ascendant, glyph: "AC" }] : []),
+                    { label: locale === "fr" ? "Soleil" : "Sun", desc: t("results.sunLabel"), data: chart.planets[0], glyph: "☉" },
+                    { label: locale === "fr" ? "Lune" : "Moon", desc: t("results.moonLabel"), data: chart.planets[1], glyph: "☽" },
+                    ...(chart.ascendant ? [{ label: locale === "fr" ? "Ascendant" : "Ascendant", desc: t("results.ascLabel"), data: chart.ascendant, glyph: "AC" }] : []),
                   ].map((item) => {
                     const isOpen = expandedPlanets.has(item.data.name);
                     return (
@@ -611,7 +684,7 @@ export default function Home() {
                 {/* Cosmic Portrait */}
                 <div className="glass p-6">
                   <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                    <span className="text-[var(--color-accent-lavender)] opacity-40">✦</span> Ton Portrait Cosmique
+                    <span className="text-[var(--color-accent-lavender)] opacity-40">&#10022;</span> {t("results.cosmicPortrait")}
                   </h2>
                   <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed space-y-4">
                     <p>{form.prenom}, ton Soleil en {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</p>
@@ -624,9 +697,9 @@ export default function Home() {
               {/* PLANETS */}
               <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-40">☉</span> Tes Planètes
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">☉</span> {t("results.planets")}
                 </h2>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-4">Chaque planète colore un aspect de ta personnalité.</p>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">{t("results.planetDesc")}</p>
                 <div className="space-y-2">
                   {chart.planets.map((planet) => {
                     const isOpen = expandedPlanets.has(planet.name);
@@ -670,9 +743,9 @@ export default function Home() {
               {/* ELEMENTS */}
               <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-40">◆</span> Éléments et Modalités
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">◆</span> {t("results.elements")}
                 </h2>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-4">L&apos;équilibre des forces dans ta carte natale.</p>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">{t("results.elementDesc")}</p>
                 <div className="glass p-5">
                   <ElementBalance planets={chart.planets} />
                 </div>
@@ -682,9 +755,9 @@ export default function Home() {
               {chart.ascendant && (
                 <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-14">
                   <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                    <span className="text-[var(--color-accent-lavender)] opacity-40">⌂</span> Tes 12 Maisons
+                    <span className="text-[var(--color-accent-lavender)] opacity-40">⌂</span> {t("results.houses")}
                   </h2>
-                  <p className="text-xs text-[var(--color-text-secondary)] mb-4">Les domaines de vie activés par tes planètes.</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
                   <HousesMap planets={chart.planets} />
                 </div>
               )}
@@ -692,9 +765,9 @@ export default function Home() {
               {/* ASPECTS */}
               <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-40">△</span> Tes Aspects
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">△</span> {t("results.aspects")}
                 </h2>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-4">Les dialogues entre tes planètes — harmonies et tensions.</p>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">{t("results.aspectDesc")}</p>
                 {chart.aspects.length > 0 ? (
                   <div className="space-y-2">
                     {chart.aspects.slice(0, form.depth >= 7 ? undefined : 12).map((aspect, i) => {
@@ -735,16 +808,56 @@ export default function Home() {
                     })}
                   </div>
                 ) : (
-                  <div className="glass p-5 text-sm text-[var(--color-text-secondary)] text-center">Aucun aspect majeur détecté dans ta carte.</div>
+                  <div className="glass p-5 text-sm text-[var(--color-text-secondary)] text-center">{t("results.noAspects")}</div>
                 )}
               </div>
+
+              {/* TRANSITS DU JOUR */}
+              {todayTransits && (
+                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-14">
+                  <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                    <span className="text-[var(--color-accent-lavender)] opacity-40">&#9678;</span> {t("transits.title")}
+                  </h2>
+                  <p className="text-xs text-[var(--color-text-secondary)] mb-4">{t("transits.desc")}</p>
+                  <div className="space-y-2">
+                    {todayTransits.planets.slice(0, 7).map((transit) => {
+                      const natal = chart.planets.find((p) => p.name === transit.name);
+                      if (!natal) return null;
+                      const sameSgn = transit.sign === natal.sign;
+                      return (
+                        <div key={transit.name} className="glass p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-base text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{transit.symbol}</span>
+                              <span className="text-sm font-medium text-[var(--color-text-primary)]">{transit.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-[var(--color-text-secondary)]">
+                                <span className="text-[var(--color-accent-lavender)]">{t("transits.current")}</span> {transit.sign} {transit.degree}°
+                              </div>
+                              <div className="text-[10px] text-[var(--color-text-secondary)] opacity-60">
+                                {t("transits.natal")} {natal.sign} {natal.degree}°
+                              </div>
+                            </div>
+                          </div>
+                          {sameSgn && (
+                            <div className="mt-2 text-[10px] text-[var(--color-accent-lavender)] opacity-60">
+                              {locale === "fr" ? `${transit.name} transite dans ton signe natal — un retour aux sources.` : `${transit.name} transits your natal sign — a return to origins.`}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* LIFE THEMES SYNTHESIS */}
               <div className="glass p-6">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-40">&#10022;</span> Tes Thèmes de Vie
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">&#10022;</span> {t("results.lifeThemes")}
                 </h2>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-5">Les fils conducteurs qui tissent ton thème natal en un récit unique.</p>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-5">{t("results.lifeThemesDesc")}</p>
                 <div className="space-y-3 stagger-in">
                   {getLifeThemes(chart, form.prenom).map((theme, i) => (
                     <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-[var(--color-glass-border)]">
@@ -765,13 +878,13 @@ export default function Home() {
                 <div className="w-12 h-12 mx-auto mb-5 rounded-full bg-[var(--color-accent-lavender)]/5 border border-[var(--color-accent-lavender)]/10 flex items-center justify-center">
                   <span className="text-lg text-[var(--color-accent-lavender)] opacity-60">&#10022;</span>
                 </div>
-                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-5">Un dernier mot, {form.prenom}</h2>
+                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-5">{t("results.closing.title")} {form.prenom}</h2>
                 <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed max-w-lg mx-auto space-y-4 mb-8">
-                  <p>Cette carte est une photographie du ciel au moment précis de ta naissance — un instant unique dans l&apos;histoire du cosmos. Elle ne prédit rien. Elle ne détermine rien. Elle éclaire.</p>
-                  <p>Les planètes dessinent des potentiels, des invitations, des tensions créatrices. C&apos;est toi qui choisis comment les vivre, les transformer, les transcender.</p>
-                  <p>Tu es l&apos;auteur·e de ton histoire — le ciel n&apos;en est que la toile de fond.</p>
+                  <p>{t("results.closing.p1")}</p>
+                  <p>{t("results.closing.p2")}</p>
+                  <p>{t("results.closing.p3")}</p>
                   <div className="border-l-2 border-[var(--color-accent-lavender)]/20 pl-4 py-2 mt-6">
-                    <p className="text-[var(--color-accent-lavender)]/60 italic text-xs">&laquo;&nbsp;Le sage domine les étoiles, les étoiles ne dominent pas le sage.&nbsp;&raquo;</p>
+                    <p className="text-[var(--color-accent-lavender)]/60 italic text-xs">&laquo;&nbsp;{t("results.closing.quote")}&nbsp;&raquo;</p>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
@@ -782,34 +895,38 @@ export default function Home() {
                       else { navigator.clipboard.writeText(text + "\n" + url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
                     }} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-                    Partager le lien
+                    {t("results.shareLink")}
                   </button>
                   <button onClick={() => {
                       navigator.clipboard.writeText(generateOnePager());
                       setCopied(true); setTimeout(() => setCopied(false), 2000);
                     }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    Copier ma carte
+                    {t("results.copyChart")}
                   </button>
                   <button onClick={() => {
                       navigator.clipboard.writeText(getShareUrl());
                       setCopied(true); setTimeout(() => setCopied(false), 2000);
                     }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                    Copier le lien
+                    {t("results.copyLink")}
+                  </button>
+                  <button onClick={exportPdf} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                    {t("results.exportPdf")}
                   </button>
                 </div>
                 {copied && (
-                  <p className="text-xs text-[var(--color-accent-lavender)] mb-4 animate-fade-in">Copié dans le presse-papier</p>
+                  <p className="text-xs text-[var(--color-accent-lavender)] mb-4 animate-fade-in">{t("results.copied")}</p>
                 )}
                 <div className="border-t border-[var(--color-glass-border)] pt-5">
-                  <p className="text-[10px] text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">L&apos;astrologie est un outil de réflexion personnelle inspiré de traditions millénaires. Elle ne remplace en aucun cas un avis médical, psychologique ou financier.</p>
+                  <p className="text-[10px] text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">{t("results.disclaimer")}</p>
                 </div>
               </div>
 
               <div className="text-center pb-8">
                 <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setExpandedPlanets(new Set()); setExpandedAspects(new Set()); setActiveTab("portrait"); }}
-                  className="btn-ghost px-6 py-3 rounded-xl text-sm">← Calculer une autre carte</button>
+                  className="btn-ghost px-6 py-3 rounded-xl text-sm">{t("results.newChart")}</button>
               </div>
             </div>
 
@@ -859,7 +976,8 @@ function EnhancedSlider({ left, right, value, onChange }: {
 
 // ─── Loading Messages ─────────────────────────────────────────────
 function LoadingMessages() {
-  const messages = ["Calcul des positions planétaires...", "Détermination des maisons astrologiques...", "Analyse des aspects entre les planètes...", "Tissage de ton portrait cosmique..."];
+  const { t } = useLocale();
+  const messages = [t("loading.planets"), t("loading.houses"), t("loading.aspects"), t("loading.portrait")];
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setIdx((i) => Math.min(i + 1, messages.length - 1)), 800);

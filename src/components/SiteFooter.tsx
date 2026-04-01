@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale } from "@/lib/i18n";
 
 export default function SiteFooter() {
+  const { t } = useLocale();
+
   return (
     <footer className="relative z-10 border-t border-[var(--color-glass-border)] mt-16">
       <div className="max-w-3xl mx-auto px-4 py-10">
@@ -12,27 +15,30 @@ export default function SiteFooter() {
               Ciel Natal
             </Link>
             <p className="text-[10px] text-[var(--color-text-secondary)] mt-1">
-              Astrologie psychologique gratuite
+              {t("footer.tagline")}
             </p>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link href="/a-propos" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
-              À propos
+              {t("nav.about")}
             </Link>
             <Link href="/contact" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
-              Contact
+              {t("nav.contact")}
             </Link>
             <Link href="/confidentialite" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
-              Confidentialité
+              {t("nav.privacy")}
             </Link>
             <Link href="/conditions" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
-              Conditions
+              {t("nav.terms")}
+            </Link>
+            <Link href="/signe" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+              {t("nav.signs")}
             </Link>
           </nav>
         </div>
         <div className="text-center mt-8">
           <p className="text-[10px] text-[var(--color-text-secondary)]/40">
-            &copy; {new Date().getFullYear()} Ciel Natal. Tous droits réservés. L&apos;astrologie est un outil de réflexion, pas un substitut médical ou professionnel.
+            &copy; {new Date().getFullYear()} Ciel Natal. {t("footer.copyright")} {t("footer.disclaimer")}
           </p>
         </div>
       </div>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LocaleProvider } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export const metadata: Metadata = {
   title: "Ciel Natal — Découvre ta carte du ciel",
@@ -28,7 +30,12 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased min-h-screen">{children}</body>
+      <body className="antialiased min-h-screen">
+        <LocaleProvider>
+          <LanguageSwitcher />
+          {children}
+        </LocaleProvider>
+      </body>
     </html>
   );
 }

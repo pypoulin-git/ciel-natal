@@ -1,0 +1,137 @@
+{
+  "hero": {
+    "title": "Ciel Natal",
+    "subtitle1": "Qu'est-ce que le ciel racontait",
+    "subtitle2": "quand tu es n\u00e9(e)\u00a0?",
+    "cta": "D\u00e9couvrir ma carte"
+  },
+  "form": {
+    "step1": {
+      "title": "Comment t'appelles-tu\u00a0?",
+      "subtitle": "Ton pr\u00e9nom personnalisera toute ta lecture.",
+      "placeholder": "Ton pr\u00e9nom"
+    },
+    "step2": {
+      "title": "Quand es-tu n\u00e9(e)\u00a0?",
+      "subtitle": "La position des astres change chaque jour.",
+      "day": "Jour",
+      "month": "Mois",
+      "year": "Ann\u00e9e"
+    },
+    "step3": {
+      "title": "\u00c0 quelle heure\u00a0?",
+      "subtitle": "L'heure exacte d\u00e9termine ton Ascendant et tes maisons.",
+      "knowTime": "Je connais mon heure de naissance",
+      "noTime": "Sans heure exacte, ta lecture n'inclura pas l'Ascendant ni les maisons astrologiques.",
+      "hour": "Heure",
+      "minute": "Minute"
+    },
+    "step4": {
+      "title": "O\u00f9 es-tu n\u00e9(e)\u00a0?",
+      "subtitle": "Le lieu affine le calcul de ton Ascendant.",
+      "placeholder": "Cherche ta ville..."
+    },
+    "step5": {
+      "title": "Personnalise ta lecture",
+      "subtitle": "Ajuste ces curseurs pour une exp\u00e9rience sur mesure."
+    },
+    "back": "\u2190 Retour",
+    "next": "Suivant \u2192",
+    "calculate": "Calculer ma carte"
+  },
+  "slider": {
+    "scientific": "Scientifique",
+    "scientific.desc": "Approche rationnelle, astronomie, psychologie",
+    "esoteric": "\u00c9sot\u00e9rique",
+    "esoteric.desc": "Symbolisme, arch\u00e9types, dimension spirituelle",
+    "concise": "Concis",
+    "concise.desc": "L'essentiel, direct et clair",
+    "detailed": "Approfondi",
+    "detailed.desc": "Analyse d\u00e9taill\u00e9e, nuances et subtilit\u00e9s",
+    "practical": "Pratique",
+    "practical.desc": "Conseils concrets, actions au quotidien",
+    "introspective": "Introspectif",
+    "introspective.desc": "R\u00e9flexion int\u00e9rieure, exploration psychologique"
+  },
+  "loading": {
+    "planets": "Calcul des positions plan\u00e9taires...",
+    "houses": "D\u00e9termination des maisons astrologiques...",
+    "aspects": "Analyse des aspects entre les plan\u00e8tes...",
+    "portrait": "Tissage de ton portrait cosmique..."
+  },
+  "results": {
+    "skyOf": "Le Ciel de",
+    "portrait": "Portrait",
+    "planets": "Plan\u00e8tes",
+    "elements": "\u00c9l\u00e9ments",
+    "houses": "Maisons",
+    "aspects": "Aspects",
+    "transits": "Transits",
+    "sunLabel": "Ton identit\u00e9 profonde",
+    "moonLabel": "Ton monde \u00e9motionnel",
+    "ascLabel": "Ta fa\u00e7ade au monde",
+    "cosmicPortrait": "Ton Portrait Cosmique",
+    "planetDesc": "Chaque plan\u00e8te colore un aspect de ta personnalit\u00e9.",
+    "elementDesc": "L'\u00e9quilibre des forces dans ta carte natale.",
+    "houseDesc": "Les domaines de vie activ\u00e9s par tes plan\u00e8tes.",
+    "aspectDesc": "Les dialogues entre tes plan\u00e8tes \u2014 harmonies et tensions.",
+    "noAspects": "Aucun aspect majeur d\u00e9tect\u00e9 dans ta carte.",
+    "lifeThemes": "Tes Th\u00e8mes de Vie",
+    "lifeThemesDesc": "Les fils conducteurs qui tissent ton th\u00e8me natal en un r\u00e9cit unique.",
+    "closing": {
+      "title": "Un dernier mot,",
+      "p1": "Cette carte est une photographie du ciel au moment pr\u00e9cis de ta naissance \u2014 un instant unique dans l'histoire du cosmos. Elle ne pr\u00e9dit rien. Elle ne d\u00e9termine rien. Elle \u00e9claire.",
+      "p2": "Les plan\u00e8tes dessinent des potentiels, des invitations, des tensions cr\u00e9atrices. C'est toi qui choisis comment les vivre, les transformer, les transcender.",
+      "p3": "Tu es l'auteur\u00b7e de ton histoire \u2014 le ciel n'en est que la toile de fond.",
+      "quote": "Le sage domine les \u00e9toiles, les \u00e9toiles ne dominent pas le sage."
+    },
+    "shareLink": "Partager le lien",
+    "copyChart": "Copier ma carte",
+    "copyLink": "Copier le lien",
+    "copied": "Copi\u00e9 dans le presse-papier",
+    "exportPdf": "Exporter en PDF",
+    "newChart": "\u2190 Calculer une autre carte",
+    "disclaimer": "L'astrologie est un outil de r\u00e9flexion personnelle inspir\u00e9 de traditions mill\u00e9naires. Elle ne remplace en aucun cas un avis m\u00e9dical, psychologique ou financier."
+  },
+  "transits": {
+    "title": "Transits du jour",
+    "desc": "Les positions plan\u00e9taires actuelles et comment elles interagissent avec ta carte natale.",
+    "current": "Position actuelle",
+    "natal": "Position natale",
+    "noTime": "Active l'heure de naissance pour voir les transits en maisons."
+  },
+  "nav": {
+    "about": "\u00c0 propos",
+    "contact": "Contact",
+    "privacy": "Confidentialit\u00e9",
+    "terms": "Conditions",
+    "signs": "Signes"
+  },
+  "footer": {
+    "tagline": "Astrologie psychologique gratuite",
+    "copyright": "Tous droits r\u00e9serv\u00e9s.",
+    "disclaimer": "L'astrologie est un outil de r\u00e9flexion, pas un substitut m\u00e9dical ou professionnel."
+  },
+  "geo": {
+    "detect": "Me localiser",
+    "detecting": "Localisation..."
+  },
+  "lang": {
+    "fr": "FR",
+    "en": "EN"
+  },
+  "months": {
+    "1": "Janvier",
+    "2": "F\u00e9vrier",
+    "3": "Mars",
+    "4": "Avril",
+    "5": "Mai",
+    "6": "Juin",
+    "7": "Juillet",
+    "8": "Ao\u00fbt",
+    "9": "Septembre",
+    "10": "Octobre",
+    "11": "Novembre",
+    "12": "D\u00e9cembre"
+  }
+}

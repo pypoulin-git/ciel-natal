@@ -1,0 +1,137 @@
+{
+  "hero": {
+    "title": "Ciel Natal",
+    "subtitle1": "What was the sky telling",
+    "subtitle2": "when you were born?",
+    "cta": "Discover my chart"
+  },
+  "form": {
+    "step1": {
+      "title": "What's your name?",
+      "subtitle": "Your first name will personalize your entire reading.",
+      "placeholder": "Your first name"
+    },
+    "step2": {
+      "title": "When were you born?",
+      "subtitle": "The position of the stars changes every day.",
+      "day": "Day",
+      "month": "Month",
+      "year": "Year"
+    },
+    "step3": {
+      "title": "What time?",
+      "subtitle": "The exact time determines your Ascendant and houses.",
+      "knowTime": "I know my birth time",
+      "noTime": "Without an exact time, your reading won't include the Ascendant or astrological houses.",
+      "hour": "Hour",
+      "minute": "Minute"
+    },
+    "step4": {
+      "title": "Where were you born?",
+      "subtitle": "Your birthplace refines the Ascendant calculation.",
+      "placeholder": "Search your city..."
+    },
+    "step5": {
+      "title": "Customize your reading",
+      "subtitle": "Adjust these sliders for a tailored experience."
+    },
+    "back": "\u2190 Back",
+    "next": "Next \u2192",
+    "calculate": "Calculate my chart"
+  },
+  "slider": {
+    "scientific": "Scientific",
+    "scientific.desc": "Rational approach, astronomy, psychology",
+    "esoteric": "Esoteric",
+    "esoteric.desc": "Symbolism, archetypes, spiritual dimension",
+    "concise": "Concise",
+    "concise.desc": "The essentials, straight and clear",
+    "detailed": "In-depth",
+    "detailed.desc": "Detailed analysis, nuances and subtleties",
+    "practical": "Practical",
+    "practical.desc": "Concrete advice, everyday actions",
+    "introspective": "Introspective",
+    "introspective.desc": "Inner reflection, psychological exploration"
+  },
+  "loading": {
+    "planets": "Calculating planetary positions...",
+    "houses": "Determining astrological houses...",
+    "aspects": "Analyzing aspects between planets...",
+    "portrait": "Weaving your cosmic portrait..."
+  },
+  "results": {
+    "skyOf": "The Sky of",
+    "portrait": "Portrait",
+    "planets": "Planets",
+    "elements": "Elements",
+    "houses": "Houses",
+    "aspects": "Aspects",
+    "transits": "Transits",
+    "sunLabel": "Your core identity",
+    "moonLabel": "Your emotional world",
+    "ascLabel": "Your face to the world",
+    "cosmicPortrait": "Your Cosmic Portrait",
+    "planetDesc": "Each planet colors a facet of your personality.",
+    "elementDesc": "The balance of forces in your birth chart.",
+    "houseDesc": "The life domains activated by your planets.",
+    "aspectDesc": "The dialogues between your planets \u2014 harmonies and tensions.",
+    "noAspects": "No major aspects detected in your chart.",
+    "lifeThemes": "Your Life Themes",
+    "lifeThemesDesc": "The guiding threads that weave your birth chart into a unique story.",
+    "closing": {
+      "title": "One last word,",
+      "p1": "This chart is a photograph of the sky at the exact moment of your birth \u2014 a unique instant in the history of the cosmos. It predicts nothing. It determines nothing. It illuminates.",
+      "p2": "The planets draw potentials, invitations, creative tensions. It is you who chooses how to live them, transform them, transcend them.",
+      "p3": "You are the author of your story \u2014 the sky is merely the backdrop.",
+      "quote": "The wise rule the stars; the stars do not rule the wise."
+    },
+    "shareLink": "Share link",
+    "copyChart": "Copy my chart",
+    "copyLink": "Copy link",
+    "copied": "Copied to clipboard",
+    "exportPdf": "Export as PDF",
+    "newChart": "\u2190 Calculate another chart",
+    "disclaimer": "Astrology is a tool for personal reflection inspired by ancient traditions. It is in no way a substitute for medical, psychological, or financial advice."
+  },
+  "transits": {
+    "title": "Today's Transits",
+    "desc": "Current planetary positions and how they interact with your birth chart.",
+    "current": "Current position",
+    "natal": "Natal position",
+    "noTime": "Enable birth time to see transits in houses."
+  },
+  "nav": {
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "signs": "Signs"
+  },
+  "footer": {
+    "tagline": "Free psychological astrology",
+    "copyright": "All rights reserved.",
+    "disclaimer": "Astrology is a tool for reflection, not a substitute for medical or professional advice."
+  },
+  "geo": {
+    "detect": "Locate me",
+    "detecting": "Locating..."
+  },
+  "lang": {
+    "fr": "FR",
+    "en": "EN"
+  },
+  "months": {
+    "1": "January",
+    "2": "February",
+    "3": "March",
+    "4": "April",
+    "5": "May",
+    "6": "June",
+    "7": "July",
+    "8": "August",
+    "9": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
+  }
+}
