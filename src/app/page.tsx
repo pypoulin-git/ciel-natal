@@ -5,6 +5,7 @@ import Starfield from "@/components/Starfield";
 import ZodiacWheel from "@/components/ZodiacWheel";
 import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
+import SiteFooter from "@/components/SiteFooter";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -814,6 +815,9 @@ export default function Home() {
 
           </section>
         )}
+
+        {/* Footer on results or hero */}
+        {(step === 0 || step === 7) && <SiteFooter />}
       </div>
     </main>
   );
