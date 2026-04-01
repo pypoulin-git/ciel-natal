@@ -316,7 +316,18 @@ input[type="range"]:active::-moz-range-thumb {
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(16px);
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
   to {
     opacity: 1;
@@ -325,7 +336,11 @@ input[type="range"]:active::-moz-range-thumb {
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out forwards;
+  animation: slideInRight 0.35s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.35s ease-out forwards;
 }
 
 /* ============================================

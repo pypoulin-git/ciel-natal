@@ -116,6 +116,7 @@ export default function Home() {
   const [expandedPlanets, setExpandedPlanets] = useState<Set<string>>(new Set());
   const [expandedAspects, setExpandedAspects] = useState<Set<number>>(new Set());
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
+  const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -247,7 +248,7 @@ export default function Home() {
               </div>
 
               {step === 1 && (
-                <div className="step-enter">
+                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Comment t&apos;appelles-tu&nbsp;?</h2>
                   <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Ton prénom personnalisera toute ta lecture.</p>
                   <input type="text" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })}
@@ -257,7 +258,7 @@ export default function Home() {
               )}
 
               {step === 2 && (
-                <div className="step-enter">
+                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Quand es-tu né(e)&nbsp;?</h2>
                   <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">La position des astres change chaque jour.</p>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -293,7 +294,7 @@ export default function Home() {
               )}
 
               {step === 3 && (
-                <div className="step-enter">
+                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">À quelle heure&nbsp;?</h2>
                   <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">L&apos;heure exacte détermine ton Ascendant et tes maisons.</p>
                   <label className="flex items-center justify-center gap-3 mb-6 cursor-pointer group">
@@ -334,7 +335,7 @@ export default function Home() {
               )}
 
               {step === 4 && (
-                <div className="step-enter">
+                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Où es-tu né(e)&nbsp;?</h2>
                   <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Le lieu affine le calcul de ton Ascendant.</p>
                   <div className="relative">
@@ -360,7 +361,7 @@ export default function Home() {
               )}
 
               {step === 5 && (
-                <div className="step-enter">
+                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">Personnalise ta lecture</h2>
                   <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">Ajuste ces curseurs pour une expérience sur mesure.</p>
                   <div className="space-y-8">
@@ -373,12 +374,12 @@ export default function Home() {
               )}
 
               <div className="flex justify-between mt-10">
-                <button onClick={() => setStep(step - 1)} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">← Retour</button>
+                <button onClick={() => { setStepDirection("prev"); setStep(step - 1); }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">← Retour</button>
                 {step < 5 ? (
-                  <button onClick={() => canAdvance() && setStep(step + 1)} disabled={!canAdvance()}
+                  <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setStep(step + 1); } }} disabled={!canAdvance()}
                     className="btn-primary px-6 py-2.5 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed">Suivant →</button>
                 ) : (
-                  <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">✦ Calculer ma carte</button>
+                  <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">Calculer ma carte</button>
                 )}
               </div>
             </div>
@@ -613,33 +614,61 @@ export default function Home() {
                 )}
               </div>
 
+              {/* LIFE THEMES SYNTHESIS */}
+              <div className="glass p-6">
+                <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                  <span className="text-[var(--color-accent-lavender)] opacity-40">&#10022;</span> Tes Thèmes de Vie
+                </h2>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-5">Les fils conducteurs qui tissent ton thème natal en un récit unique.</p>
+                <div className="space-y-3 stagger-in">
+                  {getLifeThemes(chart, form.prenom).map((theme, i) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-[var(--color-glass-border)]">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-lavender)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-sm text-[var(--color-accent-lavender)]">{theme.icon}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-1">{theme.title}</h3>
+                        <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">{theme.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* CLOSING */}
-              <div className="glass p-8 text-center border-t border-[var(--color-accent-lavender)]/10">
-                <div className="text-2xl mb-4 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
+              <div className="glass p-8 text-center">
+                <div className="w-12 h-12 mx-auto mb-5 rounded-full bg-[var(--color-accent-lavender)]/5 border border-[var(--color-accent-lavender)]/10 flex items-center justify-center">
+                  <span className="text-lg text-[var(--color-accent-lavender)] opacity-60">&#10022;</span>
+                </div>
                 <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-5">Un dernier mot, {form.prenom}</h2>
                 <div className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed max-w-lg mx-auto space-y-4 mb-8">
                   <p>Cette carte est une photographie du ciel au moment précis de ta naissance — un instant unique dans l&apos;histoire du cosmos. Elle ne prédit rien. Elle ne détermine rien. Elle éclaire.</p>
-                  <p>Les planètes dessinent des potentiels, des invitations, des tensions créatrices. C&apos;est toi qui choisis comment les vivre, les transformer, les transcender. Tu es l&apos;auteur·e de ton histoire — le ciel n&apos;en est que la toile de fond.</p>
-                  <p className="text-[var(--color-accent-lavender)]/60 italic">&laquo;&nbsp;Le sage domine les étoiles, les étoiles ne dominent pas le sage.&nbsp;&raquo;</p>
+                  <p>Les planètes dessinent des potentiels, des invitations, des tensions créatrices. C&apos;est toi qui choisis comment les vivre, les transformer, les transcender.</p>
+                  <p>Tu es l&apos;auteur·e de ton histoire — le ciel n&apos;en est que la toile de fond.</p>
+                  <div className="border-l-2 border-[var(--color-accent-lavender)]/20 pl-4 py-2 mt-6">
+                    <p className="text-[var(--color-accent-lavender)]/60 italic text-xs">&laquo;&nbsp;Le sage domine les étoiles, les étoiles ne dominent pas le sage.&nbsp;&raquo;</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="flex items-center justify-center gap-3 mb-8">
                   <button onClick={() => {
                       const text = `Mon thème natal : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre le tien sur Ciel Natal !`;
                       if (navigator.share) { navigator.share({ title: "Mon Ciel Natal", text, url: window.location.href }); }
                       else { navigator.clipboard.writeText(text + " " + window.location.href); }
-                    }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    }} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-                    Partager
+                    Partager ma carte
                   </button>
                   <button onClick={() => {
                       const text = `Mon thème natal : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}.`;
                       navigator.clipboard.writeText(text);
-                    }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                    }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                     Copier
                   </button>
                 </div>
-                <p className="text-[10px] text-[var(--color-text-secondary)]/60 italic max-w-md mx-auto">L&apos;astrologie est un outil de réflexion personnelle inspiré de traditions millénaires. Elle ne remplace en aucun cas un avis médical, psychologique ou financier.</p>
+                <div className="border-t border-[var(--color-glass-border)] pt-5">
+                  <p className="text-[10px] text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">L&apos;astrologie est un outil de réflexion personnelle inspiré de traditions millénaires. Elle ne remplace en aucun cas un avis médical, psychologique ou financier.</p>
+                </div>
               </div>
 
               <div className="text-center pb-8">
@@ -743,6 +772,58 @@ function getCosmicPortraitMoon(sign: string): string {
     Poissons: "ouvre les portes d'une sensibilité sans frontières. Tu absorbes les émotions ambiantes comme une éponge.",
   };
   return t[sign] || "enrichit ton monde intérieur d'une dimension unique.";
+}
+
+// ─── Life Themes Generator ───────────────────────────────────────
+function getLifeThemes(chart: NatalChart, prenom: string): { icon: string; title: string; text: string }[] {
+  const sun = chart.planets[0];
+  const moon = chart.planets[1];
+  const asc = chart.ascendant;
+  const themes: { icon: string; title: string; text: string }[] = [];
+
+  // Element dominance theme
+  const elCount: Record<string, number> = { Feu: 0, Terre: 0, Air: 0, Eau: 0 };
+  const elMap: Record<string, string> = {
+    Belier: "Feu", Taureau: "Terre", Gemeaux: "Air", Cancer: "Eau",
+    Lion: "Feu", Vierge: "Terre", Balance: "Air", Scorpion: "Eau",
+    Sagittaire: "Feu", Capricorne: "Terre", Verseau: "Air", Poissons: "Eau",
+  };
+  chart.planets.forEach((p) => { if (elMap[p.sign]) elCount[elMap[p.sign]]++; });
+  const dominant = Object.entries(elCount).sort((a, b) => b[1] - a[1])[0];
+  const elThemes: Record<string, { title: string; text: string }> = {
+    Feu: { title: "L'élan créateur", text: `${prenom}, ton thème est traversé par le Feu — l'énergie de l'action, de l'inspiration et du courage. Tu es fait·e pour initier, oser et rayonner.` },
+    Terre: { title: "L'ancrage constructeur", text: `${prenom}, la Terre domine ton ciel — tu construis dans la durée, avec patience et réalisme. Ta force réside dans la capacité à matérialiser tes visions.` },
+    Air: { title: "Le souffle des idées", text: `${prenom}, l'Air circule puissamment dans ta carte — pensée, communication, connexion. Tu es un·e tisseur·se de liens et d'idées.` },
+    Eau: { title: "La profondeur émotionnelle", text: `${prenom}, l'Eau nourrit ton thème — intuition, empathie, profondeur. Tu perçois ce que d'autres ne voient pas, tu ressens ce que d'autres n'osent pas.` },
+  };
+  themes.push({ icon: "◆", ...elThemes[dominant[0]] });
+
+  // Sun-Moon dynamic
+  const sunEl = elMap[sun.sign] || "";
+  const moonEl = elMap[moon.sign] || "";
+  if (sunEl === moonEl) {
+    themes.push({ icon: "☯", title: "Cohérence intérieure", text: `Ton Soleil et ta Lune partagent le même élément (${sunEl}) — une harmonie rare entre qui tu es et ce que tu ressens. Cette cohérence te donne une assurance naturelle.` });
+  } else {
+    themes.push({ icon: "☯", title: "La danse intérieure", text: `Ton Soleil en ${sun.sign} et ta Lune en ${moon.sign} créent un dialogue entre ${sunEl} et ${moonEl}. Cette tension est créatrice — elle t'invite à intégrer deux facettes complémentaires de toi-même.` });
+  }
+
+  // Ascendant theme
+  if (asc) {
+    themes.push({ icon: "↑", title: "Ton masque et ta mission", text: `Ton Ascendant ${asc.sign} est la porte par laquelle tu entres dans le monde. Il colore ta première impression et révèle la direction de croissance personnelle que la vie t'invite à explorer.` });
+  }
+
+  // Aspect pattern theme
+  const squares = chart.aspects.filter((a) => a.type === "Carre").length;
+  const trines = chart.aspects.filter((a) => a.type === "Trigone").length;
+  if (squares >= 3) {
+    themes.push({ icon: "□", title: "Les tensions qui forgent", text: `Ton thème comporte plusieurs carrés — des tensions dynamiques qui sont tes plus grands moteurs de transformation. Ce qui résiste en toi est aussi ce qui te rend fort·e.` });
+  } else if (trines >= 3) {
+    themes.push({ icon: "△", title: "Les flux naturels", text: `Les trigones abondent dans ta carte — des dons naturels, des facilités. Le défi sera de ne pas te reposer sur ces acquis mais de les mettre activement au service de ta croissance.` });
+  } else {
+    themes.push({ icon: "✧", title: "L'équilibre des forces", text: `Ton thème mêle harmonies et tensions de façon équilibrée — tu possèdes à la fois des talents naturels et des défis stimulants qui ensemble te poussent vers ta pleine expression.` });
+  }
+
+  return themes;
 }
 
 function getCosmicPortraitAsc(sign: string): string {
