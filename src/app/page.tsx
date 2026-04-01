@@ -171,6 +171,7 @@ export default function Home() {
   const [expandedAspects, setExpandedAspects] = useState<Set<number>>(new Set());
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
+  const [copied, setCopied] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -259,6 +260,75 @@ export default function Home() {
   const scrollToTab = (tabId: string) => {
     setActiveTab(tabId);
     sectionRefs.current[tabId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // ─── Auto-load from URL params ───
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.has("n") && p.has("j") && p.has("m") && p.has("a") && p.has("lat") && p.has("lon")) {
+      const loaded: FormData = {
+        prenom: decodeURIComponent(p.get("n") || ""),
+        jour: parseInt(p.get("j") || "15"),
+        mois: parseInt(p.get("m") || "6"),
+        annee: parseInt(p.get("a") || "1990"),
+        heure: parseInt(p.get("h") || "12"),
+        minute: parseInt(p.get("min") || "0"),
+        hasTime: p.get("ht") !== "0",
+        lieu: decodeURIComponent(p.get("l") || ""),
+        latitude: parseFloat(p.get("lat") || "48.8566"),
+        longitude: parseFloat(p.get("lon") || "2.3522"),
+        tone: 5, depth: 5, focus: 5,
+      };
+      setForm(loaded);
+      const c = calculateNatalChart(
+        loaded.annee, loaded.mois, loaded.jour,
+        loaded.hasTime ? loaded.heure : 12, loaded.hasTime ? loaded.minute : 0,
+        loaded.latitude, loaded.longitude, loaded.hasTime
+      );
+      setChart(c);
+      setStep(7);
+    }
+  }, []);
+
+  // ─── Generate shareable URL ───
+  const getShareUrl = (): string => {
+    const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const p = new URLSearchParams({
+      n: form.prenom, j: String(form.jour), m: String(form.mois), a: String(form.annee),
+      h: String(form.heure), min: String(form.minute), ht: form.hasTime ? "1" : "0",
+      l: form.lieu, lat: String(form.latitude), lon: String(form.longitude),
+    });
+    return `${base}?${p.toString()}`;
+  };
+
+  // ─── Generate one-pager text ───
+  const generateOnePager = (): string => {
+    if (!chart) return "";
+    const sun = chart.planets[0];
+    const moon = chart.planets[1];
+    const asc = chart.ascendant;
+    const lines = [
+      `CARTE DU CIEL DE ${form.prenom.toUpperCase()}`,
+      `${"─".repeat(36)}`,
+      `${form.jour} ${MONTHS[form.mois - 1]} ${form.annee}${form.hasTime ? ` — ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}` : ""} — ${form.lieu}`,
+      ``,
+      `LE TRIO ESSENTIEL`,
+      `  Soleil : ${sun.sign} (${sun.degree}°)${sun.house ? ` — Maison ${sun.house}` : ""}`,
+      `  Lune   : ${moon.sign} (${moon.degree}°)${moon.house ? ` — Maison ${moon.house}` : ""}`,
+      ...(asc ? [`  Asc.   : ${asc.sign} (${asc.degree}°)`] : []),
+      ``,
+      `POSITIONS PLANÉTAIRES`,
+      ...chart.planets.slice(2).map((p) => `  ${p.name.padEnd(9)} : ${p.sign} ${p.degree}°${p.house ? ` (M${p.house})` : ""}`),
+      ``,
+      `ASPECTS MAJEURS`,
+      ...chart.aspects.slice(0, 10).map((a) => `  ${a.planet1} ${ASPECT_SYMBOLS[a.type] || "·"} ${a.planet2} (${a.type}, ${a.orb}°)`),
+      ``,
+      `─────────────────────────────────────`,
+      `Généré sur Ciel Natal`,
+      getShareUrl(),
+    ];
+    return lines.join("\n");
   };
 
   return (
@@ -703,23 +773,34 @@ export default function Home() {
                     <p className="text-[var(--color-accent-lavender)]/60 italic text-xs">&laquo;&nbsp;Le sage domine les étoiles, les étoiles ne dominent pas le sage.&nbsp;&raquo;</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-center gap-3 mb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
                   <button onClick={() => {
-                      const text = `Mon thème natal : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre le tien sur Ciel Natal !`;
-                      if (navigator.share) { navigator.share({ title: "Mon Ciel Natal", text, url: window.location.href }); }
-                      else { navigator.clipboard.writeText(text + " " + window.location.href); }
+                      const url = getShareUrl();
+                      const text = `La carte du ciel de ${form.prenom} : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre la tienne !`;
+                      if (navigator.share) { navigator.share({ title: `Carte du ciel — ${form.prenom}`, text, url }); }
+                      else { navigator.clipboard.writeText(text + "\n" + url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
                     }} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-                    Partager ma carte
+                    Partager le lien
                   </button>
                   <button onClick={() => {
-                      const text = `Mon thème natal : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}.`;
-                      navigator.clipboard.writeText(text);
+                      navigator.clipboard.writeText(generateOnePager());
+                      setCopied(true); setTimeout(() => setCopied(false), 2000);
                     }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    Copier
+                    Copier ma carte
+                  </button>
+                  <button onClick={() => {
+                      navigator.clipboard.writeText(getShareUrl());
+                      setCopied(true); setTimeout(() => setCopied(false), 2000);
+                    }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    Copier le lien
                   </button>
                 </div>
+                {copied && (
+                  <p className="text-xs text-[var(--color-accent-lavender)] mb-4 animate-fade-in">Copié dans le presse-papier</p>
+                )}
                 <div className="border-t border-[var(--color-glass-border)] pt-5">
                   <p className="text-[10px] text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">L&apos;astrologie est un outil de réflexion personnelle inspiré de traditions millénaires. Elle ne remplace en aucun cas un avis médical, psychologique ou financier.</p>
                 </div>
