@@ -50,34 +50,88 @@ const ASPECT_SYMBOLS: Record<string, string> = {
 };
 
 const ASPECT_COLORS: Record<string, string> = {
-  Conjonction: "#c9a0ff", Trigone: "#34d399", Sextile: "#60a5fa", Carre: "#ef4444", Opposition: "#fbbf24",
+  Conjonction: "#a89ec8", Trigone: "#9a96aa", Sextile: "#8a87a0", Carre: "#b0a8be", Opposition: "#9590a8",
 };
 
-// ─── Nominatim City Search ────────────────────────────────────────
+// ─── City Search (Nominatim + GeoNames fallback) ─────────────────
 async function searchCities(query: string): Promise<CityResult[]> {
   if (query.length < 2) return [];
+
+  // Helper to parse Nominatim results
+  const parseNominatim = (data: Array<{
+    display_name: string; lat: string; lon: string; class: string;
+    address?: { city?: string; town?: string; village?: string; municipality?: string; state?: string; country?: string };
+  }>): CityResult[] =>
+    data
+      .filter((r) => r.class === "place" || r.class === "boundary")
+      .map((r) => {
+        const name = r.address?.city || r.address?.town || r.address?.village || r.address?.municipality || r.display_name.split(",")[0];
+        return {
+          name,
+          lat: parseFloat(r.lat),
+          lon: parseFloat(r.lon),
+          display: [name, r.address?.state, r.address?.country].filter(Boolean).join(", "),
+        };
+      });
+
   try {
+    // Primary: broad search with featuretype=city for better ranking
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=fr&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city`,
       { headers: { "User-Agent": "CielNatal/1.0" } }
     );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data
-      .filter((r: { type: string; class: string }) => r.class === "place" || r.class === "boundary")
-      .map((r: { display_name: string; lat: string; lon: string; address?: { city?: string; town?: string; village?: string; state?: string; country?: string } }) => ({
-        name: r.address?.city || r.address?.town || r.address?.village || r.display_name.split(",")[0],
-        lat: parseFloat(r.lat),
-        lon: parseFloat(r.lon),
-        display: [
-          r.address?.city || r.address?.town || r.address?.village || r.display_name.split(",")[0],
-          r.address?.state,
-          r.address?.country,
-        ].filter(Boolean).join(", "),
-      }));
+    if (res.ok) {
+      const data = await res.json();
+      let results = parseNominatim(data);
+      // If few results, try without featuretype restriction (catches villages/hamlets)
+      if (results.length < 3) {
+        const res2 = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1`,
+          { headers: { "User-Agent": "CielNatal/1.0" } }
+        );
+        if (res2.ok) {
+          const data2 = await res2.json();
+          const more = parseNominatim(data2);
+          // Merge, deduplicate by lat/lon proximity
+          for (const m of more) {
+            if (!results.some((r) => Math.abs(r.lat - m.lat) < 0.01 && Math.abs(r.lon - m.lon) < 0.01)) {
+              results.push(m);
+            }
+          }
+        }
+      }
+      // Deduplicate by name+country
+      const seen = new Set<string>();
+      results = results.filter((r) => {
+        const key = r.display.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return results.slice(0, 6);
+    }
   } catch {
-    return [];
+    // Nominatim failed, try fallback
   }
+
+  // Fallback: GeoNames free API
+  try {
+    const res = await fetch(
+      `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(query)}&maxRows=6&lang=fr&featureClass=P&username=cielnatal`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      return (data.geonames || []).map((r: { name: string; lat: string; lng: string; adminName1?: string; countryName?: string }) => ({
+        name: r.name,
+        lat: parseFloat(r.lat),
+        lon: parseFloat(r.lng),
+        display: [r.name, r.adminName1, r.countryName].filter(Boolean).join(", "),
+      }));
+    }
+  } catch {
+    // Both failed
+  }
+  return [];
 }
 
 // ─── Slider Config ────────────────────────────────────────────────
@@ -217,7 +271,7 @@ export default function Home() {
           <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
             <div className="animate-fade-in-up">
               <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">✦</div>
-              <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] bg-clip-text text-transparent leading-tight">
+              <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
                 Ciel Natal
               </h1>
               <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
@@ -241,7 +295,7 @@ export default function Home() {
               <div className="flex gap-1.5 mb-8">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
-                    <div className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-gold)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
+                    <div className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-lavender)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
                       style={{ width: s <= step ? "100%" : "0%" }} />
                   </div>
                 ))}
@@ -393,7 +447,7 @@ export default function Home() {
               <div className="text-4xl mb-8 animate-pulse-glow text-[var(--color-accent-lavender)]">✦</div>
               <LoadingMessages />
               <div className="mt-6 h-1 rounded-full bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent-lavender)] to-[var(--color-accent-gold)] animate-progress" />
+                <div className="h-full rounded-full bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] animate-progress" />
               </div>
             </div>
           </section>

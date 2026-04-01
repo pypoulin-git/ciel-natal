@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-space-deep: #0a0a1a;
-  --color-space-card: #12122a;
-  --color-accent-lavender: #c9a0ff;
-  --color-accent-gold: #ffd700;
-  --color-text-primary: #e8e0f0;
-  --color-text-secondary: #8a80a0;
-  --color-glass-border: rgba(201, 160, 255, 0.15);
-  --color-glass-bg: rgba(18, 18, 42, 0.6);
+  --color-space-deep: #09090f;
+  --color-space-card: #111118;
+  --color-accent-lavender: #a89ec8;
+  --color-accent-gold: #b8b0c8;
+  --color-text-primary: #ddd9e4;
+  --color-text-secondary: #78748a;
+  --color-glass-border: rgba(168, 158, 200, 0.1);
+  --color-glass-bg: rgba(16, 16, 24, 0.55);
 }
 
 @font-face {
@@ -74,13 +74,13 @@ body {
   background: rgba(18, 18, 42, 0.75);
   backdrop-filter: blur(28px) saturate(1.3);
   -webkit-backdrop-filter: blur(28px) saturate(1.3);
-  border: 1px solid rgba(201, 160, 255, 0.2);
+  border: 1px solid rgba(168, 158, 200, 0.2);
   border-radius: 1.25rem;
   position: relative;
   overflow: hidden;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(201, 160, 255, 0.08) inset;
+    0 0 0 1px rgba(168, 158, 200, 0.08) inset;
   animation: scaleIn 0.25s ease-out forwards;
 }
 
@@ -116,8 +116,8 @@ body {
 }
 
 .glass-input:focus {
-  border-color: rgba(201, 160, 255, 0.4);
-  box-shadow: 0 0 0 3px rgba(201, 160, 255, 0.1), 0 0 16px rgba(201, 160, 255, 0.12);
+  border-color: rgba(168, 158, 200, 0.4);
+  box-shadow: 0 0 0 3px rgba(168, 158, 200, 0.1), 0 0 16px rgba(168, 158, 200, 0.12);
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -125,7 +125,7 @@ body {
    Accent glows
    ============================================ */
 .glow-lavender {
-  box-shadow: 0 0 30px rgba(201, 160, 255, 0.2), 0 0 60px rgba(201, 160, 255, 0.1);
+  box-shadow: 0 0 30px rgba(168, 158, 200, 0.2), 0 0 60px rgba(168, 158, 200, 0.1);
 }
 
 .glow-gold {
@@ -145,13 +145,13 @@ body {
 .btn-hover:hover {
   transform: scale(1.02);
   filter: brightness(1.12);
-  box-shadow: 0 0 18px rgba(201, 160, 255, 0.2);
+  box-shadow: 0 0 18px rgba(168, 158, 200, 0.2);
 }
 
 /* Primary — lavender gradient */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-accent-lavender), #9b6fdf);
-  color: #0a0a1a;
+  background: linear-gradient(135deg, var(--color-accent-lavender), #8078a0);
+  color: #0c0c12;
   font-weight: 600;
   border: none;
   border-radius: 0.75rem;
@@ -164,7 +164,7 @@ body {
 .btn-primary:hover {
   transform: scale(1.03);
   filter: brightness(1.15);
-  box-shadow: 0 0 24px rgba(201, 160, 255, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 24px rgba(168, 158, 200, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:active {
@@ -185,7 +185,7 @@ body {
 
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(201, 160, 255, 0.25);
+  border-color: rgba(168, 158, 200, 0.25);
 }
 
 /* ============================================
@@ -197,7 +197,7 @@ input[type="range"] {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(90deg, rgba(201, 160, 255, 0.2), rgba(255, 215, 0, 0.2));
+  background: linear-gradient(90deg, rgba(168, 158, 200, 0.15), rgba(200, 195, 210, 0.2));
   outline: none;
 }
 
@@ -209,17 +209,17 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--color-accent-lavender);
   cursor: pointer;
-  box-shadow: 0 0 14px rgba(201, 160, 255, 0.5);
+  box-shadow: 0 0 14px rgba(168, 158, 200, 0.5);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 24px rgba(201, 160, 255, 0.8), 0 0 48px rgba(201, 160, 255, 0.3);
+  box-shadow: 0 0 24px rgba(168, 158, 200, 0.8), 0 0 48px rgba(168, 158, 200, 0.3);
   transform: scale(1.1);
 }
 
 input[type="range"]:active::-webkit-slider-thumb {
-  box-shadow: 0 0 32px rgba(201, 160, 255, 1), 0 0 64px rgba(201, 160, 255, 0.5);
+  box-shadow: 0 0 32px rgba(168, 158, 200, 1), 0 0 64px rgba(168, 158, 200, 0.5);
   animation: sliderPulse 0.8s ease-in-out infinite;
 }
 
@@ -230,24 +230,24 @@ input[type="range"]::-moz-range-thumb {
   background: var(--color-accent-lavender);
   cursor: pointer;
   border: none;
-  box-shadow: 0 0 14px rgba(201, 160, 255, 0.5);
+  box-shadow: 0 0 14px rgba(168, 158, 200, 0.5);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 input[type="range"]::-moz-range-thumb:hover {
-  box-shadow: 0 0 24px rgba(201, 160, 255, 0.8), 0 0 48px rgba(201, 160, 255, 0.3);
+  box-shadow: 0 0 24px rgba(168, 158, 200, 0.8), 0 0 48px rgba(168, 158, 200, 0.3);
 }
 
 input[type="range"]:active::-moz-range-thumb {
-  box-shadow: 0 0 32px rgba(201, 160, 255, 1), 0 0 64px rgba(201, 160, 255, 0.5);
+  box-shadow: 0 0 32px rgba(168, 158, 200, 1), 0 0 64px rgba(168, 158, 200, 0.5);
 }
 
 @keyframes sliderPulse {
   0%, 100% {
-    box-shadow: 0 0 32px rgba(201, 160, 255, 1), 0 0 64px rgba(201, 160, 255, 0.5);
+    box-shadow: 0 0 32px rgba(168, 158, 200, 1), 0 0 64px rgba(168, 158, 200, 0.5);
   }
   50% {
-    box-shadow: 0 0 40px rgba(201, 160, 255, 1), 0 0 80px rgba(201, 160, 255, 0.6);
+    box-shadow: 0 0 40px rgba(168, 158, 200, 1), 0 0 80px rgba(168, 158, 200, 0.6);
   }
 }
 
@@ -301,10 +301,10 @@ input[type="range"]:active::-moz-range-thumb {
 /* Button hover glow pulse */
 @keyframes hoverGlow {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(201, 160, 255, 0.15);
+    box-shadow: 0 0 12px rgba(168, 158, 200, 0.15);
   }
   50% {
-    box-shadow: 0 0 22px rgba(201, 160, 255, 0.3);
+    box-shadow: 0 0 22px rgba(168, 158, 200, 0.3);
   }
 }
 
@@ -467,7 +467,7 @@ input[type="range"]:active::-moz-range-thumb {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, rgba(201,160,255,0.05) 25%, rgba(201,160,255,0.12) 50%, rgba(201,160,255,0.05) 75%);
+  background: linear-gradient(90deg, rgba(168,158,200,0.05) 25%, rgba(168,158,200,0.12) 50%, rgba(168,158,200,0.05) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 0.5rem;

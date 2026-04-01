@@ -15,16 +15,16 @@ const MODALITY_MAP: Record<string, string> = {
 };
 
 const ELEMENT_CONFIG = {
-  Feu: { color: "#f97316", desc: "Energie, passion, initiative" },
-  Terre: { color: "#22c55e", desc: "Stabilite, concret, patience" },
-  Air: { color: "#60a5fa", desc: "Pensee, communication, idees" },
-  Eau: { color: "#8b5cf6", desc: "Emotions, intuition, empathie" },
+  Feu: { desc: "Energie, passion, initiative", intensity: 1.0 },
+  Terre: { desc: "Stabilite, concret, patience", intensity: 0.7 },
+  Air: { desc: "Pensee, communication, idees", intensity: 0.5 },
+  Eau: { desc: "Emotions, intuition, empathie", intensity: 0.85 },
 };
 
 const MODALITY_CONFIG = {
-  Cardinal: { color: "#ef4444", desc: "Initier, lancer, diriger" },
-  Fixe: { color: "#eab308", desc: "Perseverer, stabiliser, ancrer" },
-  Mutable: { color: "#06b6d4", desc: "Adapter, transformer, connecter" },
+  Cardinal: { desc: "Initier, lancer, diriger" },
+  Fixe: { desc: "Perseverer, stabiliser, ancrer" },
+  Mutable: { desc: "Adapter, transformer, connecter" },
 };
 
 interface Props {
@@ -59,14 +59,12 @@ export default function ElementBalance({ planets }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Intro */}
       <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
         Les quatre elements et trois modalites revelent la dynamique
         fondamentale de ton theme. Les elements decrivent ta nature
         energetique, les modalites ta maniere d&apos;agir dans le monde.
       </p>
 
-      {/* Element bars */}
       <div>
         <h3 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-5">
           Elements
@@ -76,15 +74,18 @@ export default function ElementBalance({ planets }: Props) {
             const config = ELEMENT_CONFIG[el];
             const count = elementCount[el];
             const pct = Math.round((count / total) * 100);
+            const isDominant = el === dominant[0];
             return (
               <div key={el}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2.5">
                     <span
                       className="block w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.color}50` }}
+                      style={{
+                        backgroundColor: isDominant ? "var(--color-accent-lavender)" : "rgba(168,158,200,0.3)",
+                      }}
                     />
-                    <span className="text-sm text-[var(--color-text-primary)]">{el}</span>
+                    <span className={`text-sm ${isDominant ? "text-[var(--color-text-primary)] font-medium" : "text-[var(--color-text-secondary)]"}`}>{el}</span>
                     <span className="text-[10px] text-[var(--color-text-secondary)] hidden sm:inline">
                       {config.desc}
                     </span>
@@ -93,10 +94,7 @@ export default function ElementBalance({ planets }: Props) {
                     <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">
                       {count}/{total}
                     </span>
-                    <span
-                      className="font-mono text-[11px] font-medium tabular-nums"
-                      style={{ color: config.color }}
-                    >
+                    <span className={`font-mono text-[11px] font-medium tabular-nums ${isDominant ? "text-[var(--color-accent-lavender)]" : "text-[var(--color-text-secondary)]"}`}>
                       {pct}%
                     </span>
                   </div>
@@ -106,20 +104,17 @@ export default function ElementBalance({ planets }: Props) {
                     className="h-full rounded-full transition-all duration-1000 ease-out"
                     style={{
                       width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${config.color}40, ${config.color}cc)`,
-                      boxShadow: `inset 0 0 4px ${config.color}30, 0 0 6px ${config.color}20`,
+                      background: isDominant
+                        ? "linear-gradient(90deg, rgba(168,158,200,0.3), rgba(168,158,200,0.7))"
+                        : "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.15))",
+                      boxShadow: isDominant ? "0 0 8px rgba(168,158,200,0.15)" : "none",
                     }}
                   />
                 </div>
                 {elementPlanets[el].length > 0 && (
                   <div className="flex gap-1.5 mt-1.5">
                     {elementPlanets[el].map((sym, i) => (
-                      <span
-                        key={i}
-                        className="text-[11px] opacity-40"
-                      >
-                        {sym}
-                      </span>
+                      <span key={i} className="text-[11px] opacity-40">{sym}</span>
                     ))}
                   </div>
                 )}
@@ -129,33 +124,31 @@ export default function ElementBalance({ planets }: Props) {
         </div>
       </div>
 
-      {/* Modality bars */}
       <div>
         <h3 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-5">
           Modalites
         </h3>
         <div className="space-y-4 stagger-in">
           {(["Cardinal", "Fixe", "Mutable"] as const).map((mod) => {
-            const config = MODALITY_CONFIG[mod];
             const count = modalityCount[mod];
             const pct = Math.round((count / total) * 100);
+            const isDominant = mod === dominantMod[0];
             return (
               <div key={mod}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2.5">
                     <span
                       className="block w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.color}50` }}
+                      style={{
+                        backgroundColor: isDominant ? "var(--color-accent-lavender)" : "rgba(168,158,200,0.3)",
+                      }}
                     />
-                    <span className="text-sm text-[var(--color-text-primary)]">{mod}</span>
+                    <span className={`text-sm ${isDominant ? "text-[var(--color-text-primary)] font-medium" : "text-[var(--color-text-secondary)]"}`}>{mod}</span>
                     <span className="text-[10px] text-[var(--color-text-secondary)]">
-                      {config.desc}
+                      {MODALITY_CONFIG[mod].desc}
                     </span>
                   </div>
-                  <span
-                    className="font-mono text-[11px] font-medium tabular-nums"
-                    style={{ color: config.color }}
-                  >
+                  <span className={`font-mono text-[11px] font-medium tabular-nums ${isDominant ? "text-[var(--color-accent-lavender)]" : "text-[var(--color-text-secondary)]"}`}>
                     {pct}%
                   </span>
                 </div>
@@ -164,20 +157,17 @@ export default function ElementBalance({ planets }: Props) {
                     className="h-full rounded-full transition-all duration-1000 ease-out"
                     style={{
                       width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${config.color}40, ${config.color}cc)`,
-                      boxShadow: `inset 0 0 4px ${config.color}30, 0 0 6px ${config.color}20`,
+                      background: isDominant
+                        ? "linear-gradient(90deg, rgba(168,158,200,0.3), rgba(168,158,200,0.7))"
+                        : "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.15))",
+                      boxShadow: isDominant ? "0 0 8px rgba(168,158,200,0.15)" : "none",
                     }}
                   />
                 </div>
                 {modalityPlanets[mod].length > 0 && (
                   <div className="flex gap-1.5 mt-1.5">
                     {modalityPlanets[mod].map((sym, i) => (
-                      <span
-                        key={i}
-                        className="text-[11px] opacity-40"
-                      >
-                        {sym}
-                      </span>
+                      <span key={i} className="text-[11px] opacity-40">{sym}</span>
                     ))}
                   </div>
                 )}
@@ -187,14 +177,10 @@ export default function ElementBalance({ planets }: Props) {
         </div>
       </div>
 
-      {/* Insight */}
-      <div className="border-l-2 border-[var(--color-accent-lavender)]/30 pl-4 py-1">
+      <div className="border-l-2 border-[var(--color-accent-lavender)]/20 pl-4 py-1">
         <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
           Ton theme est domine par l&apos;element{" "}
-          <strong
-            className="font-medium"
-            style={{ color: ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG].color }}
-          >
+          <strong className="font-medium text-[var(--color-text-primary)]">
             {dominant[0]}
           </strong>{" "}
           <span className="font-mono text-[11px]">({dominant[1]})</span>{" "}
@@ -207,10 +193,7 @@ export default function ElementBalance({ planets }: Props) {
         </p>
         <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mt-2">
           Modalite dominante :{" "}
-          <strong
-            className="font-medium"
-            style={{ color: MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].color }}
-          >
+          <strong className="font-medium text-[var(--color-text-primary)]">
             {dominantMod[0]}
           </strong>{" "}
           — tu tends naturellement a {MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].desc.toLowerCase()}.
