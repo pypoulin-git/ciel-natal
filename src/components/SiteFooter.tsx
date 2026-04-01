@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLocale } from "@/lib/i18n";
 
 export default function SiteFooter() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   return (
     <footer className="relative z-10 border-t border-[var(--color-glass-border)] mt-16">
@@ -33,6 +33,9 @@ export default function SiteFooter() {
             </Link>
             <Link href="/signe" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
               {t("nav.signs")}
+            </Link>
+            <Link href="/synastrie" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+              {locale === "fr" ? "Synastrie" : "Synastry"}
             </Link>
           </nav>
         </div>
