@@ -10,7 +10,7 @@ import DailySign from "@/components/DailySign";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { searchCities, CityResult } from "@/lib/citySearch";
+import { searchCities, CityResult, UserLocation } from "@/lib/citySearch";
 import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes } from "@/lib/chartHelpers";
 import EnhancedSlider from "@/components/EnhancedSlider";
 import LoadingMessages from "@/components/LoadingMessages";
@@ -92,6 +92,7 @@ export default function Home() {
   const [showValidation, setShowValidation] = useState(false);
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   useScrollReveal();
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -122,17 +123,28 @@ export default function Home() {
     });
   }, [locale]);
 
+  // Silently request geolocation for city search bias (no UI impact if denied)
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        () => { /* denied or unavailable — Canada bias will be used */ },
+        { timeout: 5000, maximumAge: 600000 }
+      );
+    }
+  }, []);
+
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
     if (citySearchTimer.current) clearTimeout(citySearchTimer.current);
     if (query.length < 2) { setCitySuggestions([]); return; }
     setCityLoading(true);
     citySearchTimer.current = setTimeout(async () => {
-      const results = await searchCities(query);
+      const results = await searchCities(query, userLocation);
       setCitySuggestions(results);
       setCityLoading(false);
     }, 350);
-  }, []);
+  }, [userLocation]);
 
   const selectCity = useCallback((city: CityResult) => {
     setForm((f) => ({ ...f, lieu: city.display, latitude: city.lat, longitude: city.lon }));

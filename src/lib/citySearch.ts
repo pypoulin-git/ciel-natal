@@ -5,80 +5,221 @@ export interface CityResult {
   display: string;
 }
 
+export interface UserLocation {
+  lat: number;
+  lon: number;
+}
+
 // ─── City Search (Nominatim + GeoNames fallback) ─────────────────
-export async function searchCities(query: string): Promise<CityResult[]> {
+// If userLocation is provided, results near the user are prioritized.
+// Otherwise, Canada is prioritized first, then global results.
+export async function searchCities(
+  query: string,
+  userLocation?: UserLocation | null
+): Promise<CityResult[]> {
   if (query.length < 2) return [];
 
+  const headers = { "User-Agent": "CielNatal/1.0" };
+
   // Helper to parse Nominatim results
-  const parseNominatim = (data: Array<{
-    display_name: string; lat: string; lon: string; class: string;
-    address?: { city?: string; town?: string; village?: string; municipality?: string; state?: string; country?: string };
-  }>): CityResult[] =>
+  const parseNominatim = (
+    data: Array<{
+      display_name: string;
+      lat: string;
+      lon: string;
+      class: string;
+      address?: {
+        city?: string;
+        town?: string;
+        village?: string;
+        municipality?: string;
+        state?: string;
+        country?: string;
+        country_code?: string;
+      };
+    }>
+  ): CityResult[] =>
     data
       .filter((r) => r.class === "place" || r.class === "boundary")
       .map((r) => {
-        const name = r.address?.city || r.address?.town || r.address?.village || r.address?.municipality || r.display_name.split(",")[0];
+        const name =
+          r.address?.city ||
+          r.address?.town ||
+          r.address?.village ||
+          r.address?.municipality ||
+          r.display_name.split(",")[0];
         return {
           name,
           lat: parseFloat(r.lat),
           lon: parseFloat(r.lon),
-          display: [name, r.address?.state, r.address?.country].filter(Boolean).join(", "),
+          display: [name, r.address?.state, r.address?.country]
+            .filter(Boolean)
+            .join(", "),
+          _cc: r.address?.country_code?.toLowerCase() || "",
         };
       });
 
+  // Dedup helper
+  const dedup = (results: CityResult[]): CityResult[] => {
+    const seen = new Set<string>();
+    return results.filter((r) => {
+      const key = r.display.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  // Merge without near-duplicates
+  const mergeUnique = (
+    base: CityResult[],
+    extra: CityResult[]
+  ): CityResult[] => {
+    const merged = [...base];
+    for (const m of extra) {
+      if (
+        !merged.some(
+          (r) =>
+            Math.abs(r.lat - m.lat) < 0.01 && Math.abs(r.lon - m.lon) < 0.01
+        )
+      ) {
+        merged.push(m);
+      }
+    }
+    return merged;
+  };
+
+  // Distance helper for sorting (Haversine approx in km)
+  const distKm = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
   try {
-    // Primary: broad search with featuretype=city for better ranking
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city`,
-      { headers: { "User-Agent": "CielNatal/1.0" } }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      let results = parseNominatim(data);
-      // If few results, try without featuretype restriction (catches villages/hamlets)
-      if (results.length < 3) {
+    let allResults: CityResult[] = [];
+
+    if (userLocation) {
+      // ── Strategy A: user location known → viewbox bias ──
+      // Create a ~500km bounding box around user
+      const delta = 4.5; // ~500km in degrees
+      const viewbox = [
+        userLocation.lon - delta,
+        userLocation.lat + delta,
+        userLocation.lon + delta,
+        userLocation.lat - delta,
+      ].join(",");
+
+      // 1. Search with viewbox bias (bounded=0 means prefer, not restrict)
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city&viewbox=${viewbox}&bounded=0`,
+        { headers }
+      );
+      if (res.ok) {
+        allResults = parseNominatim(await res.json());
+      }
+
+      // 2. Also search globally if few results
+      if (allResults.length < 4) {
         const res2 = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1`,
-          { headers: { "User-Agent": "CielNatal/1.0" } }
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=fr&addressdetails=1`,
+          { headers }
         );
         if (res2.ok) {
-          const data2 = await res2.json();
-          const more = parseNominatim(data2);
-          // Merge, deduplicate by lat/lon proximity
-          for (const m of more) {
-            if (!results.some((r) => Math.abs(r.lat - m.lat) < 0.01 && Math.abs(r.lon - m.lon) < 0.01)) {
-              results.push(m);
-            }
-          }
+          allResults = mergeUnique(allResults, parseNominatim(await res2.json()));
         }
       }
-      // Deduplicate by name+country
-      const seen = new Set<string>();
-      results = results.filter((r) => {
-        const key = r.display.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      return results.slice(0, 6);
+
+      // Sort by distance from user
+      allResults.sort(
+        (a, b) =>
+          distKm(userLocation.lat, userLocation.lon, a.lat, a.lon) -
+          distKm(userLocation.lat, userLocation.lon, b.lat, b.lon)
+      );
+    } else {
+      // ── Strategy B: no location → Canada first, then global ──
+
+      // 1. Search Canada specifically
+      const resCa = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=fr&addressdetails=1&featuretype=city&countrycodes=ca`,
+        { headers }
+      );
+      if (resCa.ok) {
+        allResults = parseNominatim(await resCa.json());
+      }
+
+      // 2. Global search to fill the rest
+      const resGl = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city`,
+        { headers }
+      );
+      if (resGl.ok) {
+        const global = parseNominatim(await resGl.json());
+        allResults = mergeUnique(allResults, global);
+      }
     }
+
+    // If still few, try without featuretype restriction (villages/hamlets)
+    if (allResults.length < 3) {
+      const extra = userLocation
+        ? `&viewbox=${[
+            userLocation.lon - 4.5,
+            userLocation.lat + 4.5,
+            userLocation.lon + 4.5,
+            userLocation.lat - 4.5,
+          ].join(",")}&bounded=0`
+        : "";
+      const res3 = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=fr&addressdetails=1${extra}`,
+        { headers }
+      );
+      if (res3.ok) {
+        allResults = mergeUnique(allResults, parseNominatim(await res3.json()));
+      }
+    }
+
+    return dedup(allResults).slice(0, 6);
   } catch {
-    // Nominatim failed, try fallback
+    // Nominatim failed entirely
   }
 
   // Fallback: GeoNames free API
   try {
+    const countryBias = userLocation
+      ? ""
+      : "&country=CA";
     const res = await fetch(
-      `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(query)}&maxRows=6&lang=fr&featureClass=P&username=cielnatal`
+      `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(query)}&maxRows=6&lang=fr&featureClass=P&username=cielnatal${countryBias}`
     );
     if (res.ok) {
       const data = await res.json();
-      return (data.geonames || []).map((r: { name: string; lat: string; lng: string; adminName1?: string; countryName?: string }) => ({
-        name: r.name,
-        lat: parseFloat(r.lat),
-        lon: parseFloat(r.lng),
-        display: [r.name, r.adminName1, r.countryName].filter(Boolean).join(", "),
-      }));
+      return (data.geonames || []).map(
+        (r: {
+          name: string;
+          lat: string;
+          lng: string;
+          adminName1?: string;
+          countryName?: string;
+        }) => ({
+          name: r.name,
+          lat: parseFloat(r.lat),
+          lon: parseFloat(r.lng),
+          display: [r.name, r.adminName1, r.countryName]
+            .filter(Boolean)
+            .join(", "),
+        })
+      );
     }
   } catch {
     // Both failed
