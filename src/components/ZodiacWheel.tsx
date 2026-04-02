@@ -56,53 +56,60 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
   function getAspectStyle(p1: PlanetPosition, p2: PlanetPosition): { color: string; dash?: string } | null {
     let diff = Math.abs(p1.longitude - p2.longitude);
     if (diff > 180) diff = 360 - diff;
-    if (diff < 8) return { color: "rgba(168,158,200,0.6)" };
-    if (Math.abs(diff - 60) < 6) return { color: "rgba(200,200,210,0.35)", dash: "4 2" };
-    if (Math.abs(diff - 90) < 8) return { color: "rgba(160,155,175,0.4)" };
-    if (Math.abs(diff - 120) < 8) return { color: "rgba(200,200,210,0.35)", dash: "6 3" };
-    if (Math.abs(diff - 180) < 8) return { color: "rgba(160,155,175,0.4)" };
+    if (diff < 8) return { color: "rgba(190,170,230,0.7)" };
+    if (Math.abs(diff - 60) < 6) return { color: "rgba(160,200,230,0.45)", dash: "4 2" };
+    if (Math.abs(diff - 90) < 8) return { color: "rgba(200,160,170,0.5)" };
+    if (Math.abs(diff - 120) < 8) return { color: "rgba(160,210,180,0.45)", dash: "6 3" };
+    if (Math.abs(diff - 180) < 8) return { color: "rgba(210,160,160,0.5)" };
     return null;
   }
 
   // Scale font sizes based on container width
   const isSmall = containerWidth > 0 && containerWidth < 320;
-  const glyphSize = isSmall ? "12" : "15";
-  const glyphSizeHover = isSmall ? "14" : "18";
-  const planetFontSize = isSmall ? "11" : "13";
-  const planetFontSizeActive = isSmall ? "13" : "15";
+  const glyphSize = isSmall ? "13" : "16";
+  const glyphSizeHover = isSmall ? "15" : "20";
+  const planetFontSize = isSmall ? "12" : "14";
+  const planetFontSizeActive = isSmall ? "14" : "16";
 
   return (
     <div className="relative w-full" ref={containerRef}>
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[580px] mx-auto touch-none select-none" role="img" aria-label="Zodiac wheel chart">
         <defs>
           <radialGradient id="wg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(168,158,200,0.06)" />
-            <stop offset="70%" stopColor="rgba(168,158,200,0.02)" />
+            <stop offset="0%" stopColor="rgba(168,158,200,0.12)" />
+            <stop offset="60%" stopColor="rgba(168,158,200,0.05)" />
             <stop offset="100%" stopColor="transparent" />
           </radialGradient>
           <filter id="gP">
-            <feGaussianBlur stdDeviation="2.5" result="b" />
+            <feGaussianBlur stdDeviation="3" result="b" />
             <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           <filter id="gS">
-            <feGaussianBlur stdDeviation="5" result="b" />
+            <feGaussianBlur stdDeviation="6" result="b" />
             <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           <filter id="gSign">
-            <feGaussianBlur stdDeviation="1" result="b" />
+            <feGaussianBlur stdDeviation="1.5" result="b" />
             <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          {/* Glass blur effect for sign glyphs */}
+          <filter id="glassBlur">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur" />
+            <feFlood floodColor="rgba(168,158,200,0.15)" result="color" />
+            <feComposite in="color" in2="blur" operator="in" result="glow" />
+            <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
-        {/* Background glow */}
-        <circle cx={cx} cy={cy} r={outerR + 20} fill="url(#wg)" />
+        {/* Background glow — stronger */}
+        <circle cx={cx} cy={cy} r={outerR + 25} fill="url(#wg)" />
 
-        {/* Outer decorative ring */}
-        <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(168,158,200,0.12)" strokeWidth="0.5" />
-        <circle cx={cx} cy={cy} r={outerR + 8} fill="none" stroke="rgba(168,158,200,0.05)" strokeWidth="0.5" />
+        {/* Outer decorative rings — much more visible */}
+        <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(168,158,200,0.25)" strokeWidth="1" />
+        <circle cx={cx} cy={cy} r={outerR + 10} fill="none" stroke="rgba(168,158,200,0.08)" strokeWidth="0.5" />
 
         {/* Sign band — between outerR and innerR */}
-        <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="rgba(168,158,200,0.15)" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="rgba(168,158,200,0.3)" strokeWidth="1" />
 
         {/* Sign segments with hover zones */}
         {SIGN_GLYPHS.map((glyph, i) => {
@@ -139,16 +146,25 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
                 className="transition-all duration-200"
               />
 
-              {/* Division line */}
+              {/* Division line — brighter */}
               <line x1={d1.x} y1={d1.y} x2={d2.x} y2={d2.y}
-                stroke="rgba(168,158,200,0.08)" strokeWidth="0.5" />
+                stroke="rgba(168,158,200,0.15)" strokeWidth="0.7" />
 
-              {/* Glyph */}
+              {/* Glass-backed glyph badge */}
+              <rect
+                x={glyphPos.x - 13} y={glyphPos.y - 13}
+                width="26" height="26" rx="7"
+                fill={isHovered ? "rgba(168,158,200,0.12)" : "rgba(168,158,200,0.04)"}
+                stroke={isHovered ? "rgba(168,158,200,0.35)" : "rgba(168,158,200,0.1)"}
+                strokeWidth="0.7"
+                className="transition-all duration-200 pointer-events-none"
+              />
               <text x={glyphPos.x} y={glyphPos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill={isHovered ? "rgba(168,158,200,0.95)" : "rgba(168,158,200,0.45)"}
+                fill={isHovered ? "rgba(220,210,245,0.95)" : "rgba(200,190,230,0.7)"}
                 fontSize={isHovered ? glyphSizeHover : glyphSize}
-                filter={isHovered ? "url(#gSign)" : undefined}
+                filter={isHovered ? "url(#glassBlur)" : undefined}
+                fontWeight={isHovered ? "600" : "400"}
                 className="transition-all duration-200 pointer-events-none"
                 style={{ fontFamily: "serif" }}
               >
@@ -159,8 +175,8 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               {isHovered && (
                 <text x={namePos.x} y={namePos.y}
                   textAnchor="middle" dominantBaseline="central"
-                  fill="rgba(168,158,200,0.7)" fontSize="9"
-                  letterSpacing="0.05em"
+                  fill="rgba(220,210,245,0.85)" fontSize="10" fontWeight="500"
+                  letterSpacing="0.04em"
                   className="pointer-events-none"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 >
@@ -171,8 +187,8 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
           );
         })}
 
-        {/* Inner planet track */}
-        <circle cx={cx} cy={cy} r={planetR} fill="none" stroke="rgba(168,158,200,0.06)" strokeWidth="0.5" strokeDasharray="2 4" />
+        {/* Inner planet track — more visible */}
+        <circle cx={cx} cy={cy} r={planetR} fill="none" stroke="rgba(168,158,200,0.12)" strokeWidth="0.7" strokeDasharray="3 5" />
 
         {/* Aspect lines */}
         {showAspects && (() => {
@@ -189,9 +205,9 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
                 <line key={`${i}-${j}`}
                   x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
                   stroke={style.color}
-                  strokeWidth={isActive ? "1.5" : "0.4"}
+                  strokeWidth={isActive ? "2" : "0.7"}
                   strokeDasharray={style.dash}
-                  opacity={activePlanet ? (isActive ? 1 : 0.08) : 0.3}
+                  opacity={activePlanet ? (isActive ? 1 : 0.1) : 0.5}
                   className="transition-all duration-300"
                 />
               );
@@ -220,30 +236,31 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               {/* Touch hit area */}
               <circle cx={pos.x} cy={pos.y} r="22" fill="transparent" />
 
-              {/* Glow ring on active */}
+              {/* Glow ring on active — bigger */}
               {isActive && (
-                <circle cx={pos.x} cy={pos.y} r="20"
-                  fill="none" stroke="rgba(168,158,200,0.15)" strokeWidth="1"
+                <circle cx={pos.x} cy={pos.y} r="24"
+                  fill="none" stroke="rgba(168,158,200,0.2)" strokeWidth="1.5"
                   filter="url(#gS)" className="pointer-events-none" />
               )}
 
-              {/* Planet circle */}
+              {/* Planet circle — larger, glass-like */}
               <circle cx={pos.x} cy={pos.y}
-                r={isActive ? "16" : "13"}
-                fill={isActive ? "rgba(168,158,200,0.12)" : "rgba(10,10,26,0.85)"}
-                stroke={isActive ? "rgba(168,158,200,0.6)" : "rgba(168,158,200,0.2)"}
-                strokeWidth={isActive ? "1.5" : "0.8"}
-                opacity={isDimmed ? 0.25 : 1}
+                r={isActive ? "18" : "15"}
+                fill={isActive ? "rgba(168,158,200,0.15)" : "rgba(20,18,40,0.9)"}
+                stroke={isActive ? "rgba(200,190,230,0.7)" : "rgba(168,158,200,0.35)"}
+                strokeWidth={isActive ? "1.5" : "1"}
+                opacity={isDimmed ? 0.2 : 1}
                 filter={isActive ? "url(#gS)" : "url(#gP)"}
                 className="transition-all duration-300"
               />
 
-              {/* Planet symbol */}
+              {/* Planet symbol — bolder */}
               <text x={pos.x} y={pos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill={isActive ? "#a89ec8" : "rgba(232,224,240,0.8)"}
+                fill={isActive ? "#d0c8e8" : "rgba(232,224,240,0.9)"}
                 fontSize={isActive ? planetFontSizeActive : planetFontSize}
-                opacity={isDimmed ? 0.25 : 1}
+                fontWeight={isActive ? "600" : "400"}
+                opacity={isDimmed ? 0.2 : 1}
                 className="transition-all duration-300 pointer-events-none"
                 style={{ fontFamily: "serif" }}
               >
@@ -253,17 +270,17 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               {/* Planet name + sign label on active */}
               {isActive && (
                 <>
-                  <text x={pos.x} y={pos.y - 24}
+                  <text x={pos.x} y={pos.y - 27}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="rgba(168,158,200,0.9)" fontSize="10" fontWeight="500"
+                    fill="rgba(220,210,245,0.95)" fontSize="11" fontWeight="600"
                     className="pointer-events-none"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
                     {planet.name}
                   </text>
-                  <text x={pos.x} y={pos.y + 24}
+                  <text x={pos.x} y={pos.y + 27}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="rgba(168,158,200,0.5)" fontSize="8"
+                    fill="rgba(200,190,230,0.7)" fontSize="9" fontWeight="500"
                     className="pointer-events-none"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >

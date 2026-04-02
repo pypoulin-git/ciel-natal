@@ -93,6 +93,7 @@ export default function Home() {
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
   useScrollReveal();
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -607,62 +608,65 @@ export default function Home() {
                     <span className="text-[var(--color-accent-lavender)] opacity-50">✦</span> {t("results.cosmicPortrait")}
                   </h2>
 
-                  {/* Big Three badges */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+                  {/* Big Three badges — toggle (single active, replaces content) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     {[
-                      { label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], glyph: "☉", color: "from-amber-500/20 to-orange-500/10", border: "border-amber-400/20", glow: "text-amber-300" },
-                      { label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], glyph: "☽", color: "from-blue-400/15 to-indigo-500/10", border: "border-blue-300/20", glow: "text-blue-200" },
-                      ...(chart.ascendant ? [{ label: "Ascendant", sub: t("results.ascLabel"), data: chart.ascendant, glyph: "↑", color: "from-purple-500/15 to-fuchsia-500/10", border: "border-purple-400/20", glow: "text-purple-300" }] : []),
-                    ].map((item) => (
-                      <button
-                        key={item.label}
-                        onClick={() => togglePlanet(item.data.name)}
-                        className={`relative rounded-2xl bg-gradient-to-br ${item.color} border ${item.border} backdrop-blur-md p-5 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5 cursor-pointer`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 shadow-inner">
-                            <span className={`text-2xl ${item.glow}`} style={{ fontFamily: "serif" }}>{item.glyph}</span>
+                      { id: "sun", label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], glyph: "☉", color: "from-amber-500/25 to-orange-500/10", activeColor: "from-amber-500/35 to-orange-500/20", border: "border-amber-400/20", activeBorder: "border-amber-400/50", glow: "text-amber-300", ring: "ring-amber-400/30" },
+                      { id: "moon", label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], glyph: "☽", color: "from-blue-400/20 to-indigo-500/10", activeColor: "from-blue-400/30 to-indigo-500/20", border: "border-blue-300/20", activeBorder: "border-blue-300/50", glow: "text-blue-200", ring: "ring-blue-400/30" },
+                      ...(chart.ascendant ? [{ id: "asc", label: "Ascendant", sub: t("results.ascLabel"), data: chart.ascendant, glyph: "↑", color: "from-purple-500/20 to-fuchsia-500/10", activeColor: "from-purple-500/30 to-fuchsia-500/20", border: "border-purple-400/20", activeBorder: "border-purple-400/50", glow: "text-purple-300", ring: "ring-purple-400/30" }] : []),
+                    ].map((item) => {
+                      const isActive = activeBigThree === item.data.name;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveBigThree(isActive ? null : item.data.name)}
+                          className={`relative rounded-2xl bg-gradient-to-br ${isActive ? item.activeColor : item.color} border ${isActive ? item.activeBorder : item.border} backdrop-blur-md p-5 text-left transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isActive ? `ring-2 ${item.ring} shadow-lg shadow-white/5` : "hover:shadow-lg hover:shadow-white/5"}`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center border shadow-inner transition-all duration-300 ${isActive ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10"}`}>
+                              <span className={`text-2xl transition-all duration-300 ${item.glow} ${isActive ? "scale-110" : ""}`} style={{ fontFamily: "serif" }}>{item.glyph}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[11px] uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
+                              <div className="font-cinzel text-xl text-[var(--color-text-primary)] mt-0.5">{item.data.sign}</div>
+                              <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.sub}</div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-sm font-mono text-[var(--color-text-primary)]">{item.data.degree}°</div>
+                              {item.data.house && <div className="text-xs font-mono text-[var(--color-text-secondary)]">M{item.data.house}</div>}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[11px] uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
-                            <div className="font-cinzel text-xl text-[var(--color-text-primary)] mt-0.5">{item.data.sign}</div>
-                            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.sub}</div>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-sm font-mono text-[var(--color-text-primary)]">{item.data.degree}°</div>
-                            {item.data.house && <div className="text-xs font-mono text-[var(--color-text-secondary)]">M{item.data.house}</div>}
-                          </div>
-                        </div>
-                        {/* expand hint */}
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"
-                          className={`absolute top-3 right-3 text-[var(--color-text-secondary)] opacity-30 transition-transform duration-300 ${expandedPlanets.has(item.data.name) ? "rotate-180" : ""}`}>
-                          <path d="M3 5l4 4 4-4" />
-                        </svg>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  {/* Expanded Big Three interpretations */}
-                  {[
-                    { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</> },
-                    { data: chart.planets[1], portrait: () => <>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {getCosmicPortraitMoon(chart.planets[1].sign)}</> },
-                    ...(chart.ascendant ? [{ data: chart.ascendant, portrait: () => <>{locale === "fr" ? "Avec un Ascendant" : "With an Ascendant in"} {chart.ascendant!.sign}, {getCosmicPortraitAsc(chart.ascendant!.sign)}</> }] : []),
-                  ].map((item) => {
-                    const isOpen = expandedPlanets.has(item.data.name);
-                    if (!isOpen) return null;
-                    return (
-                      <div key={item.data.name} className="mb-4 rounded-xl bg-white/[0.03] border border-white/5 overflow-hidden animate-in fade-in duration-300">
-                        <div className="p-5 sm:p-6">
-                          <p className="text-[15px] leading-relaxed text-[var(--color-text-primary)]">{item.portrait()}</p>
-                          {getInterp(item.data.name, item.data.sign, item.data.house) && (
+                  {/* Single content area — replaces on toggle with smooth transition */}
+                  <div className="min-h-[60px] transition-all duration-500 ease-in-out">
+                    {(() => {
+                      const items = [
+                        { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</> },
+                        { data: chart.planets[1], portrait: () => <>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {getCosmicPortraitMoon(chart.planets[1].sign)}</> },
+                        ...(chart.ascendant ? [{ data: chart.ascendant, portrait: () => <>{locale === "fr" ? "Avec un Ascendant" : "With an Ascendant in"} {chart.ascendant!.sign}, {getCosmicPortraitAsc(chart.ascendant!.sign)}</> }] : []),
+                      ];
+                      const active = items.find((i) => i.data.name === activeBigThree);
+                      if (!active) return (
+                        <p className="text-sm text-[var(--color-text-secondary)] text-center py-4 italic">
+                          {locale === "fr" ? "Clique sur un élément pour explorer ton portrait." : "Click an element to explore your portrait."}
+                        </p>
+                      );
+                      return (
+                        <div key={active.data.name} className="rounded-xl bg-white/[0.03] border border-white/5 p-5 sm:p-6" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
+                          <p className="text-[15px] leading-relaxed text-[var(--color-text-primary)]">{active.portrait()}</p>
+                          {getInterp(active.data.name, active.data.sign, active.data.house) && (
                             <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-primary)] opacity-85">
-                              {getInterp(item.data.name, item.data.sign, item.data.house)}
+                              {getInterp(active.data.name, active.data.sign, active.data.house)}
                             </p>
                           )}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
 

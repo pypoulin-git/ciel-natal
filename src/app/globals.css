@@ -407,6 +407,12 @@ input[type="range"]:active::-moz-range-thumb {
   animation: fadeIn 0.2s ease-out forwards;
 }
 
+/* Big Three content replacement animation */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* Stagger children animation */
 @keyframes staggerIn {
   from {
