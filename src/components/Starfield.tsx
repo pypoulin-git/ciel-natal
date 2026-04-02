@@ -6,12 +6,19 @@ export default function Starfield() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // Respect reduced motion preference — show static stars only
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animationId: number;
+    let lastFrameTime = 0;
+    const TARGET_FPS = 30;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
+
     const stars: { x: number; y: number; r: number; speed: number; opacity: number; twinkleSpeed: number }[] = [];
 
     function resize() {
@@ -34,7 +41,24 @@ export default function Starfield() {
       }
     }
 
-    function draw() {
+    function drawStatic() {
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+      for (const star of stars) {
+        ctx!.beginPath();
+        ctx!.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(232, 224, 240, ${star.opacity * 0.8})`;
+        ctx!.fill();
+      }
+    }
+
+    function draw(timestamp: number) {
+      const elapsed = timestamp - lastFrameTime;
+      if (elapsed < FRAME_INTERVAL) {
+        animationId = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
+
       ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
 
       for (const star of stars) {
@@ -59,15 +83,25 @@ export default function Starfield() {
 
     resize();
     createStars();
-    draw();
 
-    window.addEventListener("resize", () => {
+    if (prefersReducedMotion) {
+      drawStatic();
+    } else {
+      animationId = requestAnimationFrame(draw);
+    }
+
+    const handleResize = () => {
       resize();
       createStars();
-    });
+      if (prefersReducedMotion) drawStatic();
+    };
+    window.addEventListener("resize", handleResize);
 
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} id="starfield" />;
+  return <canvas ref={canvasRef} id="starfield" aria-hidden="true" />;
 }

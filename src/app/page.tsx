@@ -6,8 +6,14 @@ import ZodiacWheel from "@/components/ZodiacWheel";
 import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
+import DailySign from "@/components/DailySign";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
 import { useLocale } from "@/lib/i18n";
+import { useScrollReveal } from "@/lib/useScrollReveal";
+import { searchCities, CityResult } from "@/lib/citySearch";
+import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes } from "@/lib/chartHelpers";
+import EnhancedSlider from "@/components/EnhancedSlider";
+import LoadingMessages from "@/components/LoadingMessages";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -24,13 +30,6 @@ interface FormData {
   tone: number;
   depth: number;
   focus: number;
-}
-
-interface CityResult {
-  name: string;
-  lat: number;
-  lon: number;
-  display: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────
@@ -51,87 +50,6 @@ const ASPECT_SYMBOLS: Record<string, string> = {
 const ASPECT_COLORS: Record<string, string> = {
   Conjonction: "#a89ec8", Trigone: "#9a96aa", Sextile: "#8a87a0", Carre: "#b0a8be", Opposition: "#9590a8",
 };
-
-// ─── City Search (Nominatim + GeoNames fallback) ─────────────────
-async function searchCities(query: string): Promise<CityResult[]> {
-  if (query.length < 2) return [];
-
-  // Helper to parse Nominatim results
-  const parseNominatim = (data: Array<{
-    display_name: string; lat: string; lon: string; class: string;
-    address?: { city?: string; town?: string; village?: string; municipality?: string; state?: string; country?: string };
-  }>): CityResult[] =>
-    data
-      .filter((r) => r.class === "place" || r.class === "boundary")
-      .map((r) => {
-        const name = r.address?.city || r.address?.town || r.address?.village || r.address?.municipality || r.display_name.split(",")[0];
-        return {
-          name,
-          lat: parseFloat(r.lat),
-          lon: parseFloat(r.lon),
-          display: [name, r.address?.state, r.address?.country].filter(Boolean).join(", "),
-        };
-      });
-
-  try {
-    // Primary: broad search with featuretype=city for better ranking
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city`,
-      { headers: { "User-Agent": "CielNatal/1.0" } }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      let results = parseNominatim(data);
-      // If few results, try without featuretype restriction (catches villages/hamlets)
-      if (results.length < 3) {
-        const res2 = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1`,
-          { headers: { "User-Agent": "CielNatal/1.0" } }
-        );
-        if (res2.ok) {
-          const data2 = await res2.json();
-          const more = parseNominatim(data2);
-          // Merge, deduplicate by lat/lon proximity
-          for (const m of more) {
-            if (!results.some((r) => Math.abs(r.lat - m.lat) < 0.01 && Math.abs(r.lon - m.lon) < 0.01)) {
-              results.push(m);
-            }
-          }
-        }
-      }
-      // Deduplicate by name+country
-      const seen = new Set<string>();
-      results = results.filter((r) => {
-        const key = r.display.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      return results.slice(0, 6);
-    }
-  } catch {
-    // Nominatim failed, try fallback
-  }
-
-  // Fallback: GeoNames free API
-  try {
-    const res = await fetch(
-      `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(query)}&maxRows=6&lang=fr&featureClass=P&username=cielnatal`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      return (data.geonames || []).map((r: { name: string; lat: string; lng: string; adminName1?: string; countryName?: string }) => ({
-        name: r.name,
-        lat: parseFloat(r.lat),
-        lon: parseFloat(r.lng),
-        display: [r.name, r.adminName1, r.countryName].filter(Boolean).join(", "),
-      }));
-    }
-  } catch {
-    // Both failed
-  }
-  return [];
-}
 
 // ─── Slider Config Keys ──────────────────────────────────────────
 const SLIDER_KEYS = [
@@ -171,7 +89,10 @@ export default function Home() {
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const [copied, setCopied] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
+  useScrollReveal();
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -193,10 +114,13 @@ export default function Home() {
   };
 
   useEffect(() => {
-    import("@/data/interpretations").then((mod) => {
+    const loadInterp = locale === "en"
+      ? import("@/data/interpretations-en")
+      : import("@/data/interpretations");
+    loadInterp.then((mod) => {
       setInterpretations(mod as unknown as Record<string, unknown>);
     });
-  }, []);
+  }, [locale]);
 
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
@@ -420,6 +344,9 @@ export default function Home() {
                 className="btn-primary px-8 py-4 rounded-full text-white font-medium text-lg">
                 {t("hero.cta")}
               </button>
+              <div className="mt-12">
+                <DailySign />
+              </div>
             </div>
           </section>
         )}
@@ -571,11 +498,19 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="flex justify-between mt-10">
-                <button onClick={() => { setStepDirection("prev"); setStep(step - 1); }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">{t("form.back")}</button>
+              {showValidation && !canAdvance() && (
+                <p className="text-xs text-red-400/80 text-center mt-4 animate-fade-in" role="alert">
+                  {step === 1 && t("validation.nameRequired")}
+                  {step === 2 && t("validation.dateInvalid")}
+                  {step === 4 && t("validation.cityRequired")}
+                </p>
+              )}
+
+              <div className="flex justify-between mt-6">
+                <button onClick={() => { setStepDirection("prev"); setShowValidation(false); setStep(step - 1); }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">{t("form.back")}</button>
                 {step < 5 ? (
-                  <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setStep(step + 1); } }} disabled={!canAdvance()}
-                    className="btn-primary px-6 py-2.5 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed">{t("form.next")}</button>
+                  <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setShowValidation(false); setStep(step + 1); } else { setShowValidation(true); } }}
+                    className={`btn-primary px-6 py-2.5 rounded-xl text-sm ${!canAdvance() ? "opacity-50" : ""}`}>{t("form.next")}</button>
                 ) : (
                   <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">{t("form.calculate")}</button>
                 )}
@@ -586,7 +521,7 @@ export default function Home() {
 
         {/* ═══ LOADING ═══ */}
         {step === 6 && (
-          <section className="min-h-screen flex items-center justify-center px-4">
+          <section className="min-h-screen flex items-center justify-center px-4" aria-live="polite" aria-busy="true">
             <div className="text-center animate-fade-in-up max-w-xs mx-auto">
               <div className="text-4xl mb-8 animate-pulse-glow text-[var(--color-accent-lavender)]">✦</div>
               <LoadingMessages />
@@ -599,7 +534,7 @@ export default function Home() {
 
         {/* ═══ RESULTS ═══ */}
         {step === 7 && chart && (
-          <section className="min-h-screen pb-24">
+          <section className="min-h-screen pb-24" aria-live="polite">
             <div className="text-center pt-8 pb-4 px-4">
               <div className="text-2xl mb-2 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
               <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-1">
@@ -630,12 +565,28 @@ export default function Home() {
               </div>
             </nav>
 
-            <div ref={resultsRef} className="max-w-3xl mx-auto px-4 space-y-8 mt-6">
+            <div ref={resultsRef} className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 space-y-8 mt-6">
 
               {/* PORTRAIT */}
               <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-14">
                 <div className="glass p-4 sm:p-6 mb-6">
-                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} onTapPlanet={(p) => { setSelectedPlanet(p.name); togglePlanet(p.name); }} />
+                  <div className="flex justify-end gap-2 mb-2">
+                    <button
+                      onClick={() => setShowWheelAspects(!showWheelAspects)}
+                      className={`text-[10px] px-3 py-1 rounded-full border transition-all ${showWheelAspects ? "border-[var(--color-accent-lavender)]/40 text-[var(--color-accent-lavender)]" : "border-[var(--color-glass-border)] text-[var(--color-text-secondary)]"}`}
+                    >
+                      {locale === "fr" ? "Aspects" : "Aspects"} {showWheelAspects ? "✓" : ""}
+                    </button>
+                    {selectedPlanet && (
+                      <button
+                        onClick={() => setSelectedPlanet(null)}
+                        className="text-[10px] px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+                      >
+                        {locale === "fr" ? "Tout afficher" : "Show all"}
+                      </button>
+                    )}
+                  </div>
+                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); togglePlanet(p.name); }} />
                 </div>
 
                 {/* Big Three — full width expand/collapse */}
@@ -741,7 +692,7 @@ export default function Home() {
               </div>
 
               {/* ELEMENTS */}
-              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-14">
+              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-14 scroll-reveal">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-40">◆</span> {t("results.elements")}
                 </h2>
@@ -753,17 +704,17 @@ export default function Home() {
 
               {/* HOUSES */}
               {chart.ascendant && (
-                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-14">
+                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-14 scroll-reveal">
                   <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-40">⌂</span> {t("results.houses")}
                   </h2>
                   <p className="text-xs text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
-                  <HousesMap planets={chart.planets} />
+                  <HousesMap planets={chart.planets} locale={locale} />
                 </div>
               )}
 
               {/* ASPECTS */}
-              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-14">
+              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-14 scroll-reveal">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-40">△</span> {t("results.aspects")}
                 </h2>
@@ -814,7 +765,7 @@ export default function Home() {
 
               {/* TRANSITS DU JOUR */}
               {todayTransits && (
-                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-14">
+                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-14 scroll-reveal">
                   <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-40">&#9678;</span> {t("transits.title")}
                   </h2>
@@ -853,7 +804,7 @@ export default function Home() {
               )}
 
               {/* LIFE THEMES SYNTHESIS */}
-              <div className="glass p-6">
+              <div className="glass p-6 scroll-reveal">
                 <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-40">&#10022;</span> {t("results.lifeThemes")}
                 </h2>
@@ -874,7 +825,7 @@ export default function Home() {
               </div>
 
               {/* CLOSING */}
-              <div className="glass p-8 text-center">
+              <div className="glass p-8 text-center scroll-reveal">
                 <div className="w-12 h-12 mx-auto mb-5 rounded-full bg-[var(--color-accent-lavender)]/5 border border-[var(--color-accent-lavender)]/10 flex items-center justify-center">
                   <span className="text-lg text-[var(--color-accent-lavender)] opacity-60">&#10022;</span>
                 </div>
@@ -940,163 +891,3 @@ export default function Home() {
   );
 }
 
-// ─── Enhanced Slider ─────────────────────────────────────────────
-function EnhancedSlider({ left, right, value, onChange }: {
-  left: { label: string; desc: string };
-  right: { label: string; desc: string };
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-
-  return (
-    <div className={`transition-all ${isDragging ? "scale-[1.01]" : ""}`}>
-      <div className="flex justify-between mb-2">
-        <div className="text-left">
-          <div className={`text-xs font-medium transition-all ${value <= 4 ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>{left.label}</div>
-          <div className={`text-[10px] transition-all max-w-[140px] ${value <= 4 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-secondary)]/40"}`}>{left.desc}</div>
-        </div>
-        <div className="text-right">
-          <div className={`text-xs font-medium transition-all ${value >= 7 ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>{right.label}</div>
-          <div className={`text-[10px] transition-all max-w-[140px] ${value >= 7 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-secondary)]/40"}`}>{right.desc}</div>
-        </div>
-      </div>
-      <input type="range" min={1} max={10} value={value} onChange={(e) => onChange(parseInt(e.target.value))}
-        onMouseDown={() => setIsDragging(true)} onMouseUp={() => setIsDragging(false)}
-        onTouchStart={() => setIsDragging(true)} onTouchEnd={() => setIsDragging(false)} />
-      <div className="flex justify-between px-1 mt-1.5">
-        {Array.from({ length: 10 }, (_, i) => (
-          <div key={i} className={`w-1 h-1 rounded-full transition-all ${i + 1 === value ? "bg-[var(--color-accent-lavender)] scale-150" : "bg-white/10"}`} />
-        ))}
-      </div>
-      <div className="text-center text-[10px] text-[var(--color-text-secondary)] font-mono mt-1">{value}/10</div>
-    </div>
-  );
-}
-
-// ─── Loading Messages ─────────────────────────────────────────────
-function LoadingMessages() {
-  const { t } = useLocale();
-  const messages = [t("loading.planets"), t("loading.houses"), t("loading.aspects"), t("loading.portrait")];
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setIdx((i) => Math.min(i + 1, messages.length - 1)), 800);
-    return () => clearInterval(timer);
-  }, []);
-  return (
-    <div className="space-y-2">
-      {messages.map((msg, i) => (
-        <p key={i} className={`text-xs transition-all duration-500 font-mono ${i <= idx ? "text-[var(--color-text-primary)] opacity-100" : "text-[var(--color-text-secondary)] opacity-20"}`}>
-          {i < idx ? "✓" : i === idx ? "◌" : "·"} {msg}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-// ─── Portrait Helpers ─────────────────────────────────────────────
-function getCosmicPortraitSun(sign: string): string {
-  const t: Record<string, string> = {
-    Belier: "illumine une nature audacieuse et pionnière. Tu portes en toi une énergie d'initiation — un besoin viscéral de tracer ta propre voie.",
-    Taureau: "révèle une nature profondément ancrée et sensorielle. Tu construis avec patience, tu apprécies la beauté tangible du monde.",
-    Gemeaux: "dévoile un esprit vif, curieux et multiple. Tu as soif d'apprendre, de connecter les idées, de communiquer.",
-    Cancer: "baigne ta personnalité dans une sensibilité intuitive et protectrice. Tu ressens profondément les émotions — les tiennes et celles des autres.",
-    Lion: "rayonne d'une chaleur naturelle et d'une générosité authentique. Tu as besoin de créer, de briller, d'inspirer.",
-    Vierge: "affine ton regard sur le monde avec une précision et une intelligence analytique remarquables.",
-    Balance: "cherche l'harmonie et la justesse dans chaque interaction. Tu possèdes un sens esthétique développé et une capacité rare à voir les deux côtés.",
-    Scorpion: "plonge ta conscience dans les profondeurs de l'expérience humaine. Tu ne te contentes jamais de la surface.",
-    Sagittaire: "ouvre grands les horizons de ta conscience. Tu es animé·e par une quête de sens, d'aventure et de vérité.",
-    Capricorne: "ancre ta volonté dans la durée et la structure. Tu as une maturité naturelle et une ambition qui se mesure sur le long terme.",
-    Verseau: "souffle un vent d'originalité et de vision. Tu penses au-delà des conventions, tu questionnes les normes.",
-    Poissons: "dissout les frontières entre toi et le monde avec une empathie et une imagination sans limites.",
-  };
-  return t[sign] || "colore ta personnalité d'une énergie unique.";
-}
-
-function getCosmicPortraitMoon(sign: string): string {
-  const t: Record<string, string> = {
-    Belier: "révèle un monde émotionnel spontané et direct. Tes réactions sont vives, ton besoin d'authenticité immédiat.",
-    Taureau: "parle d'un besoin profond de stabilité et de douceur. Tu te ressources dans le confort et la sécurité du familier.",
-    Gemeaux: "dépeint une vie intérieure animée et changeante. Tu as besoin de stimulation mentale pour te sentir en équilibre.",
-    Cancer: "amplifie ta sensibilité naturelle et ton intuition. Tu ressens les ambiances comme un sismographe.",
-    Lion: "met en lumière un besoin d'être vu·e et apprécié·e dans ton authenticité. Tu as un coeur généreux.",
-    Vierge: "traduit un besoin d'ordre émotionnel et de clarté intérieure. Tu te ressources dans les routines et le sentiment d'utilité.",
-    Balance: "aspire à l'harmonie relationnelle avant tout. Tu as besoin de beauté autour de toi et de relations équilibrées.",
-    Scorpion: "révèle une vie émotionnelle d'une profondeur remarquable. La confiance se construit lentement chez toi.",
-    Sagittaire: "colore ta vie émotionnelle d'optimisme et de soif de liberté. Tu as besoin d'espace pour ton équilibre.",
-    Capricorne: "confère à tes émotions une maturité et une réserve qui cachent une grande profondeur.",
-    Verseau: "donne à ta vie émotionnelle une qualité détachée et originale. Tu traites tes émotions avec une lucidité inhabituelle.",
-    Poissons: "ouvre les portes d'une sensibilité sans frontières. Tu absorbes les émotions ambiantes comme une éponge.",
-  };
-  return t[sign] || "enrichit ton monde intérieur d'une dimension unique.";
-}
-
-// ─── Life Themes Generator ───────────────────────────────────────
-function getLifeThemes(chart: NatalChart, prenom: string): { icon: string; title: string; text: string }[] {
-  const sun = chart.planets[0];
-  const moon = chart.planets[1];
-  const asc = chart.ascendant;
-  const themes: { icon: string; title: string; text: string }[] = [];
-
-  // Element dominance theme
-  const elCount: Record<string, number> = { Feu: 0, Terre: 0, Air: 0, Eau: 0 };
-  const elMap: Record<string, string> = {
-    Belier: "Feu", Taureau: "Terre", Gemeaux: "Air", Cancer: "Eau",
-    Lion: "Feu", Vierge: "Terre", Balance: "Air", Scorpion: "Eau",
-    Sagittaire: "Feu", Capricorne: "Terre", Verseau: "Air", Poissons: "Eau",
-  };
-  chart.planets.forEach((p) => { if (elMap[p.sign]) elCount[elMap[p.sign]]++; });
-  const dominant = Object.entries(elCount).sort((a, b) => b[1] - a[1])[0];
-  const elThemes: Record<string, { title: string; text: string }> = {
-    Feu: { title: "L'élan créateur", text: `${prenom}, ton thème est traversé par le Feu — l'énergie de l'action, de l'inspiration et du courage. Tu es fait·e pour initier, oser et rayonner.` },
-    Terre: { title: "L'ancrage constructeur", text: `${prenom}, la Terre domine ton ciel — tu construis dans la durée, avec patience et réalisme. Ta force réside dans la capacité à matérialiser tes visions.` },
-    Air: { title: "Le souffle des idées", text: `${prenom}, l'Air circule puissamment dans ta carte — pensée, communication, connexion. Tu es un·e tisseur·se de liens et d'idées.` },
-    Eau: { title: "La profondeur émotionnelle", text: `${prenom}, l'Eau nourrit ton thème — intuition, empathie, profondeur. Tu perçois ce que d'autres ne voient pas, tu ressens ce que d'autres n'osent pas.` },
-  };
-  themes.push({ icon: "◆", ...elThemes[dominant[0]] });
-
-  // Sun-Moon dynamic
-  const sunEl = elMap[sun.sign] || "";
-  const moonEl = elMap[moon.sign] || "";
-  if (sunEl === moonEl) {
-    themes.push({ icon: "☯", title: "Cohérence intérieure", text: `Ton Soleil et ta Lune partagent le même élément (${sunEl}) — une harmonie rare entre qui tu es et ce que tu ressens. Cette cohérence te donne une assurance naturelle.` });
-  } else {
-    themes.push({ icon: "☯", title: "La danse intérieure", text: `Ton Soleil en ${sun.sign} et ta Lune en ${moon.sign} créent un dialogue entre ${sunEl} et ${moonEl}. Cette tension est créatrice — elle t'invite à intégrer deux facettes complémentaires de toi-même.` });
-  }
-
-  // Ascendant theme
-  if (asc) {
-    themes.push({ icon: "↑", title: "Ton masque et ta mission", text: `Ton Ascendant ${asc.sign} est la porte par laquelle tu entres dans le monde. Il colore ta première impression et révèle la direction de croissance personnelle que la vie t'invite à explorer.` });
-  }
-
-  // Aspect pattern theme
-  const squares = chart.aspects.filter((a) => a.type === "Carre").length;
-  const trines = chart.aspects.filter((a) => a.type === "Trigone").length;
-  if (squares >= 3) {
-    themes.push({ icon: "□", title: "Les tensions qui forgent", text: `Ton thème comporte plusieurs carrés — des tensions dynamiques qui sont tes plus grands moteurs de transformation. Ce qui résiste en toi est aussi ce qui te rend fort·e.` });
-  } else if (trines >= 3) {
-    themes.push({ icon: "△", title: "Les flux naturels", text: `Les trigones abondent dans ta carte — des dons naturels, des facilités. Le défi sera de ne pas te reposer sur ces acquis mais de les mettre activement au service de ta croissance.` });
-  } else {
-    themes.push({ icon: "✧", title: "L'équilibre des forces", text: `Ton thème mêle harmonies et tensions de façon équilibrée — tu possèdes à la fois des talents naturels et des défis stimulants qui ensemble te poussent vers ta pleine expression.` });
-  }
-
-  return themes;
-}
-
-function getCosmicPortraitAsc(sign: string): string {
-  const t: Record<string, string> = {
-    Belier: "tu arrives dans le monde avec une énergie directe et magnétique.",
-    Taureau: "tu te présentes au monde avec une présence calme et rassurante.",
-    Gemeaux: "tu projettes une image vive, communicative et adaptable.",
-    Cancer: "tu te montres au monde avec une douceur protectrice et intuitive.",
-    Lion: "tu entres dans une pièce avec une présence chaude et lumineuse.",
-    Vierge: "tu te présentes avec une élégance discrète et une intelligence attentive.",
-    Balance: "tu projettes une image d'harmonie et de grâce naturelle.",
-    Scorpion: "tu arrives avec une intensité magnétique qui ne passe pas inaperçue.",
-    Sagittaire: "tu rayonnes d'un enthousiasme et d'une ouverture d'esprit contagieux.",
-    Capricorne: "tu te présentes avec une dignité mature et une aura de compétence.",
-    Verseau: "tu projettes une originalité et une indépendance qui te distinguent.",
-    Poissons: "tu arrives dans le monde avec une douceur éthérée et une empathie visible.",
-  };
-  return t[sign] || "tu te présentes au monde avec une énergie unique.";
-}

@@ -105,7 +105,8 @@
     "contact": "Contact",
     "privacy": "Confidentialit\u00e9",
     "terms": "Conditions",
-    "signs": "Signes"
+    "signs": "Signes",
+    "blog": "Blog"
   },
   "footer": {
     "tagline": "Astrologie psychologique gratuite",
@@ -119,6 +120,16 @@
   "lang": {
     "fr": "FR",
     "en": "EN"
+  },
+  "validation": {
+    "nameRequired": "Entre ton prénom pour continuer",
+    "dateInvalid": "Vérifie la date saisie",
+    "cityRequired": "Sélectionne une ville dans la liste"
+  },
+  "cookie": {
+    "message": "Ce site utilise des cookies essentiels pour son fonctionnement. Aucune donnée n'est partagée avec des tiers.",
+    "accept": "Accepter",
+    "decline": "Refuser"
   },
   "months": {
     "1": "Janvier",

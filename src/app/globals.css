@@ -6,7 +6,7 @@
   --color-accent-lavender: #a89ec8;
   --color-accent-gold: #b8b0c8;
   --color-text-primary: #ddd9e4;
-  --color-text-secondary: #78748a;
+  --color-text-secondary: #9590a8;
   --color-glass-border: rgba(168, 158, 200, 0.1);
   --color-glass-bg: rgba(16, 16, 24, 0.55);
 }
@@ -471,4 +471,98 @@ input[type="range"]:active::-moz-range-thumb {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 0.5rem;
+}
+
+/* ============================================
+   Scroll-triggered animations
+   ============================================ */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-reveal-delay-1 { transition-delay: 0.1s; }
+.scroll-reveal-delay-2 { transition-delay: 0.2s; }
+.scroll-reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ============================================
+   Focus-visible — accessible keyboard outlines
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--color-accent-lavender);
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-accent-lavender);
+  outline-offset: 2px;
+}
+
+/* Remove default outline on mouse click */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================
+   Skip link — keyboard accessibility
+   ============================================ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--color-accent-lavender);
+  color: #0c0c12;
+  font-weight: 600;
+  border-radius: 0 0 0.5rem 0.5rem;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================
+   Prefers reduced motion — disable animations
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in-up,
+  .animate-scale-in,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-slide-up,
+  .animate-fade-in,
+  .animate-pulse-glow,
+  .animate-hover-glow:hover,
+  .animate-progress {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .stagger-in > * {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }

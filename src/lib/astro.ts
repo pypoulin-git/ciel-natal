@@ -175,13 +175,92 @@ function localSiderealTime(jd: number, longitude: number): number {
   return normalize(gst + longitude);
 }
 
-// Calculate houses (Equal house system for simplicity, based on Ascendant)
-function calcHouses(ascendant: number): number[] {
-  const houses: number[] = [];
-  for (let i = 0; i < 12; i++) {
-    houses.push(normalize(ascendant + i * 30));
+// Calculate houses — Placidus system (standard professional)
+// Falls back to Equal if latitude > 66° (polar regions where Placidus fails)
+function calcHouses(ascendant: number, T?: number, lst?: number, latitude?: number): number[] {
+  // Use Equal house for missing parameters or extreme latitudes
+  if (T === undefined || lst === undefined || latitude === undefined || Math.abs(latitude) > 66) {
+    const houses: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      houses.push(normalize(ascendant + i * 30));
+    }
+    return houses;
   }
-  return houses;
+
+  const eps = rad(obliquity(T));
+  const latRad = rad(latitude);
+  const lstRad = rad(lst);
+
+  // Ascendant is house 1 cusp
+  const houses: number[] = [ascendant];
+
+  // MC (Midheaven) — house 10 cusp
+  const mc = normalize(deg(Math.atan2(Math.sin(lstRad), Math.cos(lstRad) * Math.cos(eps))));
+
+  // IC (Imum Coeli) — house 4 cusp
+  const ic = normalize(mc + 180);
+
+  // Placidus intermediate cusps via trisection of semi-arcs
+  const lstVal = lst;
+
+  function placidusCusp(f: number, isAboveHorizon: boolean): number {
+    // f is the fraction of semi-arc (1/3 or 2/3)
+    // Iterative solution for Placidus cusps
+    let cusp = isAboveHorizon ? normalize(mc + f * ((ascendant + 360 - mc) % 360))
+      : normalize(ic + f * ((ascendant + 180 + 360 - ic) % 360));
+
+    for (let iter = 0; iter < 20; iter++) {
+      const cuspRad = rad(cusp);
+      const d = Math.asin(Math.sin(eps) * Math.sin(cuspRad));
+      const ad = Math.abs(deg(Math.asin(Math.tan(latRad) * Math.tan(d))));
+      const sa = isAboveHorizon ? 90 + ad : 90 - ad;
+      if (sa <= 0) break; // degenerate case
+
+      const H = normalize(lstVal - cusp);
+      const target = f * sa;
+      const diff = (isAboveHorizon ? H : normalize(H + 180)) - target;
+
+      if (Math.abs(diff) < 0.01) break;
+
+      cusp = normalize(cusp + diff * 0.5);
+    }
+    return cusp;
+  }
+
+  try {
+    // Houses 11, 12 (above horizon, between MC and ASC)
+    const h11 = placidusCusp(1 / 3, true);
+    const h12 = placidusCusp(2 / 3, true);
+
+    // Houses 2, 3 (below horizon, between ASC and IC)
+    const h2 = placidusCusp(1 / 3, false);
+    const h3 = placidusCusp(2 / 3, false);
+
+    // Opposite houses: 5=11+180, 6=12+180, 8=2+180, 9=3+180
+    houses[1] = h2; // House 2
+    houses[2] = h3; // House 3
+    houses[3] = ic; // House 4
+    houses[4] = normalize(h11 + 180); // House 5
+    houses[5] = normalize(h12 + 180); // House 6
+    houses[6] = normalize(ascendant + 180); // House 7 (Descendant)
+    houses[7] = normalize(h2 + 180); // House 8
+    houses[8] = normalize(h3 + 180); // House 9
+    houses[9] = mc; // House 10
+    houses[10] = h11; // House 11
+    houses[11] = h12; // House 12
+
+    // Validate: all cusps should be between 0-360 and make sense
+    if (houses.some((h) => isNaN(h))) throw new Error("NaN in houses");
+
+    return houses;
+  } catch {
+    // Fallback to Equal house if Placidus fails
+    const equalHouses: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      equalHouses.push(normalize(ascendant + i * 30));
+    }
+    return equalHouses;
+  }
 }
 
 // Determine which house a planet is in
@@ -282,7 +361,7 @@ export function calculateNatalChart(
   if (hasTime) {
     const lst = localSiderealTime(jd, longitude);
     const ascLon = calcAscendant(T, lst, latitude);
-    houses = calcHouses(ascLon);
+    houses = calcHouses(ascLon, T, lst, latitude);
     const ascInfo = toSignInfo(ascLon);
     ascendantPos = {
       name: "Ascendant",

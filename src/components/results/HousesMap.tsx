@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { PlanetPosition } from "@/lib/astro";
-import { houseDescriptions, planetInHouse } from "@/data/interpretations";
+import { houseDescriptions as houseDescFr, planetInHouse as pihFr } from "@/data/interpretations";
+import { houseDescriptions as houseDescEn, planetInHouse as pihEn } from "@/data/interpretations-en";
 
 interface Props {
   planets: PlanetPosition[];
+  locale?: string;
 }
 
-export default function HousesMap({ planets }: Props) {
+export default function HousesMap({ planets, locale = "fr" }: Props) {
+  const houseDescriptions = locale === "en" ? houseDescEn : houseDescFr;
+  const planetInHouse = locale === "en" ? pihEn : pihFr;
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   // Group planets by house
@@ -33,7 +37,7 @@ export default function HousesMap({ planets }: Props) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-        Ouvre chaque maison pour explorer son influence dans ta vie.
+        {locale === "en" ? "Open each house to explore its influence in your life." : "Ouvre chaque maison pour explorer son influence dans ta vie."}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -137,7 +141,7 @@ export default function HousesMap({ planets }: Props) {
                           className="rounded-lg bg-white/[0.03] border border-[var(--color-glass-border)] p-3"
                         >
                           <p className="text-xs font-semibold text-[var(--color-accent-gold)] mb-1">
-                            {p.symbol} {p.name} en maison {h}
+                            {p.symbol} {p.name} {locale === "en" ? "in house" : "en maison"} {h}
                           </p>
                           <p className="text-xs leading-relaxed text-[var(--color-text-primary)] opacity-80">
                             {interpretation}
@@ -149,8 +153,9 @@ export default function HousesMap({ planets }: Props) {
                   {/* Empty house note */}
                   {!hasOccupants && (
                     <p className="text-[10px] text-[var(--color-text-secondary)] opacity-50 pb-1">
-                      Aucune planete dans cette maison — son influence s&apos;exprime par le signe
-                      sur sa cuspide.
+                      {locale === "en"
+                        ? "No planet in this house — its influence is expressed through the sign on its cusp."
+                        : "Aucune planete dans cette maison — son influence s'exprime par le signe sur sa cuspide."}
                     </p>
                   )}
                 </div>

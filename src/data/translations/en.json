@@ -105,7 +105,8 @@
     "contact": "Contact",
     "privacy": "Privacy",
     "terms": "Terms",
-    "signs": "Signs"
+    "signs": "Signs",
+    "blog": "Blog"
   },
   "footer": {
     "tagline": "Free psychological astrology",
@@ -119,6 +120,16 @@
   "lang": {
     "fr": "FR",
     "en": "EN"
+  },
+  "validation": {
+    "nameRequired": "Enter your first name to continue",
+    "dateInvalid": "Please check the date entered",
+    "cityRequired": "Select a city from the list"
+  },
+  "cookie": {
+    "message": "This site uses essential cookies for its operation. No data is shared with third parties.",
+    "accept": "Accept",
+    "decline": "Decline"
   },
   "months": {
     "1": "January",

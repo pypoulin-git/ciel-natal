@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
   title: "Ciel Natal — Découvre ta carte du ciel",
@@ -9,6 +10,23 @@ export const metadata: Metadata = {
     "Calcule ton thème natal gratuitement et découvre ce que le ciel racontait au moment de ta naissance. Interprétations psychologiques profondes, pas un horoscope de magazine.",
   keywords:
     "carte du ciel, thème natal, astrologie, horoscope, signe ascendant, thème astral gratuit",
+  metadataBase: new URL("https://ciel-natal.vercel.app"),
+  openGraph: {
+    title: "Ciel Natal — Découvre ta carte du ciel",
+    description: "Calcule ton thème natal gratuitement. Interprétations psychologiques profondes inspirées de Jung.",
+    url: "https://ciel-natal.vercel.app",
+    siteName: "Ciel Natal",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ciel Natal — Découvre ta carte du ciel",
+    description: "Calcule ton thème natal gratuitement. Interprétations psychologiques profondes.",
+  },
+  alternates: {
+    canonical: "https://ciel-natal.vercel.app",
+  },
 };
 
 export default function RootLayout({
@@ -19,6 +37,24 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Ciel Natal",
+              url: "https://ciel-natal.vercel.app",
+              description: "Calcule ton thème natal gratuitement. Astrologie psychologique inspirée de Jung.",
+              inLanguage: ["fr", "en"],
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://ciel-natal.vercel.app/signe/{search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -32,8 +68,14 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen">
         <LocaleProvider>
+          <a href="#main-content" className="skip-link">
+            Aller au contenu principal
+          </a>
           <LanguageSwitcher />
-          {children}
+          <main id="main-content" role="main">
+            {children}
+          </main>
+          <CookieBanner />
         </LocaleProvider>
       </body>
     </html>

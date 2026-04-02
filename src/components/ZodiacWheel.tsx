@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PlanetPosition } from "@/lib/astro";
 
 const SIGN_GLYPHS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
@@ -14,11 +14,27 @@ interface ZodiacWheelProps {
   ascendant: PlanetPosition | null;
   selectedPlanet?: string | null;
   onTapPlanet?: (planet: PlanetPosition) => void;
+  showAspects?: boolean;
 }
 
-export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapPlanet }: ZodiacWheelProps) {
+export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapPlanet, showAspects = true }: ZodiacWheelProps) {
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [hoveredSign, setHoveredSign] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(el);
+    setContainerWidth(el.clientWidth);
+    return () => observer.disconnect();
+  }, []);
 
   const size = 460;
   const cx = size / 2;
@@ -48,9 +64,16 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
     return null;
   }
 
+  // Scale font sizes based on container width
+  const isSmall = containerWidth > 0 && containerWidth < 320;
+  const glyphSize = isSmall ? "12" : "15";
+  const glyphSizeHover = isSmall ? "14" : "18";
+  const planetFontSize = isSmall ? "11" : "13";
+  const planetFontSizeActive = isSmall ? "13" : "15";
+
   return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[440px] mx-auto touch-none select-none">
+    <div className="relative w-full" ref={containerRef}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[500px] mx-auto touch-none select-none" role="img" aria-label="Zodiac wheel chart">
         <defs>
           <radialGradient id="wg" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="rgba(168,158,200,0.06)" />
@@ -124,7 +147,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               <text x={glyphPos.x} y={glyphPos.y}
                 textAnchor="middle" dominantBaseline="central"
                 fill={isHovered ? "rgba(168,158,200,0.95)" : "rgba(168,158,200,0.45)"}
-                fontSize={isHovered ? "18" : "15"}
+                fontSize={isHovered ? glyphSizeHover : glyphSize}
                 filter={isHovered ? "url(#gSign)" : undefined}
                 className="transition-all duration-200 pointer-events-none"
                 style={{ fontFamily: "serif" }}
@@ -152,7 +175,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
         <circle cx={cx} cy={cy} r={planetR} fill="none" stroke="rgba(168,158,200,0.06)" strokeWidth="0.5" strokeDasharray="2 4" />
 
         {/* Aspect lines */}
-        {(() => {
+        {showAspects && (() => {
           const lines: React.ReactElement[] = [];
           for (let i = 0; i < planets.length; i++) {
             for (let j = i + 1; j < planets.length; j++) {
@@ -219,7 +242,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               <text x={pos.x} y={pos.y}
                 textAnchor="middle" dominantBaseline="central"
                 fill={isActive ? "#a89ec8" : "rgba(232,224,240,0.8)"}
-                fontSize={isActive ? "15" : "13"}
+                fontSize={isActive ? planetFontSizeActive : planetFontSize}
                 opacity={isDimmed ? 0.25 : 1}
                 className="transition-all duration-300 pointer-events-none"
                 style={{ fontFamily: "serif" }}

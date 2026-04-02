@@ -7,7 +7,7 @@ export default function SiteFooter() {
   const { t, locale } = useLocale();
 
   return (
-    <footer className="relative z-10 border-t border-[var(--color-glass-border)] mt-16">
+    <footer className="relative z-10 border-t border-[var(--color-glass-border)] mt-16" role="contentinfo">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-center sm:text-left">
@@ -18,7 +18,7 @@ export default function SiteFooter() {
               {t("footer.tagline")}
             </p>
           </div>
-          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2" aria-label="Footer">
             <Link href="/a-propos" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
               {t("nav.about")}
             </Link>
@@ -36,6 +36,12 @@ export default function SiteFooter() {
             </Link>
             <Link href="/synastrie" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
               {locale === "fr" ? "Synastrie" : "Synastry"}
+            </Link>
+            <Link href="/blog" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+              {t("nav.blog")}
+            </Link>
+            <Link href="/revolution-solaire" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+              {locale === "fr" ? "Révolution solaire" : "Solar Return"}
             </Link>
           </nav>
         </div>
