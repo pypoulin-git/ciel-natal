@@ -73,7 +73,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[500px] mx-auto touch-none select-none" role="img" aria-label="Zodiac wheel chart">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[580px] mx-auto touch-none select-none" role="img" aria-label="Zodiac wheel chart">
         <defs>
           <radialGradient id="wg" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="rgba(168,158,200,0.06)" />
