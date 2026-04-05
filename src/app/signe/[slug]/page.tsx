@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import PageShell from "@/components/PageShell";
+import { SignIcon } from "@/components/AstroIcons";
 
 /* ------------------------------------------------------------------ */
 /*  Data for all 12 signs                                              */
@@ -496,9 +497,15 @@ export default async function SignPage({ params }: { params: Promise<{ slug: str
   const elColor = elementColor[sign.element] ?? "#888";
 
   return (
-    <PageShell title={`${sign.glyph} ${sign.name}`}>
+    <PageShell title={sign.name}>
+      {/* Sign icon */}
+      <div className="flex justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 shadow-inner">
+          <SignIcon name={sign.name} size={36} color="var(--color-accent-lavender)" glow />
+        </div>
+      </div>
       {/* ---- Header badges ---- */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-6 justify-center">
         <span className="text-xs font-mono px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)]">
           {sign.dates}
         </span>

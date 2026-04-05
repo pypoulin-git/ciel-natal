@@ -8,6 +8,7 @@ import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
+import { PlanetIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { searchCities, CityResult, UserLocation } from "@/lib/citySearch";
@@ -64,7 +65,7 @@ export default function Home() {
   const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_EN;
   const RESULT_TABS = [
     { id: "portrait", label: t("results.portrait"), icon: "✦" },
-    { id: "planets", label: t("results.planets"), icon: "☉" },
+    { id: "planets", label: t("results.planets"), icon: "⊙" },
     { id: "elements", label: t("results.elements"), icon: "◆" },
     { id: "houses", label: t("results.houses"), icon: "⌂" },
     { id: "aspects", label: t("results.aspects"), icon: "△" },
@@ -611,9 +612,9 @@ export default function Home() {
                   {/* Big Three badges — toggle (single active, replaces content) */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     {[
-                      { id: "sun", label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], glyph: "☉", color: "from-amber-500/25 to-orange-500/10", activeColor: "from-amber-500/35 to-orange-500/20", border: "border-amber-400/20", activeBorder: "border-amber-400/50", glow: "text-amber-300", ring: "ring-amber-400/30" },
-                      { id: "moon", label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], glyph: "☽", color: "from-blue-400/20 to-indigo-500/10", activeColor: "from-blue-400/30 to-indigo-500/20", border: "border-blue-300/20", activeBorder: "border-blue-300/50", glow: "text-blue-200", ring: "ring-blue-400/30" },
-                      ...(chart.ascendant ? [{ id: "asc", label: "Ascendant", sub: t("results.ascLabel"), data: chart.ascendant, glyph: "↑", color: "from-purple-500/20 to-fuchsia-500/10", activeColor: "from-purple-500/30 to-fuchsia-500/20", border: "border-purple-400/20", activeBorder: "border-purple-400/50", glow: "text-purple-300", ring: "ring-purple-400/30" }] : []),
+                      { id: "sun", label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], icon: <SunIcon size={28} color="#fbbf24" glow />, color: "from-amber-500/25 to-orange-500/10", activeColor: "from-amber-500/35 to-orange-500/20", border: "border-amber-400/20", activeBorder: "border-amber-400/50", ring: "ring-amber-400/30" },
+                      { id: "moon", label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], icon: <MoonIcon size={28} color="#93c5fd" glow />, color: "from-blue-400/20 to-indigo-500/10", activeColor: "from-blue-400/30 to-indigo-500/20", border: "border-blue-300/20", activeBorder: "border-blue-300/50", ring: "ring-blue-400/30" },
+                      ...(chart.ascendant ? [{ id: "asc", label: "Ascendant", sub: t("results.ascLabel"), data: chart.ascendant, icon: <AscendantIcon size={28} color="#c084fc" glow />, color: "from-purple-500/20 to-fuchsia-500/10", activeColor: "from-purple-500/30 to-fuchsia-500/20", border: "border-purple-400/20", activeBorder: "border-purple-400/50", ring: "ring-purple-400/30" }] : []),
                     ].map((item) => {
                       const isActive = activeBigThree === item.data.name;
                       return (
@@ -624,7 +625,7 @@ export default function Home() {
                         >
                           <div className="flex items-center gap-4">
                             <div className={`w-14 h-14 rounded-xl flex items-center justify-center border shadow-inner transition-all duration-300 ${isActive ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10"}`}>
-                              <span className={`text-2xl transition-all duration-300 ${item.glow} ${isActive ? "scale-110" : ""}`} style={{ fontFamily: "serif" }}>{item.glyph}</span>
+                              <span className={`transition-all duration-300 ${isActive ? "scale-110" : ""}`}>{item.icon}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-[11px] uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
@@ -673,7 +674,7 @@ export default function Home() {
               {/* PLANETS — personal planets only (skip Sun/Moon already in Big Three, skip generational) */}
               <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-14">
                 <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
-                  <span className="text-[var(--color-accent-lavender)] opacity-50">☉</span> {t("results.planets")}
+                  <span className="text-[var(--color-accent-lavender)] opacity-50">⊙</span> {t("results.planets")}
                 </h2>
                 <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("results.planetDesc")}</p>
                 <div className="space-y-2">
@@ -687,7 +688,7 @@ export default function Home() {
                           className="w-full flex items-center justify-between p-4 sm:p-5 text-left btn-hover group">
                           <div className="flex items-center gap-4">
                             <div className="w-11 h-11 rounded-xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 group-hover:border-[var(--color-accent-lavender)]/25 transition shadow-inner">
-                              <span className="text-lg text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{planet.symbol}</span>
+                              <PlanetIcon name={planet.name} size={22} color="var(--color-accent-lavender)" />
                             </div>
                             <div>
                               <span className="text-[15px] font-medium text-[var(--color-text-primary)]">{planet.name}</span>

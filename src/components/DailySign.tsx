@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n";
+import { SignIcon } from "@/components/AstroIcons";
 
 const SIGN_DATA = [
   { fr: "Bélier", en: "Aries", glyph: "♈", start: [3, 21], end: [4, 19] },
@@ -82,7 +83,7 @@ export default function DailySign() {
     <div className="glass px-5 py-4 max-w-sm mx-auto text-center">
       <div className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-2">{label}</div>
       <div className="flex items-center justify-center gap-3 mb-2">
-        <span className="text-2xl" style={{ fontFamily: "serif" }}>{sign.glyph}</span>
+        <SignIcon name={sign.fr} size={26} color="var(--color-accent-lavender)" glow />
         <span className="font-cinzel text-lg text-[var(--color-text-primary)]">{name}</span>
       </div>
       <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{message}</p>

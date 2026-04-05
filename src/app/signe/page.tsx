@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import PageShell from "@/components/PageShell";
+import { SignIcon } from "@/components/AstroIcons";
 
 const signs = [
   { slug: "belier", name: "Bélier", glyph: "♈", dates: "21 mars – 19 avril", element: "Feu" },
@@ -59,8 +60,8 @@ export default function SignesIndex() {
             href={`/signe/${s.slug}`}
             className="glass p-4 flex flex-col items-center gap-2 hover:border-[var(--color-accent-lavender)] transition group"
           >
-            <span className="text-3xl group-hover:scale-110 transition-transform">
-              {s.glyph}
+            <span className="group-hover:scale-110 transition-transform">
+              <SignIcon name={s.name} size={32} color="var(--color-accent-lavender)" glow />
             </span>
             <span className="font-cinzel text-sm text-[var(--color-text-primary)]">
               {s.name}
