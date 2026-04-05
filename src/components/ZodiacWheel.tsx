@@ -36,7 +36,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
     return () => observer.disconnect();
   }, []);
 
-  const size = 460;
+  const size = 500;
   const cx = size / 2;
   const cy = size / 2;
   const outerR = 210;
@@ -127,7 +127,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
           const d1 = toXY(startAngle, innerR);
           const d2 = toXY(startAngle, outerR);
           const glyphPos = toXY(midAngle, signR);
-          const namePos = toXY(midAngle, outerR + 18);
+          const namePos = toXY(midAngle, outerR + 20);
 
           // Hover arc
           const arcStart = toXY(startAngle, innerR);
@@ -304,17 +304,27 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
 
         {/* Ascendant marker */}
         {ascendant && (() => {
-          const acTick1 = toXY(ascendant.longitude, outerR - 3);
-          const acTick2 = toXY(ascendant.longitude, outerR + 10);
+          const acTick1 = toXY(ascendant.longitude, outerR - 5);
+          const acTick2 = toXY(ascendant.longitude, outerR + 14);
+          const acLabel = toXY(ascendant.longitude, outerR + 28);
           return (
-            <g filter="url(#gP)">
+            <g>
+              {/* Tick line */}
               <line x1={acTick1.x} y1={acTick1.y} x2={acTick2.x} y2={acTick2.y}
-                stroke="rgba(168,158,200,0.65)" strokeWidth="1.5" />
-              <text x={toXY(ascendant.longitude, outerR + 22).x}
-                y={toXY(ascendant.longitude, outerR + 22).y}
+                stroke="rgba(220,200,255,0.8)" strokeWidth="2" />
+              {/* Glass badge behind AC */}
+              <rect
+                x={acLabel.x - 16} y={acLabel.y - 10}
+                width="32" height="20" rx="6"
+                fill="rgba(168,158,200,0.15)"
+                stroke="rgba(200,190,240,0.4)"
+                strokeWidth="0.8"
+              />
+              <text x={acLabel.x} y={acLabel.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill="rgba(168,158,200,0.85)" fontSize="11" fontWeight="600"
-                letterSpacing="0.05em"
+                fill="rgba(240,230,255,0.95)" fontSize="12" fontWeight="700"
+                letterSpacing="0.08em"
+                filter="url(#planetGlow)"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 AC
