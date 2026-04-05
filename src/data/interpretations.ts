@@ -474,6 +474,15 @@ export const planetInHouse: Record<string, Record<number, string>> = {
 
 // ─── ASPECTS ─────────────────────────────────────────────────────────
 
+// ─── Aspect Type Explanations ─────────────────────────────────────
+export const aspectTypeDescriptions: Record<string, string> = {
+  Conjonction: "La conjonction fusionne deux énergies planétaires en un seul point. C'est une intensification — les deux forces agissent ensemble, pour le meilleur ou le plus exigeant.",
+  Trigone: "Le trigone est un aspect harmonieux qui crée un flux naturel entre deux planètes. Il représente un talent inné, une facilité — quelque chose qui coule de source en toi.",
+  Sextile: "Le sextile est une opportunité douce. Deux planètes se soutiennent mutuellement, créant des possibilités que tu peux activer avec un peu d'effort conscient.",
+  Carre: "Le carré est une tension créatrice. Deux forces en toi se confrontent, créant friction et dynamisme. C'est souvent dans ces tensions que naissent tes plus grandes transformations.",
+  Opposition: "L'opposition place deux énergies face à face, comme un balancier. Le défi est de trouver l'équilibre entre ces deux pôles plutôt que de choisir l'un contre l'autre.",
+};
+
 export const aspectInterpretations: Record<
   string,
   Record<string, string>

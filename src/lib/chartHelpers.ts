@@ -1,5 +1,48 @@
 import { NatalChart } from "@/lib/astro";
 
+// ─── Gender-aware text adaptation ────────────────────────────────
+export type Genre = "femme" | "homme" | "nb";
+
+/**
+ * Adapts inclusive text (with ·e notation) to the user's gender.
+ * Femme: "animé·e" → "animée", "un·e" → "une", "fait·e" → "faite"
+ * Homme: "animé·e" → "animé", "un·e" → "un", "fait·e" → "fait"
+ * NB: keeps interpunct notation as-is
+ */
+export function genderize(text: string, genre: Genre): string {
+  if (genre === "nb") return text;
+  if (genre === "femme") {
+    return text
+      .replace(/(\w)·e\b/g, "$1e")           // "animé·e" → "animée"
+      .replace(/un·e\b/g, "une")              // "un·e" → "une"
+      .replace(/\bfait·e\b/g, "faite")
+      .replace(/\bfort·e\b/g, "forte")
+      .replace(/\bvu·e\b/g, "vue")
+      .replace(/\bné·e\b/g, "née")
+      .replace(/(\w)eur·se\b/g, "$1euse")     // "tisseur·se" → "tisseuse"
+      .replace(/(\w)·ve\b/g, "$1ve");          // "créatif·ve" → "créative"
+  }
+  // homme
+  return text
+    .replace(/·e\b/g, "")                     // "animé·e" → "animé"
+    .replace(/un·e\b/g, "un")
+    .replace(/eur·se\b/g, "eur")              // "tisseur·se" → "tisseur"
+    .replace(/·ve\b/g, "");                    // "créatif·ve" → "créatif"
+}
+
+/** Returns a gendered greeting: "Chère {name}" / "Cher {name}" / "{name}" */
+export function getGreeting(prenom: string, genre: Genre): string {
+  if (genre === "femme") return `Chère ${prenom}`;
+  if (genre === "homme") return `Cher ${prenom}`;
+  return prenom;
+}
+
+/** Extracts the first sentence from a portrait text (up to first period or comma). */
+export function getIntroSentence(portraitText: string): string {
+  const match = portraitText.match(/^[^.]+\./);
+  return match ? match[0] : portraitText;
+}
+
 // ─── Portrait Helpers ─────────────────────────────────────────────
 export function getCosmicPortraitSun(sign: string): string {
   const t: Record<string, string> = {

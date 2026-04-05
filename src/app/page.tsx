@@ -8,17 +8,15 @@ import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
-import { PlanetIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
+import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { searchCities, CityResult, UserLocation } from "@/lib/citySearch";
-import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes } from "@/lib/chartHelpers";
+import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes, genderize, getGreeting, getIntroSentence, Genre } from "@/lib/chartHelpers";
 import EnhancedSlider from "@/components/EnhancedSlider";
 import LoadingMessages from "@/components/LoadingMessages";
 
 // ─── Types ────────────────────────────────────────────────────────
-type Genre = "femme" | "homme" | "nb";
-
 interface FormData {
   prenom: string;
   genre: Genre;
@@ -253,16 +251,17 @@ export default function Home() {
       planetInHouse: Record<string, Record<number, string>>;
       getInterpretation?: (p: string, s: string, h: number | undefined, prefs: { tone: number; depth: number; focus: number }) => string;
     };
-    if (mod.getInterpretation) return mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus });
+    if (mod.getInterpretation) return genderize(mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus }), form.genre);
     let text = mod.planetInSign?.[planet]?.[sign] || "";
     if (house && mod.planetInHouse?.[planet]?.[house]) text += "\n\n" + mod.planetInHouse[planet][house];
-    return text;
+    return genderize(text, form.genre);
   };
 
   const getAspectInterp = (type: string, p1: string, p2: string): string => {
     if (!interpretations) return "";
     const mod = interpretations as { aspectInterpretations: Record<string, Record<string, string>> };
-    return mod.aspectInterpretations?.[type]?.[`${p1}-${p2}`] || mod.aspectInterpretations?.[type]?.[`${p2}-${p1}`] || "";
+    const raw = mod.aspectInterpretations?.[type]?.[`${p1}-${p2}`] || mod.aspectInterpretations?.[type]?.[`${p2}-${p1}`] || "";
+    return genderize(raw, form.genre);
   };
 
   const scrollToTab = (tabId: string) => {
@@ -629,6 +628,61 @@ export default function Home() {
               </p>
             </div>
 
+            {/* ── Intro Narrative ── */}
+            {chart && (
+              <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 animate-on-scroll">
+                <div className="glass p-6 sm:p-8 text-center">
+                  <p className="text-xl sm:text-2xl font-cinzel text-[var(--color-text-primary)] mb-4 leading-relaxed">
+                    {getGreeting(form.prenom, form.genre)},{" "}
+                    {locale === "fr" ? "tu es" : "you are"}{" "}
+                    <span className="text-[var(--color-accent-lavender)] font-semibold">{chart.planets[0].sign}</span>
+                    {chart.ascendant && (<>, {locale === "fr" ? "Ascendant" : "Ascendant"}{" "}
+                      <span className="text-[var(--color-accent-lavender)] font-semibold">{chart.ascendant.sign}</span>
+                    </>)}.
+                  </p>
+
+                  {/* Three sign icons */}
+                  <div className="flex justify-center gap-6 my-6">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center">
+                        <SignIcon name={chart.planets[0].sign} size={28} color="#fbbf24" glow />
+                      </div>
+                      <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)]">{locale === "fr" ? "Soleil" : "Sun"}</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-14 h-14 rounded-2xl bg-blue-400/10 border border-blue-300/20 flex items-center justify-center">
+                        <SignIcon name={chart.planets[1].sign} size={28} color="#93c5fd" glow />
+                      </div>
+                      <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)]">{locale === "fr" ? "Lune" : "Moon"}</span>
+                    </div>
+                    {chart.ascendant && (
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-400/20 flex items-center justify-center">
+                          <SignIcon name={chart.ascendant.sign} size={28} color="#c084fc" glow />
+                        </div>
+                        <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)]">Ascendant</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Short portrait sentences */}
+                  <div className="space-y-2 text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto">
+                    <p>{locale === "fr" ? "Ton Soleil en" : "Your Sun in"} {chart.planets[0].sign} {genderize(getIntroSentence(getCosmicPortraitSun(chart.planets[0].sign)), form.genre)}</p>
+                    <p>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {genderize(getIntroSentence(getCosmicPortraitMoon(chart.planets[1].sign)), form.genre)}</p>
+                    {chart.ascendant && (
+                      <p>{locale === "fr" ? "Ascendant" : "Ascendant"} {chart.ascendant.sign} — {genderize(getCosmicPortraitAsc(chart.ascendant.sign), form.genre)}</p>
+                    )}
+                  </div>
+
+                  <div className="mt-6">
+                    <button onClick={() => scrollToTab("portrait")} className="text-sm text-[var(--color-accent-lavender)] hover:underline inline-flex items-center gap-1 transition">
+                      {locale === "fr" ? "Explore ta carte en détail" : "Explore your chart in detail"} <span className="animate-bounce inline-block">↓</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <nav className="sticky top-0 z-30 backdrop-blur-2xl bg-[var(--color-space-deep)]/80" style={{ borderBottom: "1px solid rgba(201,160,255,0.06)" }}>
               <div className="tab-nav flex overflow-x-auto max-w-3xl mx-auto">
                 {RESULT_TABS.map((tab) => (
@@ -815,7 +869,7 @@ export default function Home() {
                     <span className="text-[var(--color-accent-lavender)] opacity-50">⌂</span> {t("results.houses")}
                   </h2>
                   <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
-                  <HousesMap planets={chart.planets} locale={locale} />
+                  <HousesMap planets={chart.planets} locale={locale} genre={form.genre} />
                 </div>
               )}
 
@@ -853,10 +907,23 @@ export default function Home() {
                               </div>
                             </div>
                           </button>
-                          <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
-                            <div className="px-5 pb-5 text-base text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
-                              <div className="pt-4">
-                                {interp || (locale === "en" ? `The ${aspect.type.toLowerCase()} between ${aspect.planet1} and ${aspect.planet2} creates a unique dialogue, shaping how these two energies interact in your life experience.` : `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique dans ta carte, colorant la manière dont ces deux énergies interagissent dans ton expérience de vie.`)}
+                          <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "800px" : "0", opacity: isOpen ? 1 : 0 }}>
+                            <div className="px-5 pb-5 text-base leading-relaxed border-t border-white/5">
+                              {/* Explain: what is this aspect type? */}
+                              {(() => {
+                                const mod = interpretations as { aspectTypeDescriptions?: Record<string, string> };
+                                const typeDesc = mod?.aspectTypeDescriptions?.[aspect.type];
+                                return typeDesc ? (
+                                  <div className="pt-4 mb-3 rounded-lg bg-white/[0.03] border border-white/5 p-3">
+                                    <span className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-secondary)] block mb-1">{locale === "fr" ? "Qu'est-ce que c'est ?" : "What is this?"}</span>
+                                    <p className="text-sm text-[var(--color-text-primary)] opacity-80">{genderize(typeDesc, form.genre)}</p>
+                                  </div>
+                                ) : null;
+                              })()}
+                              {/* Interpret: personal meaning */}
+                              <div className={`pt-${interpretations && (interpretations as { aspectTypeDescriptions?: Record<string, string> }).aspectTypeDescriptions?.[aspect.type] ? "1" : "4"}`}>
+                                <span className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent-lavender)] block mb-2">{locale === "fr" ? "Pour toi" : "For you"}</span>
+                                <p className="text-[var(--color-text-primary)]">{interp || (locale === "en" ? `The ${aspect.type.toLowerCase()} between ${aspect.planet1} and ${aspect.planet2} creates a unique dialogue, shaping how these two energies interact in your life.` : `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique, colorant la manière dont ces deux énergies interagissent dans ta vie.`)}</p>
                               </div>
                             </div>
                           </div>
