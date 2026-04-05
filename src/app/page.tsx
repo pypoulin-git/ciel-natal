@@ -270,9 +270,11 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
-    if (p.has("n") && p.has("j") && p.has("m") && p.has("a") && p.has("lat") && p.has("lon")) {
+    // Support both full links (?n=&j=...) and anonymous links (?j=&m=&a=&lat=&lon=)
+    if (p.has("j") && p.has("m") && p.has("a") && p.has("lat") && p.has("lon")) {
+      const defaultName = locale === "fr" ? "Voyageur" : "Explorer";
       const loaded: FormData = {
-        prenom: decodeURIComponent(p.get("n") || ""),
+        prenom: decodeURIComponent(p.get("n") || defaultName),
         jour: parseInt(p.get("j") || "15"),
         mois: parseInt(p.get("m") || "6"),
         annee: parseInt(p.get("a") || "1990"),
@@ -296,12 +298,24 @@ export default function Home() {
   }, []);
 
   // ─── Generate shareable URL ───
+  // Full link (with name) — for personal use
   const getShareUrl = (): string => {
     const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
     const p = new URLSearchParams({
       n: form.prenom, j: String(form.jour), m: String(form.mois), a: String(form.annee),
       h: String(form.heure), min: String(form.minute), ht: form.hasTime ? "1" : "0",
       l: form.lieu, lat: String(form.latitude), lon: String(form.longitude),
+    });
+    return `${base}?${p.toString()}`;
+  };
+
+  // Anonymous link — no name, no city name, just astronomical data
+  const getAnonymousShareUrl = (): string => {
+    const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const p = new URLSearchParams({
+      j: String(form.jour), m: String(form.mois), a: String(form.annee),
+      h: String(form.heure), min: String(form.minute), ht: form.hasTime ? "1" : "0",
+      lat: String(form.latitude), lon: String(form.longitude),
     });
     return `${base}?${p.toString()}`;
   };
@@ -867,14 +881,25 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+                  {/* Share anonymously (default — no name, safe for social) */}
                   <button onClick={() => {
-                      const url = getShareUrl();
-                      const text = `La carte du ciel de ${form.prenom} : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre la tienne !`;
-                      if (navigator.share) { navigator.share({ title: `Carte du ciel — ${form.prenom}`, text, url }); }
+                      const url = getAnonymousShareUrl();
+                      const text = locale === "fr"
+                        ? `Une carte du ciel : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre la tienne !`
+                        : `A natal chart: Sun in ${chart.planets[0].sign}, Moon in ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Discover yours!`;
+                      if (navigator.share) { navigator.share({ title: locale === "fr" ? "Carte du ciel" : "Natal Chart", text, url }); }
                       else { navigator.clipboard.writeText(text + "\n" + url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
                     }} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
                     {t("results.shareLink")}
+                  </button>
+                  {/* Copy full personal link (with name) */}
+                  <button onClick={() => {
+                      navigator.clipboard.writeText(getShareUrl());
+                      setCopied(true); setTimeout(() => setCopied(false), 2000);
+                    }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    {locale === "fr" ? "Mon lien perso" : "My personal link"}
                   </button>
                   <button onClick={() => {
                       navigator.clipboard.writeText(generateOnePager());
@@ -882,13 +907,6 @@ export default function Home() {
                     }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                     {t("results.copyChart")}
-                  </button>
-                  <button onClick={() => {
-                      navigator.clipboard.writeText(getShareUrl());
-                      setCopied(true); setTimeout(() => setCopied(false), 2000);
-                    }} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                    {t("results.copyLink")}
                   </button>
                   <button onClick={exportPdf} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
