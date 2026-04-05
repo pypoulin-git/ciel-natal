@@ -17,8 +17,11 @@ import EnhancedSlider from "@/components/EnhancedSlider";
 import LoadingMessages from "@/components/LoadingMessages";
 
 // ─── Types ────────────────────────────────────────────────────────
+type Genre = "femme" | "homme" | "nb";
+
 interface FormData {
   prenom: string;
+  genre: Genre;
   jour: number;
   mois: number;
   annee: number;
@@ -74,7 +77,7 @@ export default function Home() {
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>({
-    prenom: "", jour: 15, mois: 6, annee: 1990,
+    prenom: "", genre: "femme" as Genre, jour: 15, mois: 6, annee: 1990,
     heure: 12, minute: 0, hasTime: true,
     lieu: "", latitude: 48.8566, longitude: 2.3522,
     tone: 5, depth: 5, focus: 5,
@@ -99,6 +102,7 @@ export default function Home() {
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bigThreeContentRef = useRef<HTMLDivElement | null>(null);
 
   const togglePlanet = (name: string) => {
     setExpandedPlanets((prev) => {
@@ -263,29 +267,53 @@ export default function Home() {
 
   const scrollToTab = (tabId: string) => {
     setActiveTab(tabId);
-    sectionRefs.current[tabId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = sectionRefs.current[tabId];
+    if (el) {
+      const navHeight = 56; // sticky nav ~52px + margin
+      const y = el.getBoundingClientRect().top + window.scrollY - navHeight;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
   };
 
   // ─── Auto-load from URL params ───
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
-    // Support both full links (?n=&j=...) and anonymous links (?j=&m=&a=&lat=&lon=)
-    if (p.has("j") && p.has("m") && p.has("a") && p.has("lat") && p.has("lon")) {
-      const defaultName = locale === "fr" ? "Voyageur" : "Explorer";
-      const loaded: FormData = {
+    const defaultName = locale === "fr" ? "Voyageuse" : "Explorer";
+
+    let loaded: FormData | null = null;
+
+    // New format: ?c=base64encoded
+    if (p.has("c")) {
+      const decoded = decodeChartParams(decodeURIComponent(p.get("c") || ""));
+      if (decoded && decoded.j && decoded.m && decoded.a && decoded.la && decoded.lo) {
+        loaded = {
+          prenom: (decoded.n as string) || defaultName,
+          genre: (decoded.g as Genre) || "femme",
+          jour: decoded.j as number, mois: decoded.m as number, annee: decoded.a as number,
+          heure: (decoded.h as number) ?? 12, minute: (decoded.mn as number) ?? 0,
+          hasTime: decoded.ht !== 0,
+          lieu: (decoded.l as string) || "",
+          latitude: decoded.la as number, longitude: decoded.lo as number,
+          tone: 5, depth: 5, focus: 5,
+        };
+      }
+    }
+    // Legacy format: ?j=&m=&a=&lat=&lon=
+    else if (p.has("j") && p.has("m") && p.has("a") && p.has("lat") && p.has("lon")) {
+      loaded = {
         prenom: decodeURIComponent(p.get("n") || defaultName),
-        jour: parseInt(p.get("j") || "15"),
-        mois: parseInt(p.get("m") || "6"),
-        annee: parseInt(p.get("a") || "1990"),
-        heure: parseInt(p.get("h") || "12"),
-        minute: parseInt(p.get("min") || "0"),
+        genre: (p.get("g") as Genre) || "femme",
+        jour: parseInt(p.get("j") || "15"), mois: parseInt(p.get("m") || "6"), annee: parseInt(p.get("a") || "1990"),
+        heure: parseInt(p.get("h") || "12"), minute: parseInt(p.get("min") || "0"),
         hasTime: p.get("ht") !== "0",
         lieu: decodeURIComponent(p.get("l") || ""),
-        latitude: parseFloat(p.get("lat") || "48.8566"),
-        longitude: parseFloat(p.get("lon") || "2.3522"),
+        latitude: parseFloat(p.get("lat") || "48.8566"), longitude: parseFloat(p.get("lon") || "2.3522"),
         tone: 5, depth: 5, focus: 5,
       };
+    }
+
+    if (loaded) {
       setForm(loaded);
       const c = calculateNatalChart(
         loaded.annee, loaded.mois, loaded.jour,
@@ -297,27 +325,35 @@ export default function Home() {
     }
   }, []);
 
+  // ─── Encode/decode chart params as opaque base64 ───
+  const encodeChartParams = (payload: Record<string, unknown>): string => {
+    try { return btoa(JSON.stringify(payload)); } catch { return ""; }
+  };
+  const decodeChartParams = (encoded: string): Record<string, unknown> | null => {
+    try { return JSON.parse(atob(encoded)); } catch { return null; }
+  };
+
   // ─── Generate shareable URL ───
   // Full link (with name) — for personal use
   const getShareUrl = (): string => {
     const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
-    const p = new URLSearchParams({
-      n: form.prenom, j: String(form.jour), m: String(form.mois), a: String(form.annee),
-      h: String(form.heure), min: String(form.minute), ht: form.hasTime ? "1" : "0",
-      l: form.lieu, lat: String(form.latitude), lon: String(form.longitude),
-    });
-    return `${base}?${p.toString()}`;
+    const payload = {
+      n: form.prenom, g: form.genre, j: form.jour, m: form.mois, a: form.annee,
+      h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
+      l: form.lieu, la: form.latitude, lo: form.longitude,
+    };
+    return `${base}?c=${encodeURIComponent(encodeChartParams(payload))}`;
   };
 
-  // Anonymous link — no name, no city name, just astronomical data
+  // Anonymous link — no name, no city name
   const getAnonymousShareUrl = (): string => {
     const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
-    const p = new URLSearchParams({
-      j: String(form.jour), m: String(form.mois), a: String(form.annee),
-      h: String(form.heure), min: String(form.minute), ht: form.hasTime ? "1" : "0",
-      lat: String(form.latitude), lon: String(form.longitude),
-    });
-    return `${base}?${p.toString()}`;
+    const payload = {
+      g: form.genre, j: form.jour, m: form.mois, a: form.annee,
+      h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
+      la: form.latitude, lo: form.longitude,
+    };
+    return `${base}?c=${encodeURIComponent(encodeChartParams(payload))}`;
   };
 
   // ─── Generate one-pager text ───
@@ -399,6 +435,24 @@ export default function Home() {
                   <input type="text" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })}
                     placeholder={t("form.step1.placeholder")} className="glass-input w-full text-lg text-center" autoFocus
                     onKeyDown={(e) => e.key === "Enter" && canAdvance() && setStep(2)} />
+                  <div className="flex justify-center gap-2 mt-5">
+                    {([
+                      { value: "femme" as Genre, label: locale === "fr" ? "Femme" : "Woman" },
+                      { value: "homme" as Genre, label: locale === "fr" ? "Homme" : "Man" },
+                      { value: "nb" as Genre, label: locale === "fr" ? "Non-binaire" : "Non-binary" },
+                    ]).map((opt) => (
+                      <button key={opt.value}
+                        onClick={() => setForm({ ...form, genre: opt.value })}
+                        className={`px-4 py-2 rounded-full text-sm transition-all duration-200 border ${
+                          form.genre === opt.value
+                            ? "bg-[var(--color-accent-lavender)]/20 border-[var(--color-accent-lavender)]/50 text-[var(--color-text-primary)]"
+                            : "bg-white/5 border-white/10 text-[var(--color-text-secondary)] hover:border-white/20"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -596,7 +650,7 @@ export default function Home() {
             <div ref={resultsRef} className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 space-y-8 mt-6">
 
               {/* PORTRAIT */}
-              <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-14">
+              <div ref={(el) => { sectionRefs.current.portrait = el; }} className="scroll-mt-16">
                 <div className="glass p-4 sm:p-6 mb-6">
                   <div className="flex justify-end gap-2 mb-2">
                     <button
@@ -624,7 +678,7 @@ export default function Home() {
                   </h2>
 
                   {/* Big Three badges — toggle (single active, replaces content) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     {[
                       { id: "sun", label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], icon: <SunIcon size={28} color="#fbbf24" glow />, color: "from-amber-500/25 to-orange-500/10", activeColor: "from-amber-500/35 to-orange-500/20", border: "border-amber-400/20", activeBorder: "border-amber-400/50", ring: "ring-amber-400/30" },
                       { id: "moon", label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], icon: <MoonIcon size={28} color="#93c5fd" glow />, color: "from-blue-400/20 to-indigo-500/10", activeColor: "from-blue-400/30 to-indigo-500/20", border: "border-blue-300/20", activeBorder: "border-blue-300/50", ring: "ring-blue-400/30" },
@@ -634,7 +688,10 @@ export default function Home() {
                       return (
                         <button
                           key={item.id}
-                          onClick={() => setActiveBigThree(isActive ? null : item.data.name)}
+                          onClick={() => {
+                            setActiveBigThree(isActive ? null : item.data.name);
+                            if (!isActive) setTimeout(() => bigThreeContentRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 100);
+                          }}
                           className={`relative rounded-2xl bg-gradient-to-br ${isActive ? item.activeColor : item.color} border ${isActive ? item.activeBorder : item.border} backdrop-blur-md p-5 text-left transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isActive ? `ring-2 ${item.ring} shadow-lg shadow-white/5` : "hover:shadow-lg hover:shadow-white/5"}`}
                         >
                           <div className="flex items-center gap-4">
@@ -656,8 +713,15 @@ export default function Home() {
                     })}
                   </div>
 
+                  {/* Mobile hint arrow */}
+                  {!activeBigThree && (
+                    <div className="sm:hidden text-center py-2 animate-bounce opacity-40">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="inline text-[var(--color-accent-lavender)]"><path d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  )}
+
                   {/* Single content area — replaces on toggle with smooth transition */}
-                  <div className="min-h-[60px] transition-all duration-500 ease-in-out">
+                  <div ref={bigThreeContentRef} className="min-h-[60px] transition-all duration-500 ease-in-out">
                     {(() => {
                       const items = [
                         { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</> },
@@ -686,7 +750,7 @@ export default function Home() {
               </div>
 
               {/* PLANETS — personal planets only (skip Sun/Moon already in Big Three, skip generational) */}
-              <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-14">
+              <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-16">
                 <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">⊙</span> {t("results.planets")}
                 </h2>
@@ -734,7 +798,7 @@ export default function Home() {
               </div>
 
               {/* ELEMENTS */}
-              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-14 scroll-reveal">
+              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16 scroll-reveal">
                 <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">◆</span> {t("results.elements")}
                 </h2>
@@ -746,7 +810,7 @@ export default function Home() {
 
               {/* HOUSES */}
               {chart.ascendant && (
-                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-14 scroll-reveal">
+                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16 scroll-reveal">
                   <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">⌂</span> {t("results.houses")}
                   </h2>
@@ -756,7 +820,7 @@ export default function Home() {
               )}
 
               {/* ASPECTS */}
-              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-14 scroll-reveal">
+              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16 scroll-reveal">
                 <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">△</span> {t("results.aspects")}
                 </h2>
@@ -807,7 +871,7 @@ export default function Home() {
 
               {/* TRANSITS DU JOUR */}
               {todayTransits && (
-                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-14 scroll-reveal">
+                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-16 scroll-reveal">
                   <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">◎</span> {t("transits.title")}
                   </h2>
