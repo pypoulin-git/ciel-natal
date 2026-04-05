@@ -84,7 +84,7 @@ export default function DailySign() {
       <div className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-2">{label}</div>
       <div className="flex items-center justify-center gap-3 mb-2">
         <SignIcon name={sign.fr} size={26} color="var(--color-accent-lavender)" glow />
-        <span className="font-cinzel text-lg text-[var(--color-text-primary)]">{name}</span>
+        <span className="font-cinzel text-xl text-[var(--color-text-primary)]">{name}</span>
       </div>
       <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{message}</p>
     </div>

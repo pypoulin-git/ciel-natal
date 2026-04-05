@@ -5,19 +5,10 @@
   --color-space-card: #111118;
   --color-accent-lavender: #a89ec8;
   --color-accent-gold: #b8b0c8;
-  --color-text-primary: #eeeaf5;
-  --color-text-secondary: #b0aac2;
+  --color-text-primary: #f5f2ff;
+  --color-text-secondary: #c4beda;
   --color-glass-border: rgba(168, 158, 200, 0.1);
   --color-glass-bg: rgba(16, 16, 24, 0.55);
-}
-
-@font-face {
-  font-family: "Cinzel";
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("https://fonts.gstatic.com/s/cinzel/v23/8vIU7ww63mVu7gtR-kwKxNvkNOjw-tbnfY3lCA.woff2")
-    format("woff2");
 }
 
 html {
@@ -27,12 +18,18 @@ html {
 body {
   background: var(--color-space-deep);
   color: var(--color-text-primary);
-  font-family: "Inter", "DM Sans", system-ui, sans-serif;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.65;
   overflow-x: hidden;
 }
 
+/* Heading font — elegant serif */
 .font-cinzel {
-  font-family: "Cinzel", serif;
+  font-family: "Cormorant Garamond", "Georgia", serif;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 /* Starfield canvas */

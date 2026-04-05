@@ -143,7 +143,7 @@ export default function SynastryPage() {
               const setPerson = who === "A" ? setPersonA : setPersonB;
               return (
                 <div key={who} className="glass p-5">
-                  <h2 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-4">
+                  <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-4">
                     {locale === "fr" ? `Personne ${who === "A" ? "1" : "2"}` : `Person ${who === "A" ? "1" : "2"}`}
                   </h2>
                   <div className="space-y-3">
@@ -204,7 +204,7 @@ export default function SynastryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[{ person: personA, chart: chartA }, { person: personB, chart: chartB }].map(({ person, chart }, i) => (
                 <div key={i} className="glass p-5">
-                  <h3 className="font-cinzel text-lg text-[var(--color-accent-lavender)] mb-3">{person.prenom}</h3>
+                  <h3 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-3">{person.prenom}</h3>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between text-[var(--color-text-secondary)]">
                       <span>{locale === "fr" ? "Soleil" : "Sun"}</span>
@@ -250,7 +250,7 @@ export default function SynastryPage() {
 
             {/* Cross aspects list */}
             <div>
-              <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4">
+              <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4">
                 {locale === "fr" ? "Aspects croisés" : "Cross aspects"}
               </h2>
               <div className="space-y-2">

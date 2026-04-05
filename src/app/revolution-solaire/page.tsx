@@ -232,7 +232,7 @@ export default function RevolutionSolaire() {
             <div className="space-y-6">
               {/* SR Wheel */}
               <div className="glass p-4 sm:p-6">
-                <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4 text-center">
+                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4 text-center">
                   {locale === "fr" ? `Revolution Solaire ${new Date().getFullYear()}` : `Solar Return ${new Date().getFullYear()}`}
                 </h2>
                 <ZodiacWheel planets={srChart.planets} ascendant={srChart.ascendant} />

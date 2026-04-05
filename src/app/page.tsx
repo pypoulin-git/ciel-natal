@@ -565,10 +565,10 @@ export default function Home() {
           <section className="min-h-screen pb-24" aria-live="polite">
             <div className="text-center pt-8 pb-4 px-4">
               <div className="text-2xl mb-2 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
-              <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-1">
+              <h1 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)] mb-2">
                 {t("results.skyOf")} <span className="text-[var(--color-accent-lavender)]">{form.prenom}</span>
               </h1>
-              <p className="text-xs text-[var(--color-text-secondary)] font-mono">
+              <p className="text-sm text-[var(--color-text-secondary)] font-mono">
                 {form.jour} {MONTHS[form.mois - 1]} {form.annee}
                 {form.hasTime && ` — ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}`}
                 {" — "}{form.lieu}
@@ -619,7 +619,7 @@ export default function Home() {
 
                 {/* ── Ton Portrait Cosmique (Big Three fused) ── */}
                 <div className="glass p-6 sm:p-8 mb-6">
-                  <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-6 flex items-center gap-2">
+                  <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-6 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">✦</span> {t("results.cosmicPortrait")}
                   </h2>
 
@@ -643,7 +643,7 @@ export default function Home() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-[11px] uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
-                              <div className="font-cinzel text-xl text-[var(--color-text-primary)] mt-0.5">{item.data.sign}</div>
+                              <div className="font-cinzel text-2xl text-[var(--color-text-primary)] mt-0.5">{item.data.sign}</div>
                               <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.sub}</div>
                             </div>
                             <div className="text-right flex-shrink-0">
@@ -672,9 +672,9 @@ export default function Home() {
                       );
                       return (
                         <div key={active.data.name} className="rounded-xl bg-white/[0.03] border border-white/5 p-5 sm:p-6" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
-                          <p className="text-[15px] leading-relaxed text-[var(--color-text-primary)]">{active.portrait()}</p>
+                          <p className="text-base leading-relaxed text-[var(--color-text-primary)]">{active.portrait()}</p>
                           {getInterp(active.data.name, active.data.sign, active.data.house) && (
-                            <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-text-primary)] opacity-85">
+                            <p className="mt-4 text-base leading-relaxed text-[var(--color-text-primary)] opacity-85">
                               {getInterp(active.data.name, active.data.sign, active.data.house)}
                             </p>
                           )}
@@ -687,10 +687,10 @@ export default function Home() {
 
               {/* PLANETS — personal planets only (skip Sun/Moon already in Big Three, skip generational) */}
               <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-14">
-                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">⊙</span> {t("results.planets")}
                 </h2>
-                <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("results.planetDesc")}</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.planetDesc")}</p>
                 <div className="space-y-2">
                   {chart.planets
                     .filter((p) => !["Soleil", "Lune", "Uranus", "Neptune", "Pluton"].includes(p.name))
@@ -705,8 +705,8 @@ export default function Home() {
                               <PlanetIcon name={planet.name} size={22} color="var(--color-accent-lavender)" />
                             </div>
                             <div>
-                              <span className="text-[15px] font-medium text-[var(--color-text-primary)]">{planet.name}</span>
-                              <span className="text-sm text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
+                              <span className="text-base font-medium text-[var(--color-text-primary)]">{planet.name}</span>
+                              <span className="text-[15px] text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -719,7 +719,7 @@ export default function Home() {
                           </div>
                         </button>
                         <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
-                          <div className="px-5 pb-5 text-[15px] text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
+                          <div className="px-5 pb-5 text-base text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
                             <div className="pt-4 whitespace-pre-line">
                               {getInterp(planet.name, planet.sign, planet.house) || (
                                 <span className="text-[var(--color-text-secondary)]">{planet.name} {locale === "en" ? "in" : "en"} {planet.sign} {locale === "en" ? "colors how you express the qualities of this sign." : "colore ta manière d'exprimer les qualités de ce signe."}</span>
@@ -735,10 +735,10 @@ export default function Home() {
 
               {/* ELEMENTS */}
               <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-14 scroll-reveal">
-                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">◆</span> {t("results.elements")}
                 </h2>
-                <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("results.elementDesc")}</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.elementDesc")}</p>
                 <div className="glass p-5 sm:p-6">
                   <ElementBalance planets={chart.planets} />
                 </div>
@@ -747,20 +747,20 @@ export default function Home() {
               {/* HOUSES */}
               {chart.ascendant && (
                 <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-14 scroll-reveal">
-                  <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">⌂</span> {t("results.houses")}
                   </h2>
-                  <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
+                  <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
                   <HousesMap planets={chart.planets} locale={locale} />
                 </div>
               )}
 
               {/* ASPECTS */}
               <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-14 scroll-reveal">
-                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">△</span> {t("results.aspects")}
                 </h2>
-                <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("results.aspectDesc")}</p>
+                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.aspectDesc")}</p>
                 {chart.aspects.length > 0 ? (
                   <div className="space-y-2">
                     {chart.aspects.slice(0, form.depth >= 7 ? undefined : 12).map((aspect, i) => {
@@ -772,7 +772,7 @@ export default function Home() {
                         <div key={i} className="glass overflow-hidden">
                           <button className="w-full p-4 text-left btn-hover group" onClick={() => toggleAspect(i)}>
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-[15px]">
+                              <div className="flex items-center gap-2 text-base">
                                 <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{aspect.symbol1}</span>
                                 <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
                                 <span style={{ color }} className="text-xl mx-0.5">{symbol}</span>
@@ -790,7 +790,7 @@ export default function Home() {
                             </div>
                           </button>
                           <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
-                            <div className="px-5 pb-5 text-[15px] text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
+                            <div className="px-5 pb-5 text-base text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
                               <div className="pt-4">
                                 {interp || (locale === "en" ? `The ${aspect.type.toLowerCase()} between ${aspect.planet1} and ${aspect.planet2} creates a unique dialogue, shaping how these two energies interact in your life experience.` : `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique dans ta carte, colorant la manière dont ces deux énergies interagissent dans ton expérience de vie.`)}
                               </div>
@@ -808,10 +808,10 @@ export default function Home() {
               {/* TRANSITS DU JOUR */}
               {todayTransits && (
                 <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-14 scroll-reveal">
-                  <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">◎</span> {t("transits.title")}
                   </h2>
-                  <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t("transits.desc")}</p>
+                  <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("transits.desc")}</p>
                   <div className="space-y-2">
                     {todayTransits.planets.slice(0, 7).map((transit) => {
                       const natal = chart.planets.find((p) => p.name === transit.name);
@@ -822,7 +822,7 @@ export default function Home() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                               <span className="text-lg text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{transit.symbol}</span>
-                              <span className="text-[15px] font-medium text-[var(--color-text-primary)]">{transit.name}</span>
+                              <span className="text-base font-medium text-[var(--color-text-primary)]">{transit.name}</span>
                             </div>
                             <div className="text-right">
                               <div className="text-sm text-[var(--color-text-secondary)]">
@@ -847,7 +847,7 @@ export default function Home() {
 
               {/* LIFE THEMES SYNTHESIS */}
               <div className="glass p-6 sm:p-8 scroll-reveal">
-                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">✦</span> {t("results.lifeThemes")}
                 </h2>
                 <p className="text-sm text-[var(--color-text-secondary)] mb-5">{t("results.lifeThemesDesc")}</p>
@@ -858,7 +858,7 @@ export default function Home() {
                         <span className="text-base text-[var(--color-accent-lavender)]">{theme.icon}</span>
                       </div>
                       <div>
-                        <h3 className="text-[15px] font-medium text-[var(--color-text-primary)] mb-1">{theme.title}</h3>
+                        <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">{theme.title}</h3>
                         <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{theme.text}</p>
                       </div>
                     </div>
@@ -871,8 +871,8 @@ export default function Home() {
                 <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-[var(--color-accent-lavender)]/5 border border-[var(--color-accent-lavender)]/10 flex items-center justify-center">
                   <span className="text-xl text-[var(--color-accent-lavender)] opacity-60">✦</span>
                 </div>
-                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-5">{t("results.closing.title")} {form.prenom}</h2>
-                <div className="text-[15px] text-[var(--color-text-primary)] leading-relaxed max-w-lg mx-auto space-y-4 mb-8">
+                <h2 className="font-cinzel text-3xl text-[var(--color-text-primary)] mb-5">{t("results.closing.title")} {form.prenom}</h2>
+                <div className="text-base text-[var(--color-text-primary)] leading-relaxed max-w-lg mx-auto space-y-4 mb-8">
                   <p>{t("results.closing.p1")}</p>
                   <p>{t("results.closing.p2")}</p>
                   <p>{t("results.closing.p3")}</p>

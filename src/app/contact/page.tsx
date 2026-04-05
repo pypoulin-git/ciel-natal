@@ -102,7 +102,7 @@ export default function Contact() {
       )}
 
       <section>
-        <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-3">
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
           {locale === "fr" ? "Autres moyens" : "Other ways"}
         </h2>
         <p className="text-[var(--color-text-secondary)]">

@@ -525,7 +525,7 @@ export default async function SignPage({ params }: { params: Promise<{ slug: str
 
       {/* ---- Personnalité ---- */}
       <section>
-        <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-3">
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
           Personnalite
         </h2>
         {sign.personality.map((p, i) => (
@@ -537,7 +537,7 @@ export default async function SignPage({ params }: { params: Promise<{ slug: str
 
       {/* ---- Forces et défis ---- */}
       <section>
-        <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-3">
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
           Forces et defis
         </h2>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -566,7 +566,7 @@ export default async function SignPage({ params }: { params: Promise<{ slug: str
 
       {/* ---- En amour ---- */}
       <section>
-        <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-3">
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
           En amour
         </h2>
         {sign.love.map((p, i) => (
@@ -578,7 +578,7 @@ export default async function SignPage({ params }: { params: Promise<{ slug: str
 
       {/* ---- Dans le travail ---- */}
       <section>
-        <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-3">
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
           Dans le travail
         </h2>
         {sign.work.map((p, i) => (
