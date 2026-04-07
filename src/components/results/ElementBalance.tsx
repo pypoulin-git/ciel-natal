@@ -14,24 +14,45 @@ const MODALITY_MAP: Record<string, string> = {
   Sagittaire: "Mutable", Capricorne: "Cardinal", Verseau: "Fixe", Poissons: "Mutable",
 };
 
-const ELEMENT_CONFIG = {
-  Feu: { desc: "Energie, passion, initiative", intensity: 1.0 },
-  Terre: { desc: "Stabilite, concret, patience", intensity: 0.7 },
-  Air: { desc: "Pensee, communication, idees", intensity: 0.5 },
-  Eau: { desc: "Emotions, intuition, empathie", intensity: 0.85 },
+const ELEMENT_CONFIG_FR = {
+  Feu: { desc: "Énergie, passion, initiative" },
+  Terre: { desc: "Stabilité, concret, patience" },
+  Air: { desc: "Pensée, communication, idées" },
+  Eau: { desc: "Émotions, intuition, empathie" },
 };
 
-const MODALITY_CONFIG = {
+const ELEMENT_CONFIG_EN = {
+  Feu: { desc: "Energy, passion, initiative" },
+  Terre: { desc: "Stability, practicality, patience" },
+  Air: { desc: "Thought, communication, ideas" },
+  Eau: { desc: "Emotions, intuition, empathy" },
+};
+
+const ELEMENT_NAMES_EN: Record<string, string> = { Feu: "Fire", Terre: "Earth", Air: "Air", Eau: "Water" };
+
+const MODALITY_CONFIG_FR = {
   Cardinal: { desc: "Initier, lancer, diriger" },
-  Fixe: { desc: "Perseverer, stabiliser, ancrer" },
+  Fixe: { desc: "Persévérer, stabiliser, ancrer" },
   Mutable: { desc: "Adapter, transformer, connecter" },
 };
 
+const MODALITY_CONFIG_EN = {
+  Cardinal: { desc: "Initiate, launch, lead" },
+  Fixe: { desc: "Persevere, stabilise, anchor" },
+  Mutable: { desc: "Adapt, transform, connect" },
+};
+
+const MODALITY_NAMES_EN: Record<string, string> = { Cardinal: "Cardinal", Fixe: "Fixed", Mutable: "Mutable" };
+
 interface Props {
   planets: PlanetPosition[];
+  locale?: string;
 }
 
-export default function ElementBalance({ planets }: Props) {
+export default function ElementBalance({ planets, locale = "fr" }: Props) {
+  const isFr = locale === "fr";
+  const ELEMENT_CONFIG = isFr ? ELEMENT_CONFIG_FR : ELEMENT_CONFIG_EN;
+  const MODALITY_CONFIG = isFr ? MODALITY_CONFIG_FR : MODALITY_CONFIG_EN;
   const allPlanets = planets;
 
   const elementCount: Record<string, number> = { Feu: 0, Terre: 0, Air: 0, Eau: 0 };
@@ -60,14 +81,14 @@ export default function ElementBalance({ planets }: Props) {
   return (
     <div className="space-y-8">
       <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
-        Les quatre elements et trois modalites revelent la dynamique
-        fondamentale de ton theme. Les elements decrivent ta nature
-        energetique, les modalites ta maniere d&apos;agir dans le monde.
+        {isFr
+          ? "Les quatre éléments et trois modalités révèlent la dynamique fondamentale de ton thème. Les éléments décrivent ta nature énergétique, les modalités ta manière d'agir dans le monde."
+          : "The four elements and three modalities reveal the fundamental dynamic of your chart. The elements describe your energetic nature, the modalities your way of acting in the world."}
       </p>
 
       <div>
         <h3 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-5">
-          Elements
+          {isFr ? "Éléments" : "Elements"}
         </h3>
         <div className="space-y-4 stagger-in">
           {(["Feu", "Terre", "Air", "Eau"] as const).map((el) => {
@@ -85,7 +106,7 @@ export default function ElementBalance({ planets }: Props) {
                         backgroundColor: isDominant ? "var(--color-accent-lavender)" : "rgba(168,158,200,0.3)",
                       }}
                     />
-                    <span className={`text-sm ${isDominant ? "text-[var(--color-text-primary)] font-medium" : "text-[var(--color-text-secondary)]"}`}>{el}</span>
+                    <span className={`text-sm ${isDominant ? "text-[var(--color-text-primary)] font-medium" : "text-[var(--color-text-secondary)]"}`}>{isFr ? el : ELEMENT_NAMES_EN[el]}</span>
                     <span className="text-[10px] text-[var(--color-text-secondary)] hidden sm:inline">
                       {config.desc}
                     </span>
@@ -126,7 +147,7 @@ export default function ElementBalance({ planets }: Props) {
 
       <div>
         <h3 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-5">
-          Modalites
+          {isFr ? "Modalités" : "Modalities"}
         </h3>
         <div className="space-y-4 stagger-in">
           {(["Cardinal", "Fixe", "Mutable"] as const).map((mod) => {
@@ -143,7 +164,7 @@ export default function ElementBalance({ planets }: Props) {
                         backgroundColor: isDominant ? "var(--color-accent-lavender)" : "rgba(168,158,200,0.3)",
                       }}
                     />
-                    <span className={`text-sm ${isDominant ? "text-[var(--color-text-primary)] font-medium" : "text-[var(--color-text-secondary)]"}`}>{mod}</span>
+                    <span className={`text-sm ${isDominant ? "text-[var(--color-text-primary)] font-medium" : "text-[var(--color-text-secondary)]"}`}>{isFr ? mod : MODALITY_NAMES_EN[mod]}</span>
                     <span className="text-[10px] text-[var(--color-text-secondary)]">
                       {MODALITY_CONFIG[mod].desc}
                     </span>
@@ -179,24 +200,24 @@ export default function ElementBalance({ planets }: Props) {
 
       <div className="border-l-2 border-[var(--color-accent-lavender)]/20 pl-4 py-1">
         <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-          Ton theme est domine par l&apos;element{" "}
+          {isFr ? "Ton thème est dominé par l'élément" : "Your chart is dominated by the element"}{" "}
           <strong className="font-medium text-[var(--color-text-primary)]">
-            {dominant[0]}
+            {isFr ? dominant[0] : ELEMENT_NAMES_EN[dominant[0]]}
           </strong>{" "}
           <span className="font-mono text-[11px]">({dominant[1]})</span>{" "}
-          — {ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.
+          — {ELEMENT_CONFIG[dominant[0] as keyof typeof ELEMENT_CONFIG_FR].desc.toLowerCase()}.
           {weakest[1] === 0 ? (
-            <> L&apos;absence de {weakest[0]} t&apos;invite a developper consciemment ces qualites : {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.</>
+            <> {isFr ? `L'absence de ${weakest[0]} t'invite à développer consciemment ces qualités` : `The absence of ${ELEMENT_NAMES_EN[weakest[0]]} invites you to consciously develop these qualities`} : {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG_FR].desc.toLowerCase()}.</>
           ) : weakest[1] <= 1 ? (
-            <> L&apos;element {weakest[0]} est peu present — une invitation a explorer {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG].desc.toLowerCase()}.</>
+            <> {isFr ? `L'élément ${weakest[0]} est peu présent` : `${ELEMENT_NAMES_EN[weakest[0]]} is barely present`} — {isFr ? "une invitation à explorer" : "an invitation to explore"} {ELEMENT_CONFIG[weakest[0] as keyof typeof ELEMENT_CONFIG_FR].desc.toLowerCase()}.</>
           ) : null}
         </p>
         <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mt-2">
-          Modalite dominante :{" "}
+          {isFr ? "Modalité dominante" : "Dominant modality"} :{" "}
           <strong className="font-medium text-[var(--color-text-primary)]">
-            {dominantMod[0]}
+            {isFr ? dominantMod[0] : MODALITY_NAMES_EN[dominantMod[0]]}
           </strong>{" "}
-          — tu tends naturellement a {MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG].desc.toLowerCase()}.
+          — {isFr ? "tu tends naturellement à" : "you naturally tend to"} {MODALITY_CONFIG[dominantMod[0] as keyof typeof MODALITY_CONFIG_FR].desc.toLowerCase()}.
         </p>
       </div>
     </div>

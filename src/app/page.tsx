@@ -106,7 +106,7 @@ export default function Home() {
   const [showTabsHint, setShowTabsHint] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
-  useScrollReveal();
+  useScrollReveal([step]);
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1011,7 +1011,7 @@ export default function Home() {
                 </h2>
                 <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.elementDesc")}</p>
                 <div className="glass p-5 sm:p-6">
-                  <ElementBalance planets={chart.planets} />
+                  <ElementBalance planets={chart.planets} locale={locale} />
                 </div>
               </div>
 
