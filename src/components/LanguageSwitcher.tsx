@@ -10,17 +10,15 @@ export default function LanguageSwitcher() {
   return (
     <button
       onClick={() => setLocale(nextLocale)}
-      className="fixed top-4 right-4 z-50 flex items-center gap-0 rounded-full overflow-hidden text-xs font-semibold"
+      className="flex items-center gap-0 rounded-full overflow-hidden text-xs font-semibold"
       style={{
-        background: "var(--color-glass-bg)",
+        background: "var(--color-space-deep)",
         border: "1px solid var(--color-glass-border)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
       }}
       aria-label={locale === "fr" ? "Switch to English" : "Passer en français"}
     >
       <span
-        className="px-3 py-1.5 transition-all duration-200"
+        className="px-2.5 py-1.5 transition-all duration-200"
         style={{
           background:
             locale === "fr" ? "var(--color-accent-lavender)" : "transparent",
@@ -33,7 +31,7 @@ export default function LanguageSwitcher() {
         FR
       </span>
       <span
-        className="px-3 py-1.5 transition-all duration-200"
+        className="px-2.5 py-1.5 transition-all duration-200"
         style={{
           background:
             locale === "en" ? "var(--color-accent-lavender)" : "transparent",

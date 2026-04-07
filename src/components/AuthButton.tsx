@@ -25,7 +25,7 @@ export default function AuthButton() {
     return (
       <a
         href="/connexion"
-        className="fixed top-3 right-14 z-50 text-xs px-4 py-2 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent-lavender)]/30 transition-all"
+        className="text-xs px-4 py-1.5 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent-lavender)]/30 transition-all"
       >
         {locale === "fr" ? "Connexion" : "Sign in"}
       </a>
@@ -35,7 +35,7 @@ export default function AuthButton() {
   const initial = (user.user_metadata?.display_name || user.email || "U").charAt(0).toUpperCase();
 
   return (
-    <div ref={ref} className="fixed top-3 right-14 z-50">
+    <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
         className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all border ${
