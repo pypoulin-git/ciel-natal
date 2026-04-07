@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { PlanetPosition } from "@/lib/astro";
+import { PlanetPosition, translateSign } from "@/lib/astro";
 import { getSignPaths, getPlanetPaths } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 
-const SIGN_NAMES = [
-  "Bélier", "Taureau", "Gémeaux", "Cancer", "Lion", "Vierge",
+const SIGN_KEYS = [
+  "Belier", "Taureau", "Gemeaux", "Cancer", "Lion", "Vierge",
   "Balance", "Scorpion", "Sagittaire", "Capricorne", "Verseau", "Poissons",
 ];
 
@@ -133,7 +133,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
         <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="rgba(168,158,200,0.35)" strokeWidth="1.2" />
 
         {/* Sign segments */}
-        {SIGN_NAMES.map((_, i) => {
+        {SIGN_KEYS.map((_, i) => {
           const startAngle = i * 30;
           const midAngle = startAngle + 15;
           const isHovered = hoveredSign === i;
@@ -152,7 +152,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
           const iconSz = isHovered ? signIconSizeHover : signIconSize;
 
           return (
-            <g key={SIGN_NAMES[i]}
+            <g key={translateSign(SIGN_KEYS[i], locale)}
               onMouseEnter={() => setHoveredSign(i)}
               onMouseLeave={() => setHoveredSign(null)}
               className="cursor-default"
@@ -201,7 +201,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
                   className="pointer-events-none"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 >
-                  {SIGN_NAMES[i]}
+                  {translateSign(SIGN_KEYS[i], locale)}
                 </text>
               )}
             </g>
@@ -251,7 +251,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               onMouseEnter={() => setHoveredPlanet(planet.name)}
               onMouseLeave={() => setHoveredPlanet(null)}
               role="button"
-              aria-label={`${planet.name} en ${planet.sign}`}
+              aria-label={`${planet.name} ${locale === "en" ? "in" : "en"} ${translateSign(planet.sign, locale)}`}
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && onTapPlanet?.(planet)}
             >
@@ -308,7 +308,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
                     className="pointer-events-none"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
-                    {planet.sign} {planet.degree}°
+                    {translateSign(planet.sign, locale)} {planet.degree}°
                   </text>
                 </>
               )}

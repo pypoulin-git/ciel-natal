@@ -7,7 +7,7 @@ import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
-import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
+import { calculateNatalChart, NatalChart, PlanetPosition, translateSign } from "@/lib/astro";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
@@ -723,9 +723,9 @@ export default function Home() {
                   <p className="text-xl sm:text-2xl font-cinzel text-[var(--color-text-primary)] mb-4 leading-relaxed">
                     {getGreeting(form.prenom, form.genre, locale)},{" "}
                     {locale === "fr" ? "tu es" : "you are"}{" "}
-                    <span className="text-[var(--color-accent-lavender)] font-semibold">{chart.planets[0].sign}</span>
+                    <span className="text-[var(--color-accent-lavender)] font-semibold">{translateSign(chart.planets[0].sign, locale)}</span>
                     {chart.ascendant && (<>, {locale === "fr" ? "Ascendant" : "Ascendant"}{" "}
-                      <span className="text-[var(--color-accent-lavender)] font-semibold">{chart.ascendant.sign}</span>
+                      <span className="text-[var(--color-accent-lavender)] font-semibold">{translateSign(chart.ascendant.sign, locale)}</span>
                     </>)}.
                   </p>
 
@@ -755,10 +755,10 @@ export default function Home() {
 
                   {/* Short portrait sentences */}
                   <div className="space-y-2 text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto">
-                    <p>{locale === "fr" ? "Ton Soleil en" : "Your Sun in"} {chart.planets[0].sign} {genderize(getIntroSentence(getCosmicPortraitSun(chart.planets[0].sign, locale)), form.genre)}</p>
-                    <p>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {genderize(getIntroSentence(getCosmicPortraitMoon(chart.planets[1].sign, locale)), form.genre)}</p>
+                    <p>{locale === "fr" ? "Ton Soleil en" : "Your Sun in"} {translateSign(chart.planets[0].sign, locale)} {genderize(getIntroSentence(getCosmicPortraitSun(chart.planets[0].sign, locale)), form.genre)}</p>
+                    <p>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {translateSign(chart.planets[1].sign, locale)} {genderize(getIntroSentence(getCosmicPortraitMoon(chart.planets[1].sign, locale)), form.genre)}</p>
                     {chart.ascendant && (
-                      <p>Ascendant {chart.ascendant.sign} — {genderize(getCosmicPortraitAsc(chart.ascendant.sign, locale), form.genre)}</p>
+                      <p>Ascendant {translateSign(chart.ascendant.sign, locale)} — {genderize(getCosmicPortraitAsc(chart.ascendant.sign, locale), form.genre)}</p>
                     )}
                   </div>
 
@@ -856,7 +856,7 @@ export default function Home() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-[11px] uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
-                              <div className="font-cinzel text-2xl text-[var(--color-text-primary)] mt-0.5">{item.data.sign}</div>
+                              <div className="font-cinzel text-2xl text-[var(--color-text-primary)] mt-0.5">{translateSign(item.data.sign, locale)}</div>
                               <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.sub}</div>
                             </div>
                             <div className="text-right flex-shrink-0">
@@ -880,9 +880,9 @@ export default function Home() {
                   <div ref={bigThreeContentRef} className="min-h-[60px] transition-all duration-500 ease-in-out">
                     {(() => {
                       const items = [
-                        { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {chart.planets[0].sign} {genderize(getCosmicPortraitSun(chart.planets[0].sign, locale), form.genre)}</> },
-                        { data: chart.planets[1], portrait: () => <>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {genderize(getCosmicPortraitMoon(chart.planets[1].sign, locale), form.genre)}</> },
-                        ...(chart.ascendant ? [{ data: chart.ascendant, portrait: () => <>{locale === "fr" ? "Avec un Ascendant" : "With an Ascendant in"} {chart.ascendant!.sign}, {genderize(getCosmicPortraitAsc(chart.ascendant!.sign, locale), form.genre)}</> }] : []),
+                        { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {translateSign(chart.planets[0].sign, locale)} {genderize(getCosmicPortraitSun(chart.planets[0].sign, locale), form.genre)}</> },
+                        { data: chart.planets[1], portrait: () => <>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {translateSign(chart.planets[1].sign, locale)} {genderize(getCosmicPortraitMoon(chart.planets[1].sign, locale), form.genre)}</> },
+                        ...(chart.ascendant ? [{ data: chart.ascendant, portrait: () => <>{locale === "fr" ? "Avec un Ascendant" : "With an Ascendant in"} {translateSign(chart.ascendant!.sign, locale)}, {genderize(getCosmicPortraitAsc(chart.ascendant!.sign, locale), form.genre)}</> }] : []),
                       ];
                       const active = items.find((i) => i.data.name === activeBigThree);
                       if (!active) return (
@@ -970,7 +970,7 @@ export default function Home() {
                                 <span className="text-base font-medium text-[var(--color-text-primary)]">{planet.name}</span>
                                 {!isPremium && <PremiumBadge small />}
                               </span>
-                              <span className="text-[15px] text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
+                              <span className="text-[15px] text-[var(--color-text-secondary)] ml-2">{translateSign(planet.sign, locale)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -986,7 +986,7 @@ export default function Home() {
                           <div className="px-5 pb-5 text-base text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
                             <div className="pt-4 whitespace-pre-line">
                               {getInterp(planet.name, planet.sign, planet.house) || (
-                                <span className="text-[var(--color-text-secondary)]">{planet.name} {locale === "en" ? "in" : "en"} {planet.sign} {locale === "en" ? "colors how you express the qualities of this sign." : "colore ta manière d'exprimer les qualités de ce signe."}</span>
+                                <span className="text-[var(--color-text-secondary)]">{planet.name} {locale === "en" ? "in" : "en"} {translateSign(planet.sign, locale)} {locale === "en" ? "colors how you express the qualities of this sign." : "colore ta manière d'exprimer les qualités de ce signe."}</span>
                               )}
                             </div>
                           </div>
@@ -1126,10 +1126,10 @@ export default function Home() {
                             </div>
                             <div className="text-right">
                               <div className="text-sm text-[var(--color-text-secondary)]">
-                                <span className="text-[var(--color-accent-lavender)]">{t("transits.current")}</span> {transit.sign} {transit.degree}°
+                                <span className="text-[var(--color-accent-lavender)]">{t("transits.current")}</span> {translateSign(transit.sign, locale)} {transit.degree}°
                               </div>
                               <div className="text-xs text-[var(--color-text-secondary)] opacity-70">
-                                {t("transits.natal")} {natal.sign} {natal.degree}°
+                                {t("transits.natal")} {translateSign(natal.sign, locale)} {natal.degree}°
                               </div>
                             </div>
                           </div>
@@ -1209,8 +1209,8 @@ export default function Home() {
                   <button onClick={() => {
                       const url = getAnonymousShareUrl();
                       const text = locale === "fr"
-                        ? `Une carte du ciel : Soleil en ${chart.planets[0].sign}, Lune en ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Découvre la tienne !`
-                        : `A natal chart: Sun in ${chart.planets[0].sign}, Moon in ${chart.planets[1].sign}${chart.ascendant ? `, Ascendant ${chart.ascendant.sign}` : ""}. Discover yours!`;
+                        ? `Une carte du ciel : Soleil en ${translateSign(chart.planets[0].sign, locale)}, Lune en ${translateSign(chart.planets[1].sign, locale)}${chart.ascendant ? `, Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}. Découvre la tienne !`
+                        : `A natal chart: Sun in ${translateSign(chart.planets[0].sign, locale)}, Moon in ${translateSign(chart.planets[1].sign, locale)}${chart.ascendant ? `, Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}. Discover yours!`;
                       if (navigator.share) { navigator.share({ title: locale === "fr" ? "Carte du ciel" : "Natal Chart", text, url }); }
                       else { navigator.clipboard.writeText(text + "\n" + url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
                     }} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">

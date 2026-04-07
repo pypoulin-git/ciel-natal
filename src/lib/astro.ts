@@ -36,6 +36,22 @@ const SIGNS = [
 
 const SIGN_SYMBOLS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
 
+const SIGNS_EN: Record<string, string> = {
+  Belier: "Aries", Taureau: "Taurus", Gemeaux: "Gemini", Cancer: "Cancer",
+  Lion: "Leo", Vierge: "Virgo", Balance: "Libra", Scorpion: "Scorpio",
+  Sagittaire: "Sagittarius", Capricorne: "Capricorn", Verseau: "Aquarius", Poissons: "Pisces",
+};
+
+/** Translate a sign name (internal French key) to the display name for a given locale */
+export function translateSign(sign: string, locale: string): string {
+  if (locale === "en") return SIGNS_EN[sign] || SIGNS_EN[sign.replace(/[éè]/g, "e").replace(/[à]/g, "a")] || sign;
+  // Add accents for French display
+  const FR_DISPLAY: Record<string, string> = {
+    Belier: "Bélier", Gemeaux: "Gémeaux",
+  };
+  return FR_DISPLAY[sign] || sign;
+}
+
 // Convert date to Julian Day Number
 function toJulianDay(year: number, month: number, day: number, hour: number = 0): number {
   if (month <= 2) {

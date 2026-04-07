@@ -6,7 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
 import { useAuth } from "@/lib/auth-context";
-import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
+import { calculateNatalChart, NatalChart, PlanetPosition, translateSign } from "@/lib/astro";
 import { useLocale } from "@/lib/i18n";
 
 interface PersonData {
@@ -232,16 +232,16 @@ export default function SynastryPage() {
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between text-[var(--color-text-secondary)]">
                       <span>{locale === "fr" ? "Soleil" : "Sun"}</span>
-                      <span className="text-[var(--color-text-primary)]">{chart.planets[0].sign} {chart.planets[0].degree}°</span>
+                      <span className="text-[var(--color-text-primary)]">{translateSign(chart.planets[0].sign, locale)} {chart.planets[0].degree}°</span>
                     </div>
                     <div className="flex justify-between text-[var(--color-text-secondary)]">
                       <span>{locale === "fr" ? "Lune" : "Moon"}</span>
-                      <span className="text-[var(--color-text-primary)]">{chart.planets[1].sign} {chart.planets[1].degree}°</span>
+                      <span className="text-[var(--color-text-primary)]">{translateSign(chart.planets[1].sign, locale)} {chart.planets[1].degree}°</span>
                     </div>
                     {chart.ascendant && (
                       <div className="flex justify-between text-[var(--color-text-secondary)]">
                         <span>Ascendant</span>
-                        <span className="text-[var(--color-text-primary)]">{chart.ascendant.sign} {chart.ascendant.degree}°</span>
+                        <span className="text-[var(--color-text-primary)]">{translateSign(chart.ascendant.sign, locale)} {chart.ascendant.degree}°</span>
                       </div>
                     )}
                   </div>
