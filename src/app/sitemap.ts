@@ -21,6 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/synastrie`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 },
     { url: `${BASE_URL}/revolution-solaire`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
     { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 },
+    { url: `${BASE_URL}/premium`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
+    { url: `${BASE_URL}/connexion`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.4 },
   ];
 
   const signRoutes = SIGNS.map((slug) => ({

@@ -13,6 +13,19 @@ export interface UserLocation {
 // ─── City Search (Nominatim + GeoNames fallback) ─────────────────
 // If userLocation is provided, results near the user are prioritized.
 // Otherwise, Canada is prioritized first, then global results.
+export class CitySearchError extends Error {
+  constructor(message: string, public readonly code: "timeout" | "network" | "no_results") {
+    super(message);
+    this.name = "CitySearchError";
+  }
+}
+
+function fetchWithTimeout(url: string, headers: Record<string, string>, timeoutMs = 5000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { headers, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 export async function searchCities(
   query: string,
   userLocation?: UserLocation | null
@@ -122,9 +135,9 @@ export async function searchCities(
       ].join(",");
 
       // 1. Search with viewbox bias (bounded=0 means prefer, not restrict)
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city&viewbox=${viewbox}&bounded=0`,
-        { headers }
+        headers
       );
       if (res.ok) {
         allResults = parseNominatim(await res.json());
@@ -132,9 +145,9 @@ export async function searchCities(
 
       // 2. Also search globally if few results
       if (allResults.length < 4) {
-        const res2 = await fetch(
+        const res2 = await fetchWithTimeout(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=fr&addressdetails=1`,
-          { headers }
+          headers
         );
         if (res2.ok) {
           allResults = mergeUnique(allResults, parseNominatim(await res2.json()));
@@ -151,18 +164,18 @@ export async function searchCities(
       // ── Strategy B: no location → Canada first, then global ──
 
       // 1. Search Canada specifically
-      const resCa = await fetch(
+      const resCa = await fetchWithTimeout(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=fr&addressdetails=1&featuretype=city&countrycodes=ca`,
-        { headers }
+        headers
       );
       if (resCa.ok) {
         allResults = parseNominatim(await resCa.json());
       }
 
       // 2. Global search to fill the rest
-      const resGl = await fetch(
+      const resGl = await fetchWithTimeout(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&accept-language=fr&addressdetails=1&featuretype=city`,
-        { headers }
+        headers
       );
       if (resGl.ok) {
         const global = parseNominatim(await resGl.json());
@@ -180,18 +193,25 @@ export async function searchCities(
             userLocation.lat - 4.5,
           ].join(",")}&bounded=0`
         : "";
-      const res3 = await fetch(
+      const res3 = await fetchWithTimeout(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=fr&addressdetails=1${extra}`,
-        { headers }
+        headers
       );
       if (res3.ok) {
         allResults = mergeUnique(allResults, parseNominatim(await res3.json()));
       }
     }
 
-    return dedup(allResults).slice(0, 6);
-  } catch {
-    // Nominatim failed entirely
+    const final = dedup(allResults).slice(0, 6);
+    if (final.length === 0) {
+      throw new CitySearchError("No results found", "no_results");
+    }
+    return final;
+  } catch (err) {
+    if (err instanceof CitySearchError) throw err;
+    const isAbort = err instanceof DOMException && err.name === "AbortError";
+    if (isAbort) throw new CitySearchError("Request timed out", "timeout");
+    // Nominatim failed — try GeoNames fallback
   }
 
   // Fallback: GeoNames free API
@@ -199,12 +219,13 @@ export async function searchCities(
     const countryBias = userLocation
       ? ""
       : "&country=CA";
-    const res = await fetch(
-      `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(query)}&maxRows=6&lang=fr&featureClass=P&username=cielnatal${countryBias}`
+    const res = await fetchWithTimeout(
+      `https://secure.geonames.org/searchJSON?q=${encodeURIComponent(query)}&maxRows=6&lang=fr&featureClass=P&username=cielnatal${countryBias}`,
+      {}
     );
     if (res.ok) {
       const data = await res.json();
-      return (data.geonames || []).map(
+      const results = (data.geonames || []).map(
         (r: {
           name: string;
           lat: string;
@@ -220,9 +241,12 @@ export async function searchCities(
             .join(", "),
         })
       );
+      if (results.length === 0) throw new CitySearchError("No results found", "no_results");
+      return results;
     }
-  } catch {
+  } catch (err) {
+    if (err instanceof CitySearchError) throw err;
     // Both failed
   }
-  return [];
+  throw new CitySearchError("Network error", "network");
 }

@@ -11,7 +11,7 @@ import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { searchCities, CityResult, UserLocation } from "@/lib/citySearch";
+import { searchCities, CityResult, UserLocation, CitySearchError } from "@/lib/citySearch";
 import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes, genderize, getGreeting, getIntroSentence, serializeChartForAI, Genre } from "@/lib/chartHelpers";
 import { useAuth } from "@/lib/auth-context";
 import EnhancedSlider from "@/components/EnhancedSlider";
@@ -91,6 +91,7 @@ export default function Home() {
   const [chart, setChart] = useState<NatalChart | null>(null);
   const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
   const [cityLoading, setCityLoading] = useState(false);
+  const [cityError, setCityError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("portrait");
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [expandedPlanets, setExpandedPlanets] = useState<Set<string>>(new Set());
@@ -178,14 +179,31 @@ export default function Home() {
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
     if (citySearchTimer.current) clearTimeout(citySearchTimer.current);
-    if (query.length < 2) { setCitySuggestions([]); return; }
+    if (query.length < 2) { setCitySuggestions([]); setCityError(null); return; }
     setCityLoading(true);
+    setCityError(null);
     citySearchTimer.current = setTimeout(async () => {
-      const results = await searchCities(query, userLocation);
-      setCitySuggestions(results);
-      setCityLoading(false);
+      try {
+        const results = await searchCities(query, userLocation);
+        setCitySuggestions(results);
+      } catch (err) {
+        setCitySuggestions([]);
+        if (err instanceof CitySearchError) {
+          if (err.code === "timeout") {
+            setCityError(locale === "fr" ? "La recherche a pris trop de temps. Réessaie." : "Search took too long. Please try again.");
+          } else if (err.code === "no_results") {
+            setCityError(locale === "fr" ? "Aucun résultat trouvé. Essaie un autre nom." : "No results found. Try a different name.");
+          } else {
+            setCityError(locale === "fr" ? "Recherche impossible. Vérifie ta connexion." : "Search failed. Check your connection.");
+          }
+        } else {
+          setCityError(locale === "fr" ? "Recherche impossible. Vérifie ta connexion." : "Search failed. Check your connection.");
+        }
+      } finally {
+        setCityLoading(false);
+      }
     }, 350);
-  }, [userLocation]);
+  }, [userLocation, locale]);
 
   const selectCity = useCallback((city: CityResult) => {
     setForm((f) => ({ ...f, lieu: city.display, latitude: city.lat, longitude: city.lon }));
@@ -615,6 +633,11 @@ export default function Home() {
                         ))}
                       </div>
                     )}
+                    {cityError && (
+                      <p className="text-xs text-[var(--color-accent-rose)] mt-3 text-center animate-fade-in" role="alert">
+                        {cityError}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -801,7 +824,7 @@ export default function Home() {
                       </button>
                     )}
                   </div>
-                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); togglePlanet(p.name); }} />
+                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); if (activeTab !== "planets") { scrollToTab("planets"); setTimeout(() => togglePlanet(p.name), 200); } else { togglePlanet(p.name); } }} />
                 </div>
 
                 {/* ── Ton Portrait Cosmique (Big Three fused) ── */}
@@ -881,6 +904,40 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {/* AUDIO NARRATION — right after Portrait for visibility */}
+              {isPremium ? (
+                <div className="scroll-reveal">
+                  <AudioPlayer
+                    narrativeText={[
+                      getCosmicPortraitSun(chart.planets[0].sign),
+                      getCosmicPortraitMoon(chart.planets[1].sign),
+                      chart.ascendant ? getCosmicPortraitAsc(chart.ascendant.sign) : "",
+                      ...getLifeThemes(chart, form.prenom).slice(0, 2).map((t) => t.text),
+                    ].filter(Boolean).join(" ")}
+                    chartParams={{ sun: chart.planets[0].sign, moon: chart.planets[1].sign, asc: chart.ascendant?.sign }}
+                  />
+                </div>
+              ) : (
+                <PremiumGate compact>
+                  <div className="glass p-5 sm:p-6 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/15 flex items-center justify-center">
+                      <svg width="18" height="18" fill="none" stroke="var(--color-accent-rose)" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                        <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {locale === "fr" ? "Écoute ton portrait cosmique" : "Listen to your cosmic portrait"}
+                      </span>
+                      <span className="block text-[10px] text-[var(--color-text-secondary)] opacity-60">
+                        {locale === "fr" ? "Une narration audio douce de ta carte du ciel" : "A gentle audio narration of your natal chart"}
+                      </span>
+                    </div>
+                  </div>
+                </PremiumGate>
+              )}
 
               <SectionTransition
                 text={locale === "fr"
@@ -1109,39 +1166,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* AUDIO NARRATION */}
-              {isPremium ? (
-                <div className="scroll-reveal">
-                  <AudioPlayer
-                    narrativeText={[
-                      getCosmicPortraitSun(chart.planets[0].sign),
-                      getCosmicPortraitMoon(chart.planets[1].sign),
-                      chart.ascendant ? getCosmicPortraitAsc(chart.ascendant.sign) : "",
-                      ...getLifeThemes(chart, form.prenom).slice(0, 2).map((t) => t.text),
-                    ].filter(Boolean).join(" ")}
-                    chartParams={{ sun: chart.planets[0].sign, moon: chart.planets[1].sign, asc: chart.ascendant?.sign }}
-                  />
-                </div>
-              ) : (
-                <PremiumGate compact>
-                  <div className="glass p-5 sm:p-6 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/15 flex items-center justify-center">
-                      <svg width="18" height="18" fill="none" stroke="var(--color-accent-rose)" strokeWidth="1.5" viewBox="0 0 24 24">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                        <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {locale === "fr" ? "Ecoute ton portrait cosmique" : "Listen to your cosmic portrait"}
-                      </span>
-                      <span className="block text-[10px] text-[var(--color-text-secondary)] opacity-60">
-                        {locale === "fr" ? "Une narration audio douce de ta carte du ciel" : "A gentle audio narration of your natal chart"}
-                      </span>
-                    </div>
-                  </div>
-                </PremiumGate>
-              )}
+              {/* AUDIO NARRATION — moved to after Portrait section */}
 
               {/* CHAT AI (P4.3) */}
               <ChartChat

@@ -149,3 +149,43 @@ export function getLifeThemes(chart: NatalChart, prenom: string): { icon: string
 
   return themes;
 }
+
+// ─── AI Chat Serialization ──────────────────────────────────────
+export function serializeChartForAI(
+  chart: NatalChart,
+  form: { prenom: string; genre: Genre; jour: number; mois: number; annee: number; heure: number; minute: number; hasTime: boolean; lieu: string }
+): string {
+  const sun = chart.planets[0];
+  const moon = chart.planets[1];
+  const asc = chart.ascendant;
+
+  const elMap: Record<string, string> = {
+    Belier: "Feu", Taureau: "Terre", Gemeaux: "Air", Cancer: "Eau",
+    Lion: "Feu", Vierge: "Terre", Balance: "Air", Scorpion: "Eau",
+    Sagittaire: "Feu", Capricorne: "Terre", Verseau: "Air", Poissons: "Eau",
+  };
+  const elCount: Record<string, number> = { Feu: 0, Terre: 0, Air: 0, Eau: 0 };
+  chart.planets.forEach((p) => { if (elMap[p.sign]) elCount[elMap[p.sign]]++; });
+  const dominantEl = Object.entries(elCount).sort((a, b) => b[1] - a[1])[0][0];
+
+  const lines = [
+    `Prénom: ${form.prenom}`,
+    `Genre: ${form.genre === "femme" ? "Femme" : form.genre === "homme" ? "Homme" : "Non-binaire"}`,
+    `Naissance: ${form.jour}/${form.mois}/${form.annee}${form.hasTime ? ` à ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}` : " (heure inconnue)"}`,
+    `Lieu: ${form.lieu}`,
+    ``,
+    `Soleil: ${sun.sign} ${sun.degree}°${sun.house ? ` (Maison ${sun.house})` : ""}`,
+    `Lune: ${moon.sign} ${moon.degree}°${moon.house ? ` (Maison ${moon.house})` : ""}`,
+    ...(asc ? [`Ascendant: ${asc.sign} ${asc.degree}°`] : []),
+    ``,
+    `Planètes:`,
+    ...chart.planets.slice(2).map((p) => `  ${p.name}: ${p.sign} ${p.degree}°${p.house ? ` (Maison ${p.house})` : ""}`),
+    ``,
+    `Élément dominant: ${dominantEl} (${elCount[dominantEl]} planètes)`,
+    ``,
+    `Aspects majeurs:`,
+    ...chart.aspects.slice(0, 15).map((a) => `  ${a.planet1} ${a.type} ${a.planet2} (orbe ${a.orb}°)`),
+  ];
+
+  return lines.join("\n");
+}

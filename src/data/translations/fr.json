@@ -1,9 +1,9 @@
 {
   "hero": {
     "title": "Ciel Natal",
-    "subtitle1": "Qu'est-ce que le ciel racontait",
-    "subtitle2": "quand tu es n\u00e9(e)\u00a0?",
-    "cta": "D\u00e9couvrir ma carte"
+    "subtitle1": "Qu'est-ce que le ciel murmurait",
+    "subtitle2": "quand tu es n\u00e9\u00b7e\u00a0?",
+    "cta": "Explorer ma carte"
   },
   "form": {
     "step1": {
@@ -71,18 +71,18 @@
     "moonLabel": "Ton monde \u00e9motionnel",
     "ascLabel": "Ta fa\u00e7ade au monde",
     "cosmicPortrait": "Ton Portrait Cosmique",
-    "planetDesc": "Chaque plan\u00e8te colore un aspect de ta personnalit\u00e9.",
-    "elementDesc": "L'\u00e9quilibre des forces dans ta carte natale.",
-    "houseDesc": "Les domaines de vie activ\u00e9s par tes plan\u00e8tes.",
-    "aspectDesc": "Les dialogues entre tes plan\u00e8tes \u2014 harmonies et tensions.",
+    "planetDesc": "Chaque plan\u00e8te \u00e9claire une facette de qui tu es.",
+    "elementDesc": "L'\u00e9quilibre des \u00e9nergies qui te traversent.",
+    "houseDesc": "Les domaines de ta vie nourris par tes plan\u00e8tes.",
+    "aspectDesc": "Les conversations entre tes plan\u00e8tes \u2014 harmonies et tensions cr\u00e9atrices.",
     "noAspects": "Aucun aspect majeur d\u00e9tect\u00e9 dans ta carte.",
     "lifeThemes": "Tes Th\u00e8mes de Vie",
-    "lifeThemesDesc": "Les fils conducteurs qui tissent ton th\u00e8me natal en un r\u00e9cit unique.",
+    "lifeThemesDesc": "Les fils d'or qui tissent ton th\u00e8me natal en un r\u00e9cit unique.",
     "closing": {
       "title": "Un dernier mot,",
       "p1": "Cette carte est une photographie du ciel au moment pr\u00e9cis de ta naissance \u2014 un instant unique dans l'histoire du cosmos. Elle ne pr\u00e9dit rien. Elle ne d\u00e9termine rien. Elle \u00e9claire.",
       "p2": "Les plan\u00e8tes dessinent des potentiels, des invitations, des tensions cr\u00e9atrices. C'est toi qui choisis comment les vivre, les transformer, les transcender.",
-      "p3": "Tu es l'auteur\u00b7e de ton histoire \u2014 le ciel n'en est que la toile de fond.",
+      "p3": "Tu es l'auteur\u00b7e de ton histoire \u2014 le ciel n'en est que la toile \u00e9toil\u00e9e.",
       "quote": "Le sage domine les \u00e9toiles, les \u00e9toiles ne dominent pas le sage."
     },
     "shareLink": "Partager le lien",
@@ -109,7 +109,7 @@
     "blog": "Blog"
   },
   "footer": {
-    "tagline": "Astrologie psychologique gratuite",
+    "tagline": "Astrologie intuitive et bienveillante",
     "copyright": "Tous droits r\u00e9serv\u00e9s.",
     "disclaimer": "L'astrologie est un outil de r\u00e9flexion, pas un substitut m\u00e9dical ou professionnel."
   },

@@ -4,6 +4,9 @@ import { useState, useCallback, useRef } from "react";
 import Starfield from "@/components/Starfield";
 import ZodiacWheel from "@/components/ZodiacWheel";
 import SiteFooter from "@/components/SiteFooter";
+import PremiumGate from "@/components/PremiumGate";
+import PremiumBadge from "@/components/PremiumBadge";
+import { useAuth } from "@/lib/auth-context";
 import { calculateNatalChart, NatalChart } from "@/lib/astro";
 import { useLocale } from "@/lib/i18n";
 
@@ -57,6 +60,7 @@ const SR_THEMES: Record<string, { fr: string; en: string }> = {
 
 export default function RevolutionSolaire() {
   const { t, locale } = useLocale();
+  const { isPremium } = useAuth();
   const [form, setForm] = useState({
     jour: 15, mois: 6, annee: 1990,
     heure: 12, minute: 0, hasTime: true,
@@ -238,7 +242,7 @@ export default function RevolutionSolaire() {
                 <ZodiacWheel planets={srChart.planets} ascendant={srChart.ascendant} />
               </div>
 
-              {/* SR Ascendant theme */}
+              {/* SR Ascendant theme — free teaser */}
               {srChart.ascendant && (
                 <div className="glass p-6">
                   <h3 className="font-cinzel text-base text-[var(--color-accent-lavender)] mb-2">
@@ -251,54 +255,59 @@ export default function RevolutionSolaire() {
                 </div>
               )}
 
-              {/* SR Planets */}
-              <div className="glass p-6">
-                <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-4">
-                  {locale === "fr" ? "Positions planetaires de l'annee" : "Planetary positions for the year"}
-                </h3>
-                <div className="space-y-2">
-                  {srChart.planets.map((planet) => (
-                    <div key={planet.name} className="flex items-center justify-between py-2 border-b border-[var(--color-glass-border)] last:border-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{planet.symbol}</span>
-                        <span className="text-sm text-[var(--color-text-primary)]">{planet.name}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm text-[var(--color-text-secondary)]">{planet.sign} {planet.degree}°</span>
-                        {planet.house && <span className="text-[10px] text-[var(--color-text-secondary)] opacity-50 ml-2">M{planet.house}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Comparison with natal */}
-              {natalChart && (
-                <div className="glass p-6">
-                  <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-4">
-                    {locale === "fr" ? "Comparaison avec ton theme natal" : "Comparison with your natal chart"}
-                  </h3>
-                  <div className="space-y-2">
-                    {srChart.planets.slice(0, 7).map((srPlanet) => {
-                      const natal = natalChart.planets.find((p) => p.name === srPlanet.name);
-                      if (!natal) return null;
-                      const sameSgn = srPlanet.sign === natal.sign;
-                      return (
-                        <div key={srPlanet.name} className="flex items-center justify-between py-2 border-b border-[var(--color-glass-border)] last:border-0">
-                          <span className="text-sm text-[var(--color-text-primary)]">{srPlanet.name}</span>
-                          <div className="text-right text-xs">
-                            <span className={sameSgn ? "text-[var(--color-accent-lavender)]" : "text-[var(--color-text-secondary)]"}>
-                              {srPlanet.sign} {srPlanet.degree}°
-                            </span>
-                            <span className="text-[var(--color-text-secondary)] opacity-40 mx-2">/</span>
-                            <span className="text-[var(--color-text-secondary)] opacity-60">{natal.sign} {natal.degree}°</span>
+              {/* SR Planets + Comparison — Premium gated */}
+              <PremiumGate>
+                <div className="space-y-6">
+                  <div className="glass p-6">
+                    <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                      {locale === "fr" ? "Positions planetaires de l'annee" : "Planetary positions for the year"}
+                      {!isPremium && <PremiumBadge />}
+                    </h3>
+                    <div className="space-y-2">
+                      {srChart.planets.map((planet) => (
+                        <div key={planet.name} className="flex items-center justify-between py-2 border-b border-[var(--color-glass-border)] last:border-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{planet.symbol}</span>
+                            <span className="text-sm text-[var(--color-text-primary)]">{planet.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm text-[var(--color-text-secondary)]">{planet.sign} {planet.degree}°</span>
+                            {planet.house && <span className="text-[10px] text-[var(--color-text-secondary)] opacity-50 ml-2">M{planet.house}</span>}
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Comparison with natal */}
+                  {natalChart && (
+                    <div className="glass p-6">
+                      <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-4">
+                        {locale === "fr" ? "Comparaison avec ton theme natal" : "Comparison with your natal chart"}
+                      </h3>
+                      <div className="space-y-2">
+                        {srChart.planets.slice(0, 7).map((srPlanet) => {
+                          const natal = natalChart.planets.find((p) => p.name === srPlanet.name);
+                          if (!natal) return null;
+                          const sameSgn = srPlanet.sign === natal.sign;
+                          return (
+                            <div key={srPlanet.name} className="flex items-center justify-between py-2 border-b border-[var(--color-glass-border)] last:border-0">
+                              <span className="text-sm text-[var(--color-text-primary)]">{srPlanet.name}</span>
+                              <div className="text-right text-xs">
+                                <span className={sameSgn ? "text-[var(--color-accent-lavender)]" : "text-[var(--color-text-secondary)]"}>
+                                  {srPlanet.sign} {srPlanet.degree}°
+                                </span>
+                                <span className="text-[var(--color-text-secondary)] opacity-40 mx-2">/</span>
+                                <span className="text-[var(--color-text-secondary)] opacity-60">{natal.sign} {natal.degree}°</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </PremiumGate>
 
               <div className="text-center">
                 <button onClick={() => { setSrChart(null); setNatalChart(null); }}

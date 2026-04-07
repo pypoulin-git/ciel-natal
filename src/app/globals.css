@@ -9,6 +9,8 @@
   --color-text-secondary: #c4beda;
   --color-glass-border: rgba(168, 158, 200, 0.1);
   --color-glass-bg: rgba(16, 16, 24, 0.55);
+  --color-accent-rose: #d4a0b0;
+  --color-accent-rose-gold: #c9a07a;
 }
 
 html {
@@ -535,6 +537,33 @@ textarea:focus-visible,
 
 .skip-link:focus {
   top: 0;
+}
+
+/* ============================================
+   Prefers reduced motion — disable animations
+   ============================================ */
+/* ============================================
+   Section header — warm gradient accent
+   ============================================ */
+.section-header-glow {
+  position: relative;
+}
+
+.section-header-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -8px;
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--color-accent-rose), var(--color-accent-lavender), transparent);
+  opacity: 0.5;
+}
+
+/* Rose glow for chat elements */
+.glow-rose {
+  box-shadow: 0 0 20px rgba(212, 160, 176, 0.15), 0 0 40px rgba(212, 160, 176, 0.08);
 }
 
 /* ============================================

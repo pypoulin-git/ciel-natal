@@ -3,6 +3,9 @@
 import { useState, useCallback, useRef } from "react";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
+import PremiumGate from "@/components/PremiumGate";
+import PremiumBadge from "@/components/PremiumBadge";
+import { useAuth } from "@/lib/auth-context";
 import { calculateNatalChart, NatalChart, PlanetPosition } from "@/lib/astro";
 import { useLocale } from "@/lib/i18n";
 
@@ -58,6 +61,7 @@ async function searchCities(query: string, locale: string): Promise<CityResult[]
 
 export default function SynastryPage() {
   const { t, locale } = useLocale();
+  const { isPremium } = useAuth();
   const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_EN;
 
   const [personA, setPersonA] = useState<PersonData>({ ...DEFAULT_PERSON });
@@ -132,9 +136,26 @@ export default function SynastryPage() {
         <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2">
           {locale === "fr" ? "Synastrie — Compatibilité" : "Synastry — Compatibility"}
         </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mb-8">
+        <p className="text-sm text-[var(--color-text-secondary)] mb-6">
           {locale === "fr" ? "Compare deux thèmes natals et découvre les dynamiques relationnelles." : "Compare two natal charts and discover relationship dynamics."}
         </p>
+
+        {/* Intro contextuelle */}
+        {!computed && (
+          <div className="glass rounded-xl px-5 py-4 mb-8 border border-white/5 space-y-2">
+            <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+              {locale === "fr"
+                ? "La synastrie compare les positions planétaires de deux personnes pour révéler les dynamiques relationnelles — attractions, complémentarités et zones de tension. Plus les données sont précises (heure, lieu), plus l'analyse est riche."
+                : "Synastry compares the planetary positions of two people to reveal relationship dynamics — attractions, complementarities and areas of tension. The more precise the data (time, place), the richer the analysis."}
+            </p>
+            <p className="text-[11px] text-[var(--color-text-secondary)] opacity-60 flex items-center gap-1.5">
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              {locale === "fr"
+                ? "Tous les calculs restent sur ton appareil — aucune donnée n'est envoyée."
+                : "All calculations stay on your device — no data is sent."}
+            </p>
+          </div>
+        )}
 
         {!computed ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -143,8 +164,11 @@ export default function SynastryPage() {
               const setPerson = who === "A" ? setPersonA : setPersonB;
               return (
                 <div key={who} className="glass p-5">
-                  <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-4">
-                    {locale === "fr" ? `Personne ${who === "A" ? "1" : "2"}` : `Person ${who === "A" ? "1" : "2"}`}
+                  <h2 className="font-cinzel text-xl text-[var(--color-accent-lavender)] mb-4 flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-[var(--color-accent-lavender)]/15 border border-[var(--color-accent-lavender)]/25 flex items-center justify-center text-sm font-bold text-[var(--color-accent-lavender)]">
+                      {who}
+                    </span>
+                    {locale === "fr" ? `Personne ${who}` : `Person ${who}`}
                   </h2>
                   <div className="space-y-3">
                     <input type="text" value={person.prenom} onChange={(e) => setPerson({ ...person, prenom: e.target.value })}
@@ -225,7 +249,7 @@ export default function SynastryPage() {
               ))}
             </div>
 
-            {/* Compatibility score */}
+            {/* Compatibility score — free teaser */}
             {(() => {
               const harmonics = crossAspects.filter((a) => a.type === "Trigone" || a.type === "Sextile" || a.type === "Conjonction").length;
               const tensions = crossAspects.filter((a) => a.type === "Carre" || a.type === "Opposition").length;
@@ -248,29 +272,32 @@ export default function SynastryPage() {
               );
             })()}
 
-            {/* Cross aspects list */}
-            <div>
-              <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4">
-                {locale === "fr" ? "Aspects croisés" : "Cross aspects"}
-              </h2>
-              <div className="space-y-2">
-                {crossAspects.map((aspect, i) => (
-                  <div key={i} className="glass p-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
-                        <span className="text-[var(--color-accent-lavender)]">{ASPECT_SYMBOLS[aspect.type] || "·"}</span>
-                        <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-[var(--color-glass-border)] font-mono text-[var(--color-text-secondary)]">{aspect.type}</span>
-                        <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
+            {/* Cross aspects list — Premium gated */}
+            <PremiumGate>
+              <div>
+                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                  {locale === "fr" ? "Aspects croisés" : "Cross aspects"}
+                  {!isPremium && <PremiumBadge />}
+                </h2>
+                <div className="space-y-2">
+                  {crossAspects.map((aspect, i) => (
+                    <div key={i} className="glass p-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
+                          <span className="text-[var(--color-accent-lavender)]">{ASPECT_SYMBOLS[aspect.type] || "·"}</span>
+                          <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[var(--color-glass-border)] font-mono text-[var(--color-text-secondary)]">{aspect.type}</span>
+                          <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            </PremiumGate>
 
             <div className="text-center">
               <button onClick={() => { setComputed(false); setChartA(null); setChartB(null); setCrossAspects([]); }}

@@ -8,11 +8,19 @@
     "start": "next start -p 3335"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.66",
+    "@ai-sdk/react": "^3.0.148",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
+    "ai": "^6.0.146",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
     "next": "^16.2.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "stripe": "^22.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",

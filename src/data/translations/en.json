@@ -1,9 +1,9 @@
 {
   "hero": {
     "title": "Ciel Natal",
-    "subtitle1": "What was the sky telling",
+    "subtitle1": "What was the sky whispering",
     "subtitle2": "when you were born?",
-    "cta": "Discover my chart"
+    "cta": "Explore my chart"
   },
   "form": {
     "step1": {
@@ -71,13 +71,13 @@
     "moonLabel": "Your emotional world",
     "ascLabel": "Your face to the world",
     "cosmicPortrait": "Your Cosmic Portrait",
-    "planetDesc": "Each planet colors a facet of your personality.",
-    "elementDesc": "The balance of forces in your birth chart.",
-    "houseDesc": "The life domains activated by your planets.",
-    "aspectDesc": "The dialogues between your planets \u2014 harmonies and tensions.",
+    "planetDesc": "Each planet illuminates a facet of who you are.",
+    "elementDesc": "The balance of energies flowing through you.",
+    "houseDesc": "The life domains nourished by your planets.",
+    "aspectDesc": "The conversations between your planets \u2014 harmonies and creative tensions.",
     "noAspects": "No major aspects detected in your chart.",
     "lifeThemes": "Your Life Themes",
-    "lifeThemesDesc": "The guiding threads that weave your birth chart into a unique story.",
+    "lifeThemesDesc": "The golden threads that weave your birth chart into a unique story.",
     "closing": {
       "title": "One last word,",
       "p1": "This chart is a photograph of the sky at the exact moment of your birth \u2014 a unique instant in the history of the cosmos. It predicts nothing. It determines nothing. It illuminates.",
@@ -109,7 +109,7 @@
     "blog": "Blog"
   },
   "footer": {
-    "tagline": "Free psychological astrology",
+    "tagline": "Intuitive and caring astrology",
     "copyright": "All rights reserved.",
     "disclaimer": "Astrology is a tool for reflection, not a substitute for medical or professional advice."
   },

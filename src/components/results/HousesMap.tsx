@@ -11,9 +11,10 @@ interface Props {
   planets: PlanetPosition[];
   locale?: string;
   genre?: Genre;
+  isPremium?: boolean;
 }
 
-export default function HousesMap({ planets, locale = "fr", genre = "femme" }: Props) {
+export default function HousesMap({ planets, locale = "fr", genre = "femme", isPremium = false }: Props) {
   const houseDescriptions = locale === "en" ? houseDescEn : houseDescFr;
   const planetInHouse = locale === "en" ? pihEn : pihFr;
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -125,6 +126,8 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme" }: P
                       {occupants.map((p) => {
                         const interpretation = planetInHouse[p.name]?.[h];
                         if (!interpretation) return null;
+                        const fullText = genderize(interpretation, genre);
+                        const displayText = isPremium ? fullText : (fullText.match(/^[^.]+\./)?.[0] || fullText);
                         return (
                           <div key={p.name} className="rounded-lg bg-[var(--color-accent-lavender)]/5 border border-[var(--color-accent-lavender)]/15 p-3 sm:p-4">
                             <div className="flex items-center gap-2 mb-2">
@@ -134,8 +137,13 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme" }: P
                               </span>
                             </div>
                             <p className="text-sm leading-relaxed text-[var(--color-text-primary)] opacity-85">
-                              {genderize(interpretation, genre)}
+                              {displayText}
                             </p>
+                            {!isPremium && fullText !== displayText && (
+                              <a href="/premium" className="inline-flex items-center gap-1 mt-2 text-[10px] text-[var(--color-accent-rose)] hover:underline transition">
+                                <span>✦</span> {locale === "en" ? "Unlock full interpretation" : "Débloque l'interprétation complète"}
+                              </a>
+                            )}
                           </div>
                         );
                       })}
