@@ -352,7 +352,7 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
-    const defaultName = locale === "fr" ? "Voyageuse" : "Explorer";
+    const defaultName = locale === "fr" ? "Voyageur·se" : "Explorer";
 
     let loaded: FormData | null = null;
 
@@ -721,7 +721,7 @@ export default function Home() {
               <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 animate-on-scroll">
                 <div className="glass p-6 sm:p-8 text-center">
                   <p className="text-xl sm:text-2xl font-cinzel text-[var(--color-text-primary)] mb-4 leading-relaxed">
-                    {getGreeting(form.prenom, form.genre)},{" "}
+                    {getGreeting(form.prenom, form.genre, locale)},{" "}
                     {locale === "fr" ? "tu es" : "you are"}{" "}
                     <span className="text-[var(--color-accent-lavender)] font-semibold">{chart.planets[0].sign}</span>
                     {chart.ascendant && (<>, {locale === "fr" ? "Ascendant" : "Ascendant"}{" "}
@@ -755,10 +755,10 @@ export default function Home() {
 
                   {/* Short portrait sentences */}
                   <div className="space-y-2 text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-lg mx-auto">
-                    <p>{locale === "fr" ? "Ton Soleil en" : "Your Sun in"} {chart.planets[0].sign} {genderize(getIntroSentence(getCosmicPortraitSun(chart.planets[0].sign)), form.genre)}</p>
-                    <p>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {genderize(getIntroSentence(getCosmicPortraitMoon(chart.planets[1].sign)), form.genre)}</p>
+                    <p>{locale === "fr" ? "Ton Soleil en" : "Your Sun in"} {chart.planets[0].sign} {genderize(getIntroSentence(getCosmicPortraitSun(chart.planets[0].sign, locale)), form.genre)}</p>
+                    <p>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {genderize(getIntroSentence(getCosmicPortraitMoon(chart.planets[1].sign, locale)), form.genre)}</p>
                     {chart.ascendant && (
-                      <p>{locale === "fr" ? "Ascendant" : "Ascendant"} {chart.ascendant.sign} — {genderize(getCosmicPortraitAsc(chart.ascendant.sign), form.genre)}</p>
+                      <p>Ascendant {chart.ascendant.sign} — {genderize(getCosmicPortraitAsc(chart.ascendant.sign, locale), form.genre)}</p>
                     )}
                   </div>
 
@@ -880,9 +880,9 @@ export default function Home() {
                   <div ref={bigThreeContentRef} className="min-h-[60px] transition-all duration-500 ease-in-out">
                     {(() => {
                       const items = [
-                        { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {chart.planets[0].sign} {getCosmicPortraitSun(chart.planets[0].sign)}</> },
-                        { data: chart.planets[1], portrait: () => <>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {getCosmicPortraitMoon(chart.planets[1].sign)}</> },
-                        ...(chart.ascendant ? [{ data: chart.ascendant, portrait: () => <>{locale === "fr" ? "Avec un Ascendant" : "With an Ascendant in"} {chart.ascendant!.sign}, {getCosmicPortraitAsc(chart.ascendant!.sign)}</> }] : []),
+                        { data: chart.planets[0], portrait: () => <><strong>{form.prenom}</strong>, {locale === "fr" ? "ton Soleil en" : "your Sun in"} {chart.planets[0].sign} {genderize(getCosmicPortraitSun(chart.planets[0].sign, locale), form.genre)}</> },
+                        { data: chart.planets[1], portrait: () => <>{locale === "fr" ? "Ta Lune en" : "Your Moon in"} {chart.planets[1].sign} {genderize(getCosmicPortraitMoon(chart.planets[1].sign, locale), form.genre)}</> },
+                        ...(chart.ascendant ? [{ data: chart.ascendant, portrait: () => <>{locale === "fr" ? "Avec un Ascendant" : "With an Ascendant in"} {chart.ascendant!.sign}, {genderize(getCosmicPortraitAsc(chart.ascendant!.sign, locale), form.genre)}</> }] : []),
                       ];
                       const active = items.find((i) => i.data.name === activeBigThree);
                       if (!active) return (
@@ -910,10 +910,10 @@ export default function Home() {
                 <div className="scroll-reveal">
                   <AudioPlayer
                     narrativeText={[
-                      getCosmicPortraitSun(chart.planets[0].sign),
-                      getCosmicPortraitMoon(chart.planets[1].sign),
-                      chart.ascendant ? getCosmicPortraitAsc(chart.ascendant.sign) : "",
-                      ...getLifeThemes(chart, form.prenom).slice(0, 2).map((t) => t.text),
+                      getCosmicPortraitSun(chart.planets[0].sign, locale),
+                      getCosmicPortraitMoon(chart.planets[1].sign, locale),
+                      chart.ascendant ? getCosmicPortraitAsc(chart.ascendant.sign, locale) : "",
+                      ...getLifeThemes(chart, form.prenom, locale).slice(0, 2).map((t) => t.text),
                     ].filter(Boolean).join(" ")}
                     chartParams={{ sun: chart.planets[0].sign, moon: chart.planets[1].sign, asc: chart.ascendant?.sign }}
                   />
@@ -1152,14 +1152,14 @@ export default function Home() {
                 </h2>
                 <p className="text-sm text-[var(--color-text-secondary)] mb-5">{t("results.lifeThemesDesc")}</p>
                 <div className="space-y-3 stagger-in">
-                  {getLifeThemes(chart, form.prenom).map((theme, i) => (
+                  {getLifeThemes(chart, form.prenom, locale).map((theme, i) => (
                     <div key={i} className="flex gap-4 p-4 sm:p-5 rounded-xl bg-white/[0.02] border border-[var(--color-glass-border)]">
                       <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-lavender)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-base text-[var(--color-accent-lavender)]">{theme.icon}</span>
                       </div>
                       <div>
                         <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">{theme.title}</h3>
-                        <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{theme.text}</p>
+                        <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{genderize(theme.text, form.genre)}</p>
                       </div>
                     </div>
                   ))}
