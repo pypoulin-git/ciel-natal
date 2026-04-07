@@ -12,9 +12,16 @@ import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon }
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { searchCities, CityResult, UserLocation } from "@/lib/citySearch";
-import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes, genderize, getGreeting, getIntroSentence, Genre } from "@/lib/chartHelpers";
+import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes, genderize, getGreeting, getIntroSentence, serializeChartForAI, Genre } from "@/lib/chartHelpers";
+import { useAuth } from "@/lib/auth-context";
 import EnhancedSlider from "@/components/EnhancedSlider";
 import LoadingMessages from "@/components/LoadingMessages";
+import SectionTransition from "@/components/results/SectionTransition";
+import ChartChat from "@/components/results/ChartChat";
+import PremiumGate from "@/components/PremiumGate";
+import PremiumBadge from "@/components/PremiumBadge";
+import AudioPlayer from "@/components/AudioPlayer";
+import SavedCharts from "@/components/SavedCharts";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -63,6 +70,7 @@ const SLIDER_KEYS = [
 // ─── Page ────────────────────────────────────────────────────────
 export default function Home() {
   const { t, locale } = useLocale();
+  const { isPremium } = useAuth();
   const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_EN;
   const RESULT_TABS = [
     { id: "portrait", label: t("results.portrait"), icon: "✦" },
@@ -94,6 +102,7 @@ export default function Home() {
   const [showValidation, setShowValidation] = useState(false);
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
+  const [showTabsHint, setShowTabsHint] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
   useScrollReveal();
@@ -101,6 +110,34 @@ export default function Home() {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bigThreeContentRef = useRef<HTMLDivElement | null>(null);
+
+  // ─── IntersectionObserver for auto-highlighting active tab ───
+  useEffect(() => {
+    if (step !== 7) return;
+    const sectionIds = ["portrait", "planets", "elements", "houses", "aspects", "transits"];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = sectionIds.find((sid) => sectionRefs.current[sid] === entry.target);
+            if (id) setActiveTab(id);
+          }
+        }
+      },
+      { rootMargin: "-80px 0px -60% 0px", threshold: 0.1 }
+    );
+    // Small delay to let refs settle
+    const timer = setTimeout(() => {
+      sectionIds.forEach((id) => {
+        const el = sectionRefs.current[id];
+        if (el) observer.observe(el);
+      });
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [step]);
 
   const togglePlanet = (name: string) => {
     setExpandedPlanets((prev) => {
@@ -175,6 +212,10 @@ export default function Home() {
         form.latitude, form.longitude, form.hasTime
       );
       setChart(c);
+      // Show tabs guidance hint once per session for first-time results view
+      if (!sessionStorage.getItem("tabs_guidance_seen")) {
+        setShowTabsHint(true);
+      }
       setTimeout(() => setStep(7), 2500);
     }, 1000);
   };
@@ -251,17 +292,32 @@ export default function Home() {
       planetInHouse: Record<string, Record<number, string>>;
       getInterpretation?: (p: string, s: string, h: number | undefined, prefs: { tone: number; depth: number; focus: number }) => string;
     };
-    if (mod.getInterpretation) return genderize(mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus }), form.genre);
-    let text = mod.planetInSign?.[planet]?.[sign] || "";
-    if (house && mod.planetInHouse?.[planet]?.[house]) text += "\n\n" + mod.planetInHouse[planet][house];
-    return genderize(text, form.genre);
+    let text: string;
+    if (mod.getInterpretation) {
+      text = mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus });
+    } else {
+      text = mod.planetInSign?.[planet]?.[sign] || "";
+      if (house && mod.planetInHouse?.[planet]?.[house]) text += "\n\n" + mod.planetInHouse[planet][house];
+    }
+    const gendered = genderize(text, form.genre);
+    // Free users see only the first sentence
+    if (!isPremium && gendered) {
+      const match = gendered.match(/^[^.]+\./);
+      return match ? match[0] : gendered;
+    }
+    return gendered;
   };
 
   const getAspectInterp = (type: string, p1: string, p2: string): string => {
     if (!interpretations) return "";
     const mod = interpretations as { aspectInterpretations: Record<string, Record<string, string>> };
     const raw = mod.aspectInterpretations?.[type]?.[`${p1}-${p2}`] || mod.aspectInterpretations?.[type]?.[`${p2}-${p1}`] || "";
-    return genderize(raw, form.genre);
+    const gendered = genderize(raw, form.genre);
+    if (!isPremium && gendered) {
+      const match = gendered.match(/^[^.]+\./);
+      return match ? match[0] : gendered;
+    }
+    return gendered;
   };
 
   const scrollToTab = (tabId: string) => {
@@ -566,7 +622,16 @@ export default function Home() {
               {step === 5 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step5.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step5.subtitle")}</p>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step5.subtitle")}</p>
+                  {form.tone === 5 && form.depth === 5 && form.focus === 5 && (
+                    <div className="glass rounded-xl px-4 py-3 mb-6 text-center border border-white/5">
+                      <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                        {locale === "en"
+                          ? "These sliders adjust the writing style of your interpretation — they don't change the astrological calculation."
+                          : "Ces curseurs personnalisent le style de rédaction de ton interprétation. Ils n'affectent pas le calcul astrologique."}
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-8">
                     {SLIDER_KEYS.map((slider) => (
                       <EnhancedSlider key={slider.key}
@@ -686,7 +751,13 @@ export default function Home() {
             <nav className="sticky top-0 z-30 backdrop-blur-2xl bg-[var(--color-space-deep)]/80" style={{ borderBottom: "1px solid rgba(201,160,255,0.06)" }}>
               <div className="tab-nav flex overflow-x-auto max-w-3xl mx-auto">
                 {RESULT_TABS.map((tab) => (
-                  <button key={tab.id} onClick={() => scrollToTab(tab.id)}
+                  <button key={tab.id} onClick={() => {
+                    scrollToTab(tab.id);
+                    if (showTabsHint) {
+                      setShowTabsHint(false);
+                      sessionStorage.setItem("tabs_guidance_seen", "1");
+                    }
+                  }}
                     className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 text-[11px] font-medium tracking-wide uppercase transition-all whitespace-nowrap relative ${
                       activeTab === tab.id
                         ? "text-[var(--color-accent-lavender)]"
@@ -700,6 +771,14 @@ export default function Home() {
                 ))}
               </div>
             </nav>
+
+            {showTabsHint && (
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-3">
+                <p className="text-[11px] text-center text-[var(--color-accent-lavender)]/60 animate-fade-in">
+                  {locale === "en" ? "↑ Start here — explore each section at your own pace" : "↑ Commence par ici — explore chaque section à ton rythme"}
+                </p>
+              </div>
+            )}
 
             <div ref={resultsRef} className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 space-y-8 mt-6">
 
@@ -803,6 +882,13 @@ export default function Home() {
                 </div>
               </div>
 
+              <SectionTransition
+                text={locale === "fr"
+                  ? "Maintenant que tu connais tes trois piliers, explorons les planètes qui colorent ton thème..."
+                  : "Now that you know your three pillars, let's explore the planets that color your chart..."}
+                symbol="⊙"
+              />
+
               {/* PLANETS — personal planets only (skip Sun/Moon already in Big Three, skip generational) */}
               <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-16">
                 <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
@@ -823,7 +909,10 @@ export default function Home() {
                               <PlanetIcon name={planet.name} size={22} color="var(--color-accent-lavender)" />
                             </div>
                             <div>
-                              <span className="text-base font-medium text-[var(--color-text-primary)]">{planet.name}</span>
+                              <span className="inline-flex items-center gap-2">
+                                <span className="text-base font-medium text-[var(--color-text-primary)]">{planet.name}</span>
+                                {!isPremium && <PremiumBadge small />}
+                              </span>
                               <span className="text-[15px] text-[var(--color-text-secondary)] ml-2">{planet.sign}</span>
                             </div>
                           </div>
@@ -851,6 +940,13 @@ export default function Home() {
                 </div>
               </div>
 
+              <SectionTransition
+                text={locale === "fr"
+                  ? "Chaque planète appartient à un élément. Voici l'équilibre des forces qui te traversent..."
+                  : "Each planet belongs to an element. Here's the balance of forces flowing through you..."}
+                symbol="◆"
+              />
+
               {/* ELEMENTS */}
               <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16 scroll-reveal">
                 <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
@@ -862,6 +958,15 @@ export default function Home() {
                 </div>
               </div>
 
+              {chart.ascendant && (
+                <SectionTransition
+                  text={locale === "fr"
+                    ? "Les maisons astrologiques révèlent les domaines de ta vie où ces énergies s'expriment..."
+                    : "The astrological houses reveal the life areas where these energies express themselves..."}
+                  symbol="⌂"
+                />
+              )}
+
               {/* HOUSES */}
               {chart.ascendant && (
                 <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16 scroll-reveal">
@@ -869,9 +974,16 @@ export default function Home() {
                     <span className="text-[var(--color-accent-lavender)] opacity-50">⌂</span> {t("results.houses")}
                   </h2>
                   <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
-                  <HousesMap planets={chart.planets} locale={locale} genre={form.genre} />
+                  <HousesMap planets={chart.planets} locale={locale} genre={form.genre} isPremium={isPremium} />
                 </div>
               )}
+
+              <SectionTransition
+                text={locale === "fr"
+                  ? "Les aspects révèlent comment tes planètes se parlent entre elles — harmonies et tensions créatrices..."
+                  : "Aspects reveal how your planets talk to each other — harmonies and creative tensions..."}
+                symbol="△"
+              />
 
               {/* ASPECTS */}
               <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16 scroll-reveal">
@@ -997,6 +1109,48 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* AUDIO NARRATION */}
+              {isPremium ? (
+                <div className="scroll-reveal">
+                  <AudioPlayer
+                    narrativeText={[
+                      getCosmicPortraitSun(chart.planets[0].sign),
+                      getCosmicPortraitMoon(chart.planets[1].sign),
+                      chart.ascendant ? getCosmicPortraitAsc(chart.ascendant.sign) : "",
+                      ...getLifeThemes(chart, form.prenom).slice(0, 2).map((t) => t.text),
+                    ].filter(Boolean).join(" ")}
+                    chartParams={{ sun: chart.planets[0].sign, moon: chart.planets[1].sign, asc: chart.ascendant?.sign }}
+                  />
+                </div>
+              ) : (
+                <PremiumGate compact>
+                  <div className="glass p-5 sm:p-6 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/15 flex items-center justify-center">
+                      <svg width="18" height="18" fill="none" stroke="var(--color-accent-rose)" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                        <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {locale === "fr" ? "Ecoute ton portrait cosmique" : "Listen to your cosmic portrait"}
+                      </span>
+                      <span className="block text-[10px] text-[var(--color-text-secondary)] opacity-60">
+                        {locale === "fr" ? "Une narration audio douce de ta carte du ciel" : "A gentle audio narration of your natal chart"}
+                      </span>
+                    </div>
+                  </div>
+                </PremiumGate>
+              )}
+
+              {/* CHAT AI (P4.3) */}
+              <ChartChat
+                chartContext={serializeChartForAI(chart, form)}
+                prenom={form.prenom}
+                genre={form.genre}
+                locale={locale}
+              />
+
               {/* CLOSING */}
               <div className="glass p-8 sm:p-10 text-center scroll-reveal">
                 <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-[var(--color-accent-lavender)]/5 border border-[var(--color-accent-lavender)]/10 flex items-center justify-center">
@@ -1011,6 +1165,20 @@ export default function Home() {
                     <p className="text-[var(--color-accent-lavender)] italic text-sm opacity-70">&laquo;&nbsp;{t("results.closing.quote")}&nbsp;&raquo;</p>
                   </div>
                 </div>
+                {/* Saved charts (premium only) */}
+                <div className="flex justify-center mb-6">
+                  <SavedCharts
+                    onLoadChart={(formData) => {
+                      const fd = formData as unknown as typeof form;
+                      setForm(fd);
+                      setStep(0);
+                      setChart(null);
+                    }}
+                    currentFormData={form as unknown as Record<string, unknown>}
+                    currentLabel={form.prenom}
+                  />
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
                   {/* Share anonymously (default — no name, safe for social) */}
                   <button onClick={() => {
@@ -1039,10 +1207,17 @@ export default function Home() {
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                     {t("results.copyChart")}
                   </button>
-                  <button onClick={exportPdf} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
-                    {t("results.exportPdf")}
-                  </button>
+                  {isPremium ? (
+                    <button onClick={exportPdf} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                      {t("results.exportPdf")}
+                    </button>
+                  ) : (
+                    <a href="/premium" className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2 opacity-60">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                      {t("results.exportPdf")} <PremiumBadge small />
+                    </a>
+                  )}
                 </div>
                 {copied && (
                   <p className="text-xs text-[var(--color-accent-lavender)] mb-4 animate-fade-in">{t("results.copied")}</p>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { PlanetPosition } from "@/lib/astro";
 import { getSignPaths, getPlanetPaths } from "@/components/AstroIcons";
+import { useLocale } from "@/lib/i18n";
 
 const SIGN_NAMES = [
   "Bélier", "Taureau", "Gémeaux", "Cancer", "Lion", "Vierge",
@@ -18,6 +19,7 @@ interface ZodiacWheelProps {
 }
 
 export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapPlanet, showAspects = true }: ZodiacWheelProps) {
+  const { locale } = useLocale();
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [hoveredSign, setHoveredSign] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,9 +73,21 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
   const planetIconSize = isSmall ? 11 : 13;
   const planetIconSizeActive = isSmall ? 13 : 15;
 
+  const wheelLabel = locale === "en" ? "Interactive zodiac wheel" : "Roue zodiacale interactive";
+  const keyboardHint = locale === "en"
+    ? "Use Tab to navigate between planets, Enter to select"
+    : "Utilisez Tab pour naviguer entre les planètes, Entrée pour sélectionner";
+
   return (
     <div className="relative w-full" ref={containerRef}>
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[580px] mx-auto touch-none select-none" role="img" aria-label="Zodiac wheel chart">
+      <p className="sr-only">{keyboardHint}</p>
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="w-full max-w-[580px] mx-auto touch-none select-none"
+        role="img"
+        aria-labelledby="zodiac-wheel-title"
+      >
+        <title id="zodiac-wheel-title">{wheelLabel}</title>
         <defs>
           <radialGradient id="wg" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="rgba(168,158,200,0.15)" />

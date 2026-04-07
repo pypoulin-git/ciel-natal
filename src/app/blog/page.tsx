@@ -1,29 +1,15 @@
+"use client";
+
 import Link from "next/link";
-import type { Metadata } from "next";
 import { articles } from "@/data/blog/articles";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
-
-export const metadata: Metadata = {
-  title: "Blog — Astrologie psychologique | Ciel Natal",
-  description:
-    "Articles educatifs sur l'astrologie psychologique : ascendant, elements, aspects planetaires et bien plus. Apprends a lire ton theme natal.",
-  keywords: [
-    "blog astrologie",
-    "astrologie psychologique",
-    "ascendant",
-    "elements astrologie",
-    "aspects planetaires",
-    "theme natal",
-  ],
-  openGraph: {
-    title: "Blog — Ciel Natal",
-    description:
-      "Explore nos articles sur l'astrologie psychologique et apprends a lire ton theme natal.",
-  },
-};
+import { useLocale } from "@/lib/i18n";
 
 export default function BlogPage() {
+  const { locale } = useLocale();
+  const isFr = locale !== "en";
+
   return (
     <main className="relative min-h-screen">
       <Starfield />
@@ -42,14 +28,14 @@ export default function BlogPage() {
           >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          Retour
+          {isFr ? "Retour" : "Back"}
         </Link>
 
         <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2">
           Blog
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mb-10">
-          Explorations en astrologie psychologique
+          {isFr ? "Explorations en astrologie psychologique" : "Explorations in psychological astrology"}
         </p>
 
         <div className="grid gap-6 sm:grid-cols-2">
@@ -65,10 +51,10 @@ export default function BlogPage() {
                 <span>{article.readingTime}</span>
               </div>
               <h2 className="font-cinzel text-base text-[var(--color-text-primary)] group-hover:text-[var(--color-accent-lavender)] transition mb-2">
-                {article.titleFr}
+                {isFr ? article.titleFr : article.titleEn}
               </h2>
               <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">
-                {article.excerptFr}
+                {isFr ? article.excerptFr : article.excerptEn}
               </p>
             </Link>
           ))}
