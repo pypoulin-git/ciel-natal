@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { ViewTransition } from "react";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth-context";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import AuthButton from "@/components/AuthButton";
 import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
@@ -68,14 +71,19 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen">
         <LocaleProvider>
-          <a href="#main-content" className="skip-link">
-            Aller au contenu principal
-          </a>
-          <LanguageSwitcher />
-          <main id="main-content" role="main">
-            {children}
-          </main>
-          <CookieBanner />
+          <AuthProvider>
+            <a href="#main-content" className="skip-link">
+              Aller au contenu principal
+            </a>
+            <LanguageSwitcher />
+            <AuthButton />
+            <ViewTransition>
+              <main id="main-content" role="main">
+                {children}
+              </main>
+            </ViewTransition>
+            <CookieBanner />
+          </AuthProvider>
         </LocaleProvider>
       </body>
     </html>
