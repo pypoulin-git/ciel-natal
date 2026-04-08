@@ -52,6 +52,19 @@ export function translateSign(sign: string, locale: string): string {
   return FR_DISPLAY[sign] || sign;
 }
 
+const PLANET_NAMES_EN: Record<string, string> = {
+  Soleil: "Sun", Lune: "Moon", Mercure: "Mercury", "Vénus": "Venus",
+  Mars: "Mars", Jupiter: "Jupiter", Saturne: "Saturn",
+  Uranus: "Uranus", Neptune: "Neptune", Pluton: "Pluto",
+  "Noeud Nord": "North Node",
+};
+
+/** Translate a planet name to the display name for a given locale */
+export function translatePlanet(name: string, locale: string): string {
+  if (locale === "en") return PLANET_NAMES_EN[name] || name;
+  return name;
+}
+
 // Convert date to Julian Day Number
 function toJulianDay(year: number, month: number, day: number, hour: number = 0): number {
   if (month <= 2) {

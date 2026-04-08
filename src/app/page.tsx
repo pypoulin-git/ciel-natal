@@ -7,7 +7,7 @@ import ElementBalance from "@/components/results/ElementBalance";
 import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
-import { calculateNatalChart, NatalChart, PlanetPosition, translateSign } from "@/lib/astro";
+import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
@@ -948,10 +948,10 @@ export default function Home() {
 
               {/* PLANETS — personal planets only (skip Sun/Moon already in Big Three, skip generational) */}
               <div ref={(el) => { sectionRefs.current.planets = el; }} className="scroll-mt-16">
-                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">⊙</span> {t("results.planets")}
                 </h2>
-                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.planetDesc")}</p>
+                <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.planetDesc")}</p>
                 <div className="space-y-2">
                   {chart.planets
                     .filter((p) => !["Soleil", "Lune", "Uranus", "Neptune", "Pluton"].includes(p.name))
@@ -962,15 +962,15 @@ export default function Home() {
                         <button onClick={() => togglePlanet(planet.name)}
                           className="w-full flex items-center justify-between p-4 sm:p-5 text-left btn-hover group">
                           <div className="flex items-center gap-4">
-                            <div className="w-11 h-11 rounded-xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 group-hover:border-[var(--color-accent-lavender)]/25 transition shadow-inner">
-                              <PlanetIcon name={planet.name} size={22} color="var(--color-accent-lavender)" />
+                            <div className="w-12 h-12 rounded-xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 group-hover:border-[var(--color-accent-lavender)]/25 transition shadow-inner">
+                              <PlanetIcon name={planet.name} size={26} color="var(--color-accent-lavender)" />
                             </div>
                             <div>
                               <span className="inline-flex items-center gap-2">
-                                <span className="text-base font-medium text-[var(--color-text-primary)]">{planet.name}</span>
+                                <span className="text-lg font-medium text-[var(--color-text-primary)]">{translatePlanet(planet.name, locale)}</span>
                                 {!isPremium && <PremiumBadge small />}
                               </span>
-                              <span className="text-[15px] text-[var(--color-text-secondary)] ml-2">{translateSign(planet.sign, locale)}</span>
+                              <span className="text-base text-[var(--color-text-secondary)] ml-2">{translateSign(planet.sign, locale)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -986,7 +986,7 @@ export default function Home() {
                           <div className="px-5 pb-5 text-base text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
                             <div className="pt-4 whitespace-pre-line">
                               {getInterp(planet.name, planet.sign, planet.house) || (
-                                <span className="text-[var(--color-text-secondary)]">{planet.name} {locale === "en" ? "in" : "en"} {translateSign(planet.sign, locale)} {locale === "en" ? "colors how you express the qualities of this sign." : "colore ta manière d'exprimer les qualités de ce signe."}</span>
+                                <span className="text-[var(--color-text-secondary)]">{translatePlanet(planet.name, locale)} {locale === "en" ? "in" : "en"} {translateSign(planet.sign, locale)} {locale === "en" ? "colors how you express the qualities of this sign." : "colore ta manière d'exprimer les qualités de ce signe."}</span>
                               )}
                             </div>
                           </div>
@@ -1006,13 +1006,11 @@ export default function Home() {
 
               {/* ELEMENTS */}
               <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16 scroll-reveal">
-                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">◆</span> {t("results.elements")}
                 </h2>
-                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.elementDesc")}</p>
-                <div className="glass p-5 sm:p-6">
-                  <ElementBalance planets={chart.planets} locale={locale} />
-                </div>
+                <p className="text-base text-[var(--color-text-secondary)] mb-6">{t("results.elementDesc")}</p>
+                <ElementBalance planets={chart.planets} locale={locale} />
               </div>
 
               {chart.ascendant && (
@@ -1027,10 +1025,10 @@ export default function Home() {
               {/* HOUSES */}
               {chart.ascendant && (
                 <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16 scroll-reveal">
-                  <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">⌂</span> {t("results.houses")}
                   </h2>
-                  <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.houseDesc")}</p>
+                  <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.houseDesc")}</p>
                   <HousesMap planets={chart.planets} locale={locale} genre={form.genre} isPremium={isPremium} />
                 </div>
               )}
@@ -1044,10 +1042,10 @@ export default function Home() {
 
               {/* ASPECTS */}
               <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16 scroll-reveal">
-                <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">△</span> {t("results.aspects")}
                 </h2>
-                <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("results.aspectDesc")}</p>
+                <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.aspectDesc")}</p>
                 {chart.aspects.length > 0 ? (
                   <div className="space-y-2">
                     {chart.aspects.slice(0, form.depth >= 7 ? undefined : 12).map((aspect, i) => {
@@ -1108,10 +1106,10 @@ export default function Home() {
               {/* TRANSITS DU JOUR */}
               {todayTransits && (
                 <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-16 scroll-reveal">
-                  <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+                  <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">◎</span> {t("transits.title")}
                   </h2>
-                  <p className="text-[15px] text-[var(--color-text-secondary)] mb-4">{t("transits.desc")}</p>
+                  <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("transits.desc")}</p>
                   <div className="space-y-2">
                     {todayTransits.planets.slice(0, 7).map((transit) => {
                       const natal = chart.planets.find((p) => p.name === transit.name);
@@ -1122,7 +1120,7 @@ export default function Home() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                               <span className="text-lg text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{transit.symbol}</span>
-                              <span className="text-base font-medium text-[var(--color-text-primary)]">{transit.name}</span>
+                              <span className="text-base font-medium text-[var(--color-text-primary)]">{translatePlanet(transit.name, locale)}</span>
                             </div>
                             <div className="text-right">
                               <div className="text-sm text-[var(--color-text-secondary)]">
@@ -1135,7 +1133,7 @@ export default function Home() {
                           </div>
                           {sameSgn && (
                             <div className="mt-2 text-xs text-[var(--color-accent-lavender)] opacity-70">
-                              {locale === "fr" ? `${transit.name} transite dans ton signe natal — un retour aux sources.` : `${transit.name} transits your natal sign — a return to origins.`}
+                              {locale === "fr" ? `${transit.name} transite dans ton signe natal — un retour aux sources.` : `${translatePlanet(transit.name, locale)} transits your natal sign — a return to origins.`}
                             </div>
                           )}
                         </div>

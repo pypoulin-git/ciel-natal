@@ -301,6 +301,18 @@ export function Pluto(props: IconProps) {
   );
 }
 
+/** North Node ☊ — Omega-like horseshoe */
+export function NorthNode(props: IconProps) {
+  return wrap(
+    <>
+      <path d="M6 18 C6 10, 12 4, 12 4 C12 4, 18 10, 18 18" strokeLinecap="round" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="18" r="3" />
+    </>,
+    props
+  );
+}
+
 /** Ascendant ↑ — Arrow up with base */
 export function AscendantIcon(props: IconProps) {
   return wrap(
@@ -341,6 +353,7 @@ const PLANET_COMPONENTS: Record<string, React.FC<IconProps>> = {
   "Uranus": Uranus,
   "Neptune": Neptune,
   "Pluton": Pluto, "Pluto": Pluto,
+  "Noeud Nord": NorthNode, "North Node": NorthNode,
   "Ascendant": AscendantIcon, "AC": AscendantIcon,
 };
 
@@ -424,6 +437,8 @@ export function getPlanetPaths(name: string): React.ReactNode {
     "Neptune": <><line x1="12" y1="6" x2="12" y2="22" /><line x1="8" y1="18" x2="16" y2="18" /><path d="M6 6 C6 10, 12 10, 12 6 C12 10, 18 10, 18 6" /><line x1="6" y1="6" x2="6" y2="4" /><line x1="18" y1="6" x2="18" y2="4" /></>,
     "Pluton": <><circle cx="12" cy="8" r="4" /><path d="M8 8 A4 4 0 0 1 16 8" /><line x1="12" y1="12" x2="12" y2="22" /><line x1="9" y1="17" x2="15" y2="17" /></>,
     "Pluto": <><circle cx="12" cy="8" r="4" /><path d="M8 8 A4 4 0 0 1 16 8" /><line x1="12" y1="12" x2="12" y2="22" /><line x1="9" y1="17" x2="15" y2="17" /></>,
+    "Noeud Nord": <><path d="M6 18 C6 10, 12 4, 12 4 C12 4, 18 10, 18 18" strokeLinecap="round" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="18" r="3" /></>,
+    "North Node": <><path d="M6 18 C6 10, 12 4, 12 4 C12 4, 18 10, 18 18" strokeLinecap="round" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="18" r="3" /></>,
     "Ascendant": <><line x1="12" y1="4" x2="12" y2="20" /><polyline points="7,9 12,4 17,9" /><line x1="7" y1="20" x2="17" y2="20" /></>,
   };
   return map[name] ?? null;
