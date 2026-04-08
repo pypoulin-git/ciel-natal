@@ -6,6 +6,8 @@
     "dev": "next dev -p 3335",
     "build": "next build",
     "start": "next start -p 3335",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
@@ -32,8 +34,10 @@
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
+    "@vitejs/plugin-react": "^6.0.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.3"
   }
 }

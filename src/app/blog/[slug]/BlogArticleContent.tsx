@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n";
 import type { BlogArticle } from "@/data/blog/articles";
+import ShareButtons from "@/components/ShareButtons";
 
 export default function BlogArticleContent({ article }: { article: BlogArticle }) {
   const { locale } = useLocale();
@@ -10,6 +11,7 @@ export default function BlogArticleContent({ article }: { article: BlogArticle }
 
   const title = fr ? article.titleFr : article.titleEn;
   const content = fr ? article.contentFr : article.contentEn;
+  const shareUrl = `https://ciel-natal.vercel.app/blog/${article.slug}`;
 
   return (
     <>
@@ -38,6 +40,10 @@ export default function BlogArticleContent({ article }: { article: BlogArticle }
           <p key={i}>{paragraph}</p>
         ))}
       </article>
+
+      <div className="mt-8 flex justify-center">
+        <ShareButtons url={shareUrl} title={title} />
+      </div>
 
       <div className="mt-10 text-center">
         <Link

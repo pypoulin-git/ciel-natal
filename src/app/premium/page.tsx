@@ -5,6 +5,21 @@ import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 
+const PRODUCT_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "Ciel Natal Premium",
+  description: "Lifetime access to full astrological interpretations, unlimited AI chat, PDF export, saved charts, audio narration, synastry, solar return and personalized transits.",
+  brand: { "@type": "Brand", name: "Ciel Natal" },
+  offers: {
+    "@type": "Offer",
+    price: "9.99",
+    priceCurrency: "CAD",
+    availability: "https://schema.org/InStock",
+    url: "https://ciel-natal.vercel.app/premium",
+  },
+};
+
 const FEATURES_FR = [
   { icon: "✦", title: "Interprétations complètes", desc: "Toutes les planètes, maisons et aspects décryptés pour toi." },
   { icon: "💬", title: "Chat IA illimité", desc: "Pose toutes tes questions à ton astrologue bienveillante." },
@@ -48,6 +63,7 @@ export default function PremiumPage() {
 
   return (
     <main className="relative min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PRODUCT_JSON_LD) }} />
       <Starfield />
       <div className="relative z-10">
         <section className="max-w-2xl mx-auto px-4 pt-16 pb-20">
@@ -86,7 +102,7 @@ export default function PremiumPage() {
               <button
                 onClick={handleCheckout}
                 disabled={loading}
-                className="btn-primary px-10 py-4 rounded-xl text-base font-semibold disabled:opacity-50"
+                className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #a06080)" }}
               >
                 {loading

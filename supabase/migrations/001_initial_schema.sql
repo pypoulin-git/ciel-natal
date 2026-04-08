@@ -13,6 +13,7 @@ CREATE TABLE public.profiles (
   chat_used INTEGER DEFAULT 0,
   chat_month TEXT,
   chat_lifetime INTEGER DEFAULT 0,
+  welcome_sent_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

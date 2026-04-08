@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLocale } from "@/lib/i18n";
 import { SignIcon } from "@/components/AstroIcons";
 
@@ -76,8 +77,32 @@ export default function DailySign() {
   const { locale } = useLocale();
   const sign = getCurrentSign();
   const name = locale === "fr" ? sign.fr : sign.en;
-  const message = getDailyMessage(sign.fr, sign.en, locale);
+  const fallback = getDailyMessage(sign.fr, sign.en, locale);
   const label = locale === "fr" ? "Énergie du jour" : "Today's energy";
+
+  // Fetch the dynamic cosmic forecast (updated daily by the Vercel cron).
+  // Gracefully falls back to the static per-sign message if the cron hasn't
+  // run yet or the API is unavailable.
+  const [dynamicMsg, setDynamicMsg] = useState<{ fr: string; en: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/daily-forecast")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.fr && data?.en) {
+          setDynamicMsg({ fr: data.fr, en: data.en });
+        }
+      })
+      .catch(() => {
+        /* silent fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const message = dynamicMsg ? (locale === "fr" ? dynamicMsg.fr : dynamicMsg.en) : fallback;
 
   return (
     <div className="glass px-5 py-4 max-w-sm mx-auto text-center">

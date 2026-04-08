@@ -12,11 +12,20 @@ export async function GET(request: Request) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
       // Defensive profile upsert (trigger handles most cases, this is a safety net)
+      let isFirstSignIn = false;
       try {
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         if (serviceKey && supabaseUrl) {
           const admin = createAdminClient(supabaseUrl, serviceKey);
+          // Check if a welcome email has already been sent
+          const { data: existing } = await admin
+            .from("profiles")
+            .select("id, welcome_sent_at")
+            .eq("id", data.user.id)
+            .maybeSingle();
+          isFirstSignIn = !existing?.welcome_sent_at;
+
           await admin.from("profiles").upsert(
             {
               id: data.user.id,
@@ -28,6 +37,30 @@ export async function GET(request: Request) {
             },
             { onConflict: "id", ignoreDuplicates: true }
           );
+
+          // Fire-and-forget welcome email on first sign-in
+          if (isFirstSignIn && data.user.email && process.env.RESEND_API_KEY) {
+            const displayName =
+              data.user.user_metadata?.display_name ||
+              data.user.user_metadata?.full_name ||
+              data.user.email.split("@")[0];
+            const locale = searchParams.get("locale") || "fr";
+            // Don't await — non-blocking
+            fetch(`${origin}/api/email/welcome`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: data.user.email, displayName, locale }),
+            })
+              .then(async (res) => {
+                if (res.ok) {
+                  await admin
+                    .from("profiles")
+                    .update({ welcome_sent_at: new Date().toISOString() })
+                    .eq("id", data.user.id);
+                }
+              })
+              .catch(() => { /* ignore */ });
+          }
         }
       } catch {
         // Non-blocking — trigger should have handled it
