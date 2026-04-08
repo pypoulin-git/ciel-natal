@@ -95,6 +95,27 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
     audio.currentTime = pct * audio.duration;
   };
 
+  const seekByKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      audio.currentTime = Math.max(0, audio.currentTime - 5);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      audio.currentTime = 0;
+    } else if (e.key === "End") {
+      e.preventDefault();
+      audio.currentTime = audio.duration;
+    } else if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      togglePlay();
+    }
+  };
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
@@ -140,7 +161,20 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
           )}
         </button>
         {error && (
-          <p className="text-xs text-red-400/70 mt-3">{error}</p>
+          <div
+            role="alert"
+            className="flex items-start gap-2 mt-3 p-2 rounded-lg bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/30"
+          >
+            <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-[var(--color-accent-rose)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <p className="text-xs text-[var(--color-text-primary)] text-left">
+              <span className="sr-only">{locale === "fr" ? "Erreur : " : "Error: "}</span>
+              {error}
+            </p>
+          </div>
         )}
       </div>
     );
@@ -155,15 +189,16 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
         {/* Play/Pause */}
         <button
           onClick={togglePlay}
-          className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition"
+          aria-label={playing ? (locale === "fr" ? "Pause" : "Pause") : (locale === "fr" ? "Lecture" : "Play")}
+          className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition"
           style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #a06080)" }}
         >
           {playing ? (
-            <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="white" viewBox="0 0 24 24" aria-hidden="true">
               <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
             </svg>
           ) : (
-            <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="white" viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
           )}
@@ -172,8 +207,16 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
         {/* Progress */}
         <div className="flex-1">
           <div
-            className="h-1.5 rounded-full bg-white/[0.06] cursor-pointer overflow-hidden"
+            className="h-2 rounded-full bg-white/[0.06] cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-[var(--color-accent-rose)] focus-visible:outline-none"
             onClick={seekTo}
+            onKeyDown={seekByKey}
+            role="slider"
+            tabIndex={0}
+            aria-label={locale === "fr" ? "Progression audio" : "Audio progress"}
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration) || 0}
+            aria-valuenow={Math.round(audioRef.current?.currentTime || 0)}
+            aria-valuetext={`${formatTime(audioRef.current?.currentTime || 0)} / ${formatTime(duration)}`}
           >
             <div
               className="h-full rounded-full transition-[width] duration-100"
@@ -181,17 +224,17 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
             />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">
+            <span className="text-xs text-[var(--color-text-secondary)] font-mono">
               {formatTime(audioRef.current?.currentTime || 0)}
             </span>
-            <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">
+            <span className="text-xs text-[var(--color-text-secondary)] font-mono">
               {formatTime(duration)}
             </span>
           </div>
         </div>
       </div>
 
-      <p className="text-[10px] text-[var(--color-text-secondary)] opacity-50 mt-2 text-center">
+      <p className="text-xs text-[var(--color-text-secondary)] opacity-50 mt-2 text-center">
         {locale === "fr" ? "Portrait cosmique — narration IA" : "Cosmic portrait — AI narration"}
       </p>
     </div>

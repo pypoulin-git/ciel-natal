@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /connexion
+Disallow: /inscription
+Disallow: /mon-compte
+Disallow: /premium/succes
+Disallow: /auth/
 
 Sitemap: https://ciel-natal.vercel.app/sitemap.xml

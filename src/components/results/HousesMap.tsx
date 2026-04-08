@@ -140,7 +140,7 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
                               {displayText}
                             </p>
                             {!isPremium && fullText !== displayText && (
-                              <a href="/premium" className="inline-flex items-center gap-1 mt-2 text-[10px] text-[var(--color-accent-rose)] hover:underline transition">
+                              <a href="/premium" className="inline-flex items-center gap-1 mt-2 text-xs text-[var(--color-accent-rose)] hover:underline transition">
                                 <span>✦</span> {locale === "en" ? "Unlock full interpretation" : "Débloque l'interprétation complète"}
                               </a>
                             )}

@@ -10,6 +10,19 @@ function getSupabaseAdmin() {
   );
 }
 
+// Verify the caller owns this userId by checking the Authorization header
+async function verifyAuth(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice(7);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { data } = await supabase.auth.getUser(token);
+  return data?.user?.id ?? null;
+}
+
 // Verify the user is authenticated and premium
 async function verifyPremiumUser(userId: string) {
   const supabase = getSupabaseAdmin();
@@ -25,6 +38,12 @@ async function verifyPremiumUser(userId: string) {
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("userId");
   if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+
+  // Verify the caller owns this userId
+  const authedUserId = await verifyAuth(req);
+  if (!authedUserId || authedUserId !== userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -43,6 +62,12 @@ export async function POST(req: NextRequest) {
     const { userId, label, formData, chartData } = await req.json();
     if (!userId || !label || !formData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Verify the caller owns this userId
+    const authedUserId = await verifyAuth(req);
+    if (!authedUserId || authedUserId !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check premium
@@ -87,6 +112,12 @@ export async function DELETE(req: NextRequest) {
     const { userId, chartId } = await req.json();
     if (!userId || !chartId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Verify the caller owns this userId
+    const authedUserId = await verifyAuth(req);
+    if (!authedUserId || authedUserId !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const supabase = getSupabaseAdmin();

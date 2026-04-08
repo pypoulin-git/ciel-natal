@@ -52,7 +52,7 @@ export default function AuthButton() {
           <div className="px-3 py-2 border-b border-white/5 mb-1">
             <p className="text-xs text-[var(--color-text-primary)] truncate">{user.email}</p>
             {isPremium && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-[var(--color-accent-rose)] mt-0.5">
+              <span className="inline-flex items-center gap-1 text-xs text-[var(--color-accent-rose)] mt-0.5">
                 <span>✦</span> Premium
               </span>
             )}

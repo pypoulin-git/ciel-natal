@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function SavedCharts({ onLoadChart, currentFormData, currentLabel }: Props) {
-  const { user, isPremium } = useAuth();
+  const { user, isPremium, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const [charts, setCharts] = useState<SavedChart[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -32,14 +32,17 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
     if (!user?.id) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/charts?userId=${user.id}`);
+      const token = await getAccessToken();
+      const res = await fetch(`/api/charts?userId=${user.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setCharts(data.charts || []);
       }
     } catch { /* ignore */ }
     setLoading(false);
-  }, [user?.id]);
+  }, [user?.id, getAccessToken]);
 
   useEffect(() => {
     if (isOpen && user?.id && isPremium) fetchCharts();
@@ -49,10 +52,11 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
     if (!user?.id || saving) return;
     setSaving(true);
     try {
+      const token = await getAccessToken();
       const label = currentLabel || (locale === "fr" ? "Ma carte" : "My chart");
       const res = await fetch("/api/charts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ userId: user.id, label, formData: currentFormData }),
       });
       if (res.ok) {
@@ -65,9 +69,10 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
   const deleteChart = async (chartId: string) => {
     if (!user?.id) return;
     try {
+      const token = await getAccessToken();
       await fetch("/api/charts", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ userId: user.id, chartId }),
       });
       setCharts((prev) => prev.filter((c) => c.id !== chartId));
@@ -127,7 +132,7 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
                   className="flex-1 text-left"
                 >
                   <span className="text-sm text-[var(--color-text-primary)] block">{chart.label}</span>
-                  <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  <span className="text-xs text-[var(--color-text-secondary)]">
                     {new Date(chart.created_at).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA")}
                   </span>
                 </button>

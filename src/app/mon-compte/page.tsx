@@ -13,7 +13,7 @@ interface SavedChart {
 }
 
 export default function MonComptePage() {
-  const { user, isPremium, loading, signOut } = useAuth();
+  const { user, isPremium, loading, signOut, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const [charts, setCharts] = useState<SavedChart[]>([]);
   const [chartsLoading, setChartsLoading] = useState(false);
@@ -22,14 +22,17 @@ export default function MonComptePage() {
     if (!user?.id || !isPremium) return;
     setChartsLoading(true);
     try {
-      const res = await fetch(`/api/charts?userId=${user.id}`);
+      const token = await getAccessToken();
+      const res = await fetch(`/api/charts?userId=${user.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setCharts(data.charts || []);
       }
     } catch { /* ignore */ }
     setChartsLoading(false);
-  }, [user?.id, isPremium]);
+  }, [user?.id, isPremium, getAccessToken]);
 
   useEffect(() => {
     fetchCharts();
@@ -38,9 +41,10 @@ export default function MonComptePage() {
   const deleteChart = async (chartId: string) => {
     if (!user?.id) return;
     try {
+      const token = await getAccessToken();
       await fetch("/api/charts", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ userId: user.id, chartId }),
       });
       setCharts((prev) => prev.filter((c) => c.id !== chartId));
@@ -148,18 +152,23 @@ export default function MonComptePage() {
             ) : (
               <div className="space-y-2">
                 {charts.map((chart) => (
-                  <div key={chart.id} className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/[0.02] border border-[var(--color-glass-border)] group">
-                    <div>
-                      <span className="text-sm text-[var(--color-text-primary)]">{chart.label}</span>
-                      <span className="text-[10px] text-[var(--color-text-secondary)] ml-3">
+                  <div key={chart.id} className="flex items-center justify-between gap-3 py-3 px-4 rounded-lg bg-white/[0.02] border border-[var(--color-glass-border)]">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm text-[var(--color-text-primary)] block truncate">{chart.label}</span>
+                      <span className="text-xs text-[var(--color-text-secondary)]">
                         {new Date(chart.created_at).toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA")}
                       </span>
                     </div>
                     <button
                       onClick={() => deleteChart(chart.id)}
-                      className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition text-xs text-red-400 px-2 py-1"
+                      aria-label={locale === "fr" ? `Supprimer ${chart.label}` : `Delete ${chart.label}`}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-accent-rose)] px-3 py-2 min-h-[44px] rounded-lg border border-[var(--color-glass-border)] hover:border-[var(--color-accent-rose)]/40 transition"
                     >
-                      {locale === "fr" ? "Supprimer" : "Delete"}
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                      <span className="hidden sm:inline">{locale === "fr" ? "Supprimer" : "Delete"}</span>
                     </button>
                   </div>
                 ))}

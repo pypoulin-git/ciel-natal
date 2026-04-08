@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ViewTransition } from "react";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
@@ -37,8 +39,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <head>
+        {/* Sync lang attribute with user locale preference */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var l=localStorage.getItem("ciel-natal-locale");if(l)document.documentElement.lang=l}catch(e){}` }} />
+        <link rel="alternate" hrefLang="fr" href="https://ciel-natal.vercel.app" />
+        <link rel="alternate" hrefLang="en" href="https://ciel-natal.vercel.app" />
+        <link rel="alternate" hrefLang="x-default" href="https://ciel-natal.vercel.app" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -72,7 +79,7 @@ export default function RootLayout({
         <LocaleProvider>
           <AuthProvider>
             <a href="#main-content" className="skip-link">
-              Aller au contenu principal
+              Skip to content
             </a>
             <TopBar />
             <ViewTransition>
@@ -81,6 +88,8 @@ export default function RootLayout({
               </main>
             </ViewTransition>
             <CookieBanner />
+            <Analytics />
+            <SpeedInsights />
           </AuthProvider>
         </LocaleProvider>
       </body>

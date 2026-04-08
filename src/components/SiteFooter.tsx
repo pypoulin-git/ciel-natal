@@ -14,7 +14,7 @@ export default function SiteFooter() {
             <Link href="/" className="font-cinzel text-sm text-[var(--color-text-primary)] hover:text-[var(--color-accent-lavender)] transition">
               Ciel Natal
             </Link>
-            <p className="text-[10px] text-[var(--color-text-secondary)] mt-1">
+            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
               {t("footer.tagline")}
             </p>
           </div>
@@ -46,7 +46,7 @@ export default function SiteFooter() {
           </nav>
         </div>
         <div className="text-center mt-8">
-          <p className="text-[10px] text-[var(--color-text-secondary)]/40">
+          <p className="text-xs text-[var(--color-text-secondary)]/40">
             &copy; {new Date().getFullYear()} Ciel Natal. {t("footer.copyright")} {t("footer.disclaimer")}
           </p>
         </div>

@@ -125,7 +125,7 @@ export default function ChartChat({ chartContext, prenom, genre, locale }: Props
             <span className="text-sm font-medium text-[var(--color-text-primary)]">
               {locale === "fr" ? "Ton astrologue" : "Your astrologer"}
             </span>
-            <span className="block text-[10px] text-[var(--color-accent-rose)]">
+            <span className="block text-xs text-[var(--color-accent-rose)]">
               {isLoading ? (locale === "fr" ? "en train d'écrire..." : "typing...") : (locale === "fr" ? "en ligne" : "online")}
             </span>
           </div>
@@ -263,7 +263,7 @@ export default function ChartChat({ chartContext, prenom, genre, locale }: Props
 
       {/* Remaining messages counter */}
       <div className="text-center py-1.5 border-t border-white/5">
-        <span className="text-[10px] text-[var(--color-text-secondary)] opacity-50">
+        <span className="text-xs text-[var(--color-text-secondary)] opacity-50">
           {isPremium
             ? (locale === "fr" ? `${remaining} messages restants ce mois` : `${remaining} messages remaining this month`)
             : (locale === "fr" ? `${remaining}/${FREE_MSG_LIMIT} messages gratuits restants` : `${remaining}/${FREE_MSG_LIMIT} free messages remaining`)}

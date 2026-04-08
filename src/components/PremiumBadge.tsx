@@ -18,7 +18,7 @@ export default function PremiumBadge({ small = false }: Props) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/20 text-[var(--color-accent-rose)]">
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/20 text-[var(--color-accent-rose)]">
       <span>✦</span> Premium
     </span>
   );

@@ -10,6 +10,7 @@ interface AuthContextValue {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  getAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
+  getAccessToken: async () => null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -76,9 +78,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsPremium(false);
   }, [supabase]);
 
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token ?? null;
+  }, [supabase]);
+
   const value = useMemo(
-    () => ({ user, isPremium, loading, signOut, refreshProfile }),
-    [user, isPremium, loading, signOut, refreshProfile]
+    () => ({ user, isPremium, loading, signOut, refreshProfile, getAccessToken }),
+    [user, isPremium, loading, signOut, refreshProfile, getAccessToken]
   );
 
   return (

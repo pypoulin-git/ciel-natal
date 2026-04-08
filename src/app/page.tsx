@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import Starfield from "@/components/Starfield";
-import ZodiacWheel from "@/components/ZodiacWheel";
-import ElementBalance from "@/components/results/ElementBalance";
-import HousesMap from "@/components/results/HousesMap";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
@@ -17,11 +15,16 @@ import { useAuth } from "@/lib/auth-context";
 import EnhancedSlider from "@/components/EnhancedSlider";
 import LoadingMessages from "@/components/LoadingMessages";
 import SectionTransition from "@/components/results/SectionTransition";
-import ChartChat from "@/components/results/ChartChat";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
-import AudioPlayer from "@/components/AudioPlayer";
-import SavedCharts from "@/components/SavedCharts";
+
+// Lazy-load heavy result components (only needed after chart calculation)
+const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
+const ElementBalance = dynamic(() => import("@/components/results/ElementBalance"), { ssr: false });
+const HousesMap = dynamic(() => import("@/components/results/HousesMap"), { ssr: false });
+const ChartChat = dynamic(() => import("@/components/results/ChartChat"), { ssr: false });
+const AudioPlayer = dynamic(() => import("@/components/AudioPlayer"), { ssr: false });
+const SavedCharts = dynamic(() => import("@/components/SavedCharts"), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -535,7 +538,7 @@ export default function Home() {
                   <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step2.subtitle")}</p>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.day")}</label>
+                      <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.day")}</label>
                       <select value={form.jour} onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) })}
                         className="glass-input w-full text-center text-base sm:text-lg appearance-none">
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -544,7 +547,7 @@ export default function Home() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.month")}</label>
+                      <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.month")}</label>
                       <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
                         className="glass-input w-full text-center text-base sm:text-lg appearance-none">
                         {MONTHS.map((m, i) => (
@@ -553,7 +556,7 @@ export default function Home() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.year")}</label>
+                      <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.year")}</label>
                       <select value={form.annee} onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) })}
                         className="glass-input w-full text-center text-base sm:text-lg appearance-none">
                         {Array.from({ length: 127 }, (_, i) => 2026 - i).map((y) => (
@@ -579,7 +582,7 @@ export default function Home() {
                   {form.hasTime ? (
                     <div className="flex items-center justify-center gap-3">
                       <div className="flex-1 max-w-[120px]">
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.hour")}</label>
+                        <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.hour")}</label>
                         <select value={form.heure} onChange={(e) => setForm({ ...form, heure: parseInt(e.target.value) })}
                           className="glass-input w-full text-center text-lg appearance-none">
                           {Array.from({ length: 24 }, (_, i) => i).map((h) => (
@@ -589,7 +592,7 @@ export default function Home() {
                       </div>
                       <span className="text-2xl text-[var(--color-text-secondary)] mt-5 font-light">:</span>
                       <div className="flex-1 max-w-[120px]">
-                        <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.minute")}</label>
+                        <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.minute")}</label>
                         <select value={form.minute} onChange={(e) => setForm({ ...form, minute: parseInt(e.target.value) })}
                           className="glass-input w-full text-center text-lg appearance-none">
                           {Array.from({ length: 60 }, (_, i) => i).map((m) => (
@@ -735,20 +738,20 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center">
                         <SignIcon name={chart.planets[0].sign} size={28} color="#fbbf24" glow />
                       </div>
-                      <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)]">{locale === "fr" ? "Soleil" : "Sun"}</span>
+                      <span className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">{locale === "fr" ? "Soleil" : "Sun"}</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <div className="w-14 h-14 rounded-2xl bg-blue-400/10 border border-blue-300/20 flex items-center justify-center">
                         <SignIcon name={chart.planets[1].sign} size={28} color="#93c5fd" glow />
                       </div>
-                      <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)]">{locale === "fr" ? "Lune" : "Moon"}</span>
+                      <span className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">{locale === "fr" ? "Lune" : "Moon"}</span>
                     </div>
                     {chart.ascendant && (
                       <div className="flex flex-col items-center gap-1">
                         <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-400/20 flex items-center justify-center">
                           <SignIcon name={chart.ascendant.sign} size={28} color="#c084fc" glow />
                         </div>
-                        <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)]">Ascendant</span>
+                        <span className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)]">Ascendant</span>
                       </div>
                     )}
                   </div>
@@ -781,7 +784,7 @@ export default function Home() {
                       sessionStorage.setItem("tabs_guidance_seen", "1");
                     }
                   }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 text-[11px] font-medium tracking-wide uppercase transition-all whitespace-nowrap relative ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3.5 text-xs font-medium tracking-wide uppercase transition-all whitespace-nowrap relative ${
                       activeTab === tab.id
                         ? "text-[var(--color-accent-lavender)]"
                         : "text-[var(--color-text-secondary)]/60 hover:text-[var(--color-text-secondary)]"
@@ -797,7 +800,7 @@ export default function Home() {
 
             {showTabsHint && (
               <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-3">
-                <p className="text-[11px] text-center text-[var(--color-accent-lavender)]/60 animate-fade-in">
+                <p className="text-xs text-center text-[var(--color-accent-lavender)]/60 animate-fade-in">
                   {locale === "en" ? "↑ Start here — explore each section at your own pace" : "↑ Commence par ici — explore chaque section à ton rythme"}
                 </p>
               </div>
@@ -811,14 +814,14 @@ export default function Home() {
                   <div className="flex justify-end gap-2 mb-2">
                     <button
                       onClick={() => setShowWheelAspects(!showWheelAspects)}
-                      className={`text-[10px] px-3 py-1 rounded-full border transition-all ${showWheelAspects ? "border-[var(--color-accent-lavender)]/40 text-[var(--color-accent-lavender)]" : "border-[var(--color-glass-border)] text-[var(--color-text-secondary)]"}`}
+                      className={`text-xs px-3 py-1 rounded-full border transition-all ${showWheelAspects ? "border-[var(--color-accent-lavender)]/40 text-[var(--color-accent-lavender)]" : "border-[var(--color-glass-border)] text-[var(--color-text-secondary)]"}`}
                     >
                       {locale === "fr" ? "Aspects" : "Aspects"} {showWheelAspects ? "✓" : ""}
                     </button>
                     {selectedPlanet && (
                       <button
                         onClick={() => setSelectedPlanet(null)}
-                        className="text-[10px] px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+                        className="text-xs px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
                       >
                         {locale === "fr" ? "Tout afficher" : "Show all"}
                       </button>
@@ -855,7 +858,7 @@ export default function Home() {
                               <span className={`transition-all duration-300 ${isActive ? "scale-110" : ""}`}>{item.icon}</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-[11px] uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
+                              <div className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] font-medium">{item.label}</div>
                               <div className="font-cinzel text-2xl text-[var(--color-text-primary)] mt-0.5">{translateSign(item.data.sign, locale)}</div>
                               <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.sub}</div>
                             </div>
@@ -931,7 +934,7 @@ export default function Home() {
                       <span className="text-sm font-medium text-[var(--color-text-primary)]">
                         {locale === "fr" ? "Écoute ton portrait cosmique" : "Listen to your cosmic portrait"}
                       </span>
-                      <span className="block text-[10px] text-[var(--color-text-secondary)] opacity-60">
+                      <span className="block text-xs text-[var(--color-text-secondary)] opacity-60">
                         {locale === "fr" ? "Une narration audio douce de ta carte du ciel" : "A gentle audio narration of your natal chart"}
                       </span>
                     </div>
@@ -1246,7 +1249,7 @@ export default function Home() {
                   <p className="text-xs text-[var(--color-accent-lavender)] mb-4 animate-fade-in">{t("results.copied")}</p>
                 )}
                 <div className="border-t border-[var(--color-glass-border)] pt-5">
-                  <p className="text-[10px] text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">{t("results.disclaimer")}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">{t("results.disclaimer")}</p>
                 </div>
               </div>
 

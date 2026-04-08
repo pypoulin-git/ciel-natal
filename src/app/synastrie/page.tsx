@@ -148,7 +148,7 @@ export default function SynastryPage() {
                 ? "La synastrie compare les positions planétaires de deux personnes pour révéler les dynamiques relationnelles — attractions, complémentarités et zones de tension. Plus les données sont précises (heure, lieu), plus l'analyse est riche."
                 : "Synastry compares the planetary positions of two people to reveal relationship dynamics — attractions, complementarities and areas of tension. The more precise the data (time, place), the richer the analysis."}
             </p>
-            <p className="text-[11px] text-[var(--color-text-secondary)] opacity-60 flex items-center gap-1.5">
+            <p className="text-xs text-[var(--color-text-secondary)] opacity-60 flex items-center gap-1.5">
               <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               {locale === "fr"
                 ? "Tous les calculs restent sur ton appareil — aucune donnée n'est envoyée."
@@ -289,8 +289,8 @@ export default function SynastryPage() {
                           <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[var(--color-glass-border)] font-mono text-[var(--color-text-secondary)]">{aspect.type}</span>
-                          <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full border border-[var(--color-glass-border)] font-mono text-[var(--color-text-secondary)]">{aspect.type}</span>
+                          <span className="text-xs text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
                         </div>
                       </div>
                     </div>

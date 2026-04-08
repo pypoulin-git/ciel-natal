@@ -68,14 +68,14 @@ export default function ConnexionPage() {
 
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-[var(--color-glass-border)]" />
-              <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-widest">
+              <span className="text-xs text-[var(--color-text-secondary)] uppercase tracking-widest">
                 {locale === "fr" ? "ou" : "or"}
               </span>
               <div className="flex-1 h-px bg-[var(--color-glass-border)]" />
             </div>
 
             {/* Email form */}
-            <form onSubmit={handleEmailLogin} className="space-y-3">
+            <form onSubmit={handleEmailLogin} className="space-y-3" noValidate>
               <input
                 type="email"
                 value={email}
@@ -83,6 +83,9 @@ export default function ConnexionPage() {
                 placeholder={locale === "fr" ? "Ton email" : "Your email"}
                 className="w-full glass-input"
                 required
+                aria-label={locale === "fr" ? "Adresse email" : "Email address"}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "login-error" : undefined}
               />
               <input
                 type="password"
@@ -92,9 +95,33 @@ export default function ConnexionPage() {
                 className="w-full glass-input"
                 required
                 minLength={6}
+                aria-label={locale === "fr" ? "Mot de passe" : "Password"}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "login-error" : undefined}
               />
               {error && (
-                <p className="text-xs text-red-400/80 animate-fade-in">{error}</p>
+                <div
+                  id="login-error"
+                  role="alert"
+                  className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/30 animate-fade-in"
+                >
+                  <svg
+                    className="w-4 h-4 flex-shrink-0 mt-0.5 text-[var(--color-accent-rose)]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <p className="text-xs text-[var(--color-text-primary)]">
+                    <span className="sr-only">{locale === "fr" ? "Erreur : " : "Error: "}</span>
+                    {error}
+                  </p>
+                </div>
               )}
               <button
                 type="submit"
@@ -106,6 +133,12 @@ export default function ConnexionPage() {
                   : (locale === "fr" ? "Se connecter" : "Sign in")}
               </button>
             </form>
+
+            <div className="text-center">
+              <a href="/mot-de-passe-oublie" className="text-xs text-[var(--color-accent-lavender)] hover:underline transition">
+                {locale === "fr" ? "Mot de passe oublié ?" : "Forgot your password?"}
+              </a>
+            </div>
           </div>
 
           <p className="text-center text-xs text-[var(--color-text-secondary)] mt-5">

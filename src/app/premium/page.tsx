@@ -125,7 +125,7 @@ export default function PremiumPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Free version */}
                 <div className="glass p-5 relative overflow-hidden">
-                  <div className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
+                  <div className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
                     {locale === "fr" ? "Version gratuite" : "Free version"}
                   </div>
                   <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
@@ -137,7 +137,7 @@ export default function PremiumPage() {
                 </div>
                 {/* Premium version */}
                 <div className="glass p-5 border-[var(--color-accent-rose)]/20 glow-rose">
-                  <div className="text-[10px] uppercase tracking-widest text-[var(--color-accent-rose)] mb-3 flex items-center gap-1">
+                  <div className="text-xs uppercase tracking-widest text-[var(--color-accent-rose)] mb-3 flex items-center gap-1">
                     <span>✦</span> Premium
                   </div>
                   <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">

@@ -45,7 +45,7 @@ export default function BlogPage() {
               href={`/blog/${article.slug}`}
               className="group glass p-6 rounded-xl border border-[var(--color-glass-border)] hover:border-[var(--color-accent-lavender)]/40 transition-all duration-300"
             >
-              <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-secondary)] mb-3">
+              <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)] mb-3">
                 <time dateTime={article.date}>{article.date}</time>
                 <span aria-hidden="true">&middot;</span>
                 <span>{article.readingTime}</span>

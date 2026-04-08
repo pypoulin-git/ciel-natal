@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev -p 3335",
     "build": "next build",
-    "start": "next start -p 3335"
+    "start": "next start -p 3335",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\""
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.66",
@@ -14,6 +18,8 @@
     "@supabase/supabase-js": "^2.101.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "ai": "^6.0.146",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",

@@ -166,7 +166,7 @@ export default function RevolutionSolaire() {
             <div className="glass p-6 sm:p-8 space-y-6">
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
+                  <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
                     {locale === "fr" ? "Jour" : "Day"}
                   </label>
                   <select value={form.jour} onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) })}
@@ -177,7 +177,7 @@ export default function RevolutionSolaire() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
+                  <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
                     {locale === "fr" ? "Mois" : "Month"}
                   </label>
                   <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
@@ -188,7 +188,7 @@ export default function RevolutionSolaire() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
+                  <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
                     {locale === "fr" ? "Annee" : "Year"}
                   </label>
                   <select value={form.annee} onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) })}
@@ -201,7 +201,7 @@ export default function RevolutionSolaire() {
               </div>
 
               <div className="relative">
-                <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">
+                <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">
                   {locale === "fr" ? "Lieu de naissance" : "Birthplace"}
                 </label>
                 <input type="text" value={form.lieu} onChange={(e) => handleCitySearch(e.target.value)}
@@ -272,7 +272,7 @@ export default function RevolutionSolaire() {
                           </div>
                           <div className="text-right">
                             <span className="text-sm text-[var(--color-text-secondary)]">{planet.sign} {planet.degree}°</span>
-                            {planet.house && <span className="text-[10px] text-[var(--color-text-secondary)] opacity-50 ml-2">M{planet.house}</span>}
+                            {planet.house && <span className="text-xs text-[var(--color-text-secondary)] opacity-50 ml-2">M{planet.house}</span>}
                           </div>
                         </div>
                       ))}

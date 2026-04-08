@@ -67,21 +67,21 @@ export default function Contact() {
           </div>
 
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">
+            <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">
               {locale === "fr" ? "Nom" : "Name"}
             </label>
             <input type="text" required value={name} onChange={(e) => setName(e.target.value)}
               className="glass-input w-full" placeholder={locale === "fr" ? "Votre nom" : "Your name"} />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">
+            <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">
               {locale === "fr" ? "Courriel" : "Email"}
             </label>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               className="glass-input w-full" placeholder={locale === "fr" ? "votre@courriel.com" : "your@email.com"} />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">Message</label>
+            <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block">Message</label>
             <textarea required rows={5} value={message} onChange={(e) => setMessage(e.target.value)}
               className="glass-input w-full resize-none" placeholder={locale === "fr" ? "Votre message..." : "Your message..."} />
           </div>

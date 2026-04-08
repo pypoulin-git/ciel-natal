@@ -29,7 +29,7 @@ export default function PremiumGate({ children, preview, blur = true, compact = 
           </div>
         ))}
         <div className="flex items-center gap-2 mt-2">
-          <span className="text-[10px] text-[var(--color-accent-rose)]">✦</span>
+          <span className="text-xs text-[var(--color-accent-rose)]">✦</span>
           <a
             href={user ? "/premium" : "/connexion"}
             className="text-xs text-[var(--color-accent-rose)] hover:underline transition"
