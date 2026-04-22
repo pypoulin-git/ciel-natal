@@ -11,23 +11,26 @@ export type Genre = "femme" | "homme" | "nb";
  */
 export function genderize(text: string, genre: Genre): string {
   if (genre === "nb") return text;
+  // Broader letter class covering accented Latin characters (é, è, à, î, ï…)
+  // so that "animé·e" matches the pattern (\w does NOT match "é").
+  const L = "[a-zA-ZÀ-ÖØ-öø-ÿ]";
   if (genre === "femme") {
     return text
-      .replace(/(\w)·e\b/g, "$1e")           // "animé·e" → "animée"
-      .replace(/un·e\b/g, "une")              // "un·e" → "une"
+      .replace(/eur·se\b/g, "euse")                             // "tisseur·se" → "tisseuse"
+      .replace(/f·ve\b/g, "ve")                                 // "créatif·ve" → "créative"
+      .replace(/un·e\b/g, "une")                                // "un·e" → "une"
       .replace(/\bfait·e\b/g, "faite")
       .replace(/\bfort·e\b/g, "forte")
       .replace(/\bvu·e\b/g, "vue")
       .replace(/\bné·e\b/g, "née")
-      .replace(/(\w)eur·se\b/g, "$1euse")     // "tisseur·se" → "tisseuse"
-      .replace(/(\w)·ve\b/g, "$1ve");          // "créatif·ve" → "créative"
+      .replace(new RegExp(`(${L})·e\\b`, "g"), "$1e");          // "animé·e" → "animée"
   }
   // homme
   return text
-    .replace(/·e\b/g, "")                     // "animé·e" → "animé"
     .replace(/un·e\b/g, "un")
     .replace(/eur·se\b/g, "eur")              // "tisseur·se" → "tisseur"
-    .replace(/·ve\b/g, "");                    // "créatif·ve" → "créatif"
+    .replace(/·ve\b/g, "")                    // "créatif·ve" → "créatif"
+    .replace(/·e\b/g, "");                    // "animé·e" → "animé"
 }
 
 /** Returns a gendered greeting, locale-aware */
@@ -47,93 +50,93 @@ export function getIntroSentence(portraitText: string): string {
 // ─── Portrait Helpers ─────────────────────────────────────────────
 
 const SUN_FR: Record<string, string> = {
-  Belier: "illumine une nature audacieuse et pionnière. Tu portes en toi une énergie d'initiation — un besoin viscéral de tracer ta propre voie.",
-  Taureau: "révèle une nature profondément ancrée et sensorielle. Tu construis avec patience, tu apprécies la beauté tangible du monde.",
-  Gemeaux: "dévoile un esprit vif, curieux et multiple. Tu as soif d'apprendre, de connecter les idées, de communiquer.",
-  Cancer: "baigne ta personnalité dans une sensibilité intuitive et protectrice. Tu ressens profondément les émotions — les tiennes et celles des autres.",
-  Lion: "rayonne d'une chaleur naturelle et d'une générosité authentique. Tu as besoin de créer, de briller, d'inspirer.",
-  Vierge: "affine ton regard sur le monde avec une précision et une intelligence analytique remarquables.",
-  Balance: "cherche l'harmonie et la justesse dans chaque interaction. Tu possèdes un sens esthétique développé·e et une capacité rare à voir les deux côtés.",
-  Scorpion: "plonge ta conscience dans les profondeurs de l'expérience humaine. Tu ne te contentes jamais de la surface.",
-  Sagittaire: "ouvre grands les horizons de ta conscience. Tu es animé·e par une quête de sens, d'aventure et de vérité.",
-  Capricorne: "ancre ta volonté dans la durée et la structure. Tu as une maturité naturelle et une ambition qui se mesure sur le long terme.",
-  Verseau: "souffle un vent d'originalité et de vision. Tu penses au-delà des conventions, tu questionnes les normes.",
-  Poissons: "dissout les frontières entre toi et le monde avec une empathie et une imagination sans limites.",
+  Belier: "t'a donné un feu qui ne demande pas la permission. Tu sais, toi, quand il faut bouger — tu le sais dans le ventre avant de le savoir dans la tête. Ta grande question n'est pas *que faire* mais *comment ne pas te trahir quand tu ralentis*.",
+  Taureau: "ancre ta présence dans le palpable. Tu as besoin de toucher, d'éprouver, de goûter avant de croire. Ce qui ressemble à de la lenteur chez toi est en fait une forme de fidélité au réel. Tu refuses ce qui se dépose trop vite.",
+  Gemeaux: "te donne plusieurs voix à la fois. Tu passes d'une idée à l'autre comme on respire, et ça épuise les gens qui voudraient te fixer quelque part. Tu n'es pas dispersé·e — tu es en conversation avec le monde, tout le temps.",
+  Cancer: "loge ton centre dans ta mémoire et ton ventre. Tu reconnais les lieux, les voix, les humeurs avant de les comprendre. Ton grand défi : savoir protéger ce que tu aimes sans te refermer dessus.",
+  Lion: "te demande d'exister pleinement et d'être vu·e pour ce que tu es vraiment. Ce n'est pas de l'orgueil — c'est un besoin vital de laisser sortir la lumière qui pulse en toi. Quand tu te caches, tu tombes malade à l'intérieur.",
+  Vierge: "aiguise ton regard jusqu'au détail qui compte. Tu vois ce que les autres ratent — la fissure, l'écart, l'usure. Ta tentation : croire qu'en corrigeant tout, enfin tu pourras te reposer. Tu ne le pourras pas. Apprends à poser l'outil.",
+  Balance: "te place entre les deux — toujours entre deux personnes, deux options, deux vérités. Tu cherches l'accord, pas le compromis. Tu supportes mal les ambiances fausses. Ta difficulté : décider sans trahir un des camps.",
+  Scorpion: "te descend dans ce que les autres préfèrent ignorer. Tu ne crois pas aux sourires qui cachent. Ce qui te libère, c'est de nommer — même ce qui fait peur, surtout ce qui fait peur. La surface te fatigue.",
+  Sagittaire: "te tire vers plus grand que toi. Tu as besoin de sens, d'horizon, de quelque chose à viser. L'ennui t'est insupportable. Ta pente : t'enfuir quand ce qui est ici commence à peser trop.",
+  Capricorne: "te donne une maturité précoce qui t'a sans doute coûté quelque chose d'enfance. Tu construis pour durer, tu ne brûles pas à vide. Mais attention : la réussite ne remplace pas la tendresse que tu ne t'accordes pas.",
+  Verseau: "te met légèrement à côté, et c'est là ta force. Tu vois le collectif là où les autres voient leur propre histoire. Tu te méfies des chaleurs qui endorment. Tu préfères la lucidité, même quand elle coûte.",
+  Poissons: "dissout les contours. Tu absorbes ce qui flotte autour de toi — les émotions, les atmosphères, les non-dits. Ton talent est aussi ton risque : savoir ce qui est à toi et ce qui vient d'ailleurs.",
 };
 
 const SUN_EN: Record<string, string> = {
-  Belier: "illuminates a bold, pioneering nature. You carry an energy of initiation — a visceral need to forge your own path.",
-  Taureau: "reveals a deeply grounded, sensorial nature. You build with patience, you appreciate the tangible beauty of the world.",
-  Gemeaux: "unveils a quick, curious, multifaceted mind. You thirst for learning, connecting ideas, communicating.",
-  Cancer: "bathes your personality in intuitive, protective sensitivity. You feel emotions deeply — yours and those of others.",
-  Lion: "radiates a natural warmth and authentic generosity. You need to create, to shine, to inspire.",
-  Vierge: "sharpens your view of the world with remarkable precision and analytical intelligence.",
-  Balance: "seeks harmony and rightness in every interaction. You have a refined aesthetic sense and a rare ability to see both sides.",
-  Scorpion: "plunges your consciousness into the depths of human experience. You never settle for the surface.",
-  Sagittaire: "opens wide the horizons of your consciousness. You are driven by a quest for meaning, adventure and truth.",
-  Capricorne: "anchors your will in duration and structure. You have a natural maturity and an ambition that measures itself over the long term.",
-  Verseau: "blows a wind of originality and vision. You think beyond conventions, you question norms.",
-  Poissons: "dissolves the boundaries between you and the world with boundless empathy and imagination.",
+  Belier: "gave you a fire that doesn't ask permission. You know, in your gut, when it's time to move — you know it before your head does. Your real question isn't *what to do* but *how to stay true to yourself when you slow down*.",
+  Taureau: "anchors your presence in what can be touched. You need to handle, taste, weigh before you believe. What looks like slowness in you is actually fidelity to the real. You refuse what settles too fast.",
+  Gemeaux: "gives you several voices at once. You move from one idea to the next the way others breathe, and it exhausts people who want to pin you down. You're not scattered — you're in conversation with the world, all the time.",
+  Cancer: "sets your center in your memory and your belly. You recognize places, voices, moods before you understand them. Your real challenge: protecting what you love without closing around it.",
+  Lion: "asks you to exist fully and to be seen for who you truly are. It's not vanity — it's a vital need to let out the light pulsing in you. When you hide, you get sick on the inside.",
+  Vierge: "sharpens your eye to the detail that matters. You see what others miss — the crack, the gap, the wear. Your temptation: believing that if you fix everything, finally you'll be able to rest. You won't. Learn to put the tool down.",
+  Balance: "places you between — always between two people, two options, two truths. You seek agreement, not compromise. You can't stand false atmospheres. Your difficulty: deciding without betraying one of the sides.",
+  Scorpion: "takes you down into what others prefer to ignore. You don't trust smiles that cover. What frees you is naming — even what scares you, especially what scares you. Surface tires you out.",
+  Sagittaire: "pulls you toward something larger than yourself. You need meaning, horizon, something to aim for. Boredom is unbearable to you. Your slope: fleeing when what's here starts weighing too much.",
+  Capricorne: "gives you an early maturity that probably cost you some childhood. You build to last, you don't burn for nothing. But watch out: success doesn't replace the tenderness you don't grant yourself.",
+  Verseau: "places you slightly off to the side, and that's your strength. You see the collective where others see their own story. You distrust warmths that lull. You prefer lucidity, even when it costs.",
+  Poissons: "dissolves edges. You absorb what floats around you — emotions, atmospheres, unspokens. Your gift is also your risk: knowing what's yours and what came from elsewhere.",
 };
 
 const MOON_FR: Record<string, string> = {
-  Belier: "révèle un monde émotionnel spontané et direct. Tes réactions sont vives, ton besoin d'authenticité immédiat.",
-  Taureau: "parle d'un besoin profond de stabilité et de douceur. Tu te ressources dans le confort et la sécurité du familier.",
-  Gemeaux: "dépeint une vie intérieure animée et changeante. Tu as besoin de stimulation mentale pour te sentir en équilibre.",
-  Cancer: "amplifie ta sensibilité naturelle et ton intuition. Tu ressens les ambiances comme un sismographe.",
-  Lion: "met en lumière un besoin d'être vu·e et apprécié·e dans ton authenticité. Tu as un cœur généreux.",
-  Vierge: "traduit un besoin d'ordre émotionnel et de clarté intérieure. Tu te ressources dans les routines et le sentiment d'utilité.",
-  Balance: "aspire à l'harmonie relationnelle avant tout. Tu as besoin de beauté autour de toi et de relations équilibrées.",
-  Scorpion: "révèle une vie émotionnelle d'une profondeur remarquable. La confiance se construit lentement chez toi.",
-  Sagittaire: "colore ta vie émotionnelle d'optimisme et de soif de liberté. Tu as besoin d'espace pour ton équilibre.",
-  Capricorne: "confère à tes émotions une maturité et une réserve qui cachent une grande profondeur.",
-  Verseau: "donne à ta vie émotionnelle une qualité détachée et originale. Tu traites tes émotions avec une lucidité inhabituelle.",
-  Poissons: "ouvre les portes d'une sensibilité sans frontières. Tu absorbes les émotions ambiantes comme une éponge.",
+  Belier: "t'a donné des émotions qui arrivent en premier, fortes, claires — et qui partent aussi vite. Tu ne rumines pas longtemps, tu agis ton émotion plus que tu ne la digères. Apprendre à rester dans le ressenti, même quand ça brûle, c'est ton travail.",
+  Taureau: "a besoin de lenteur et de certitudes sensorielles. Tu te rassures par la chaleur d'une pièce, la voix de quelqu'un·e, un parfum connu. Le changement brusque te fait mal comme un courant d'air sur la peau.",
+  Gemeaux: "a besoin de parler pour sentir. Ce que tu ne mets pas en mots reste flou pour toi — presque pas arrivé. Tu peux sembler froid·e parce que tu analyses en même temps que tu ressens. Tu n'es pas détaché·e, tu es en traduction permanente.",
+  Cancer: "te fait absorber les humeurs des autres comme un buvard. Tu sais qui va mal en entrant dans la pièce. Tu as besoin d'un refuge — un lieu, une personne, un rituel — sinon tu t'épuises à contenir tout ce qui flotte.",
+  Lion: "a besoin d'être vue. Pas flattée — vue. Quand quelqu'un·e te reconnaît vraiment, tu renais. Quand on passe à côté de toi, tu te mets à douter de ton existence même. C'est fort, mais c'est comme ça.",
+  Vierge: "se rassure par l'utile. Tu aimes mieux avoir quelque chose à faire pour les autres qu'à recevoir pour toi. Ton angoisse intime : ne pas être à la hauteur de ce qui t'est confié. Apprends à poser, à déléguer, à imperfectionner.",
+  Balance: "a besoin d'harmonie autour d'elle pour trouver la sienne. Les conflits te coûtent physiquement, tu les absorbes dans le corps. Ton défi : accepter d'être en désaccord sans croire que la relation va casser.",
+  Scorpion: "descend vite dans le profond. Tu ne fais pas d'émotion à moitié. Tu aimes fort, tu en veux fort, tu pardonnes lentement. Ce qui te blesse va loin. Ce qui te nourrit aussi.",
+  Sagittaire: "a besoin d'air et d'horizons pour respirer. Tu supportes mal les huis-clos émotionnels. L'humour te protège, mais attention à ne pas t'en servir pour fuir ce qui te touche vraiment.",
+  Capricorne: "tient ses émotions à distance pour les gérer. Tu es souvent l'adulte de ta propre enfance. Quand tu cesses de tout tenir, tu découvres qu'on peut t'aimer aussi quand tu ne performes pas.",
+  Verseau: "observe tes émotions comme quelqu'un·e d'un peu extérieur·e. Tu peux te trouver étrange — ressentir et analyser en même temps. Ce n'est pas un défaut. Tu as juste besoin de comprendre pour sentir en sécurité.",
+  Poissons: "n'a pas de frontière claire. Tu ressens ce que les autres ressentent, parfois avant eux. Ta fatigue vient souvent de là — pas de toi, des autres que tu portes. Apprendre à décanter, c'est ta survie.",
 };
 
 const MOON_EN: Record<string, string> = {
-  Belier: "reveals a spontaneous and direct emotional world. Your reactions are swift, your need for authenticity immediate.",
-  Taureau: "speaks of a deep need for stability and gentleness. You recharge through comfort and the safety of the familiar.",
-  Gemeaux: "depicts a lively, changeable inner life. You need mental stimulation to feel balanced.",
-  Cancer: "amplifies your natural sensitivity and intuition. You sense atmospheres like a seismograph.",
-  Lion: "highlights a need to be seen and appreciated in your authenticity. You have a generous heart.",
-  Vierge: "translates a need for emotional order and inner clarity. You recharge through routines and the feeling of usefulness.",
-  Balance: "aspires to relational harmony above all. You need beauty around you and balanced relationships.",
-  Scorpion: "reveals an emotional life of remarkable depth. Trust builds slowly within you.",
-  Sagittaire: "colours your emotional life with optimism and a thirst for freedom. You need space for your balance.",
-  Capricorne: "gives your emotions a maturity and reserve that conceal great depth.",
-  Verseau: "lends your emotional life a detached, original quality. You process your emotions with unusual clarity.",
-  Poissons: "opens the doors to a sensitivity without borders. You absorb surrounding emotions like a sponge.",
+  Belier: "gave you emotions that arrive first, strong, clear — and leave just as fast. You don't brood long, you act your emotion more than you digest it. Learning to stay in the feeling, even when it burns, is your work.",
+  Taureau: "needs slowness and sensory certainty. You reassure yourself through the warmth of a room, someone's voice, a familiar scent. Sudden change hurts you like a draft on bare skin.",
+  Gemeaux: "needs to speak to feel. What you don't put into words stays blurry — almost hasn't happened. You can seem cool because you analyze while you feel. You're not detached, you're in constant translation.",
+  Cancer: "makes you absorb other people's moods like blotting paper. You know who's not well when you walk in. You need a refuge — a place, a person, a ritual — otherwise you exhaust yourself containing what floats around.",
+  Lion: "needs to be seen. Not flattered — seen. When someone truly recognizes you, you come back to life. When you're passed over, you start doubting your own existence. It's strong, but it's how it is.",
+  Vierge: "reassures itself through usefulness. You prefer having something to do for others over receiving for yourself. Your intimate fear: not being enough for what's entrusted to you. Learn to set down, to delegate, to un-perfect.",
+  Balance: "needs harmony around to find its own. Conflicts cost you physically, you absorb them in the body. Your challenge: accepting disagreement without thinking the relationship will break.",
+  Scorpion: "descends fast into the deep. You don't do emotion by halves. You love hard, you resent hard, you forgive slowly. What hurts you goes far. What feeds you too.",
+  Sagittaire: "needs air and horizons to breathe. You handle emotional confinement badly. Humor protects you, but watch out not to use it to flee what actually touches you.",
+  Capricorne: "keeps emotions at arm's length to manage them. You were often the adult of your own childhood. When you stop holding everything, you discover people can love you even when you don't perform.",
+  Verseau: "observes your emotions a little from outside. You can find yourself strange — feeling and analyzing at once. It's not a flaw. You just need to understand to feel safe.",
+  Poissons: "has no clear border. You feel what others feel, sometimes before they do. Your exhaustion often comes from there — not from you, from the others you carry. Learning to settle what's yours is your survival.",
 };
 
 const ASC_FR: Record<string, string> = {
-  Belier: "tu arrives dans le monde avec une énergie directe et magnétique.",
-  Taureau: "tu te présentes au monde avec une présence calme et rassurante.",
-  Gemeaux: "tu projettes une image vive, communicatif·ve et adaptable.",
-  Cancer: "tu te montres au monde avec une douceur protectrice et intuitif·ve.",
-  Lion: "tu entres dans une pièce avec une présence chaude et lumineux·se.",
-  Vierge: "tu te présentes avec une élégance discrète et une intelligence attentif·ve.",
-  Balance: "tu projettes une image d'harmonie et de grâce naturelle.",
-  Scorpion: "tu arrives avec une intensité magnétique qui ne passe pas inaperçu·e.",
-  Sagittaire: "tu rayonnes d'un enthousiasme et d'une ouverture d'esprit contagieux·se.",
-  Capricorne: "tu te présentes avec une dignité mature et une aura de compétence.",
-  Verseau: "tu projettes une originalité et une indépendance qui te distinguent.",
-  Poissons: "tu arrives dans le monde avec une douceur éthérée et une empathie visible.",
+  Belier: "tu entres dans une pièce comme si tu venais d'avoir une bonne idée. Les gens te remarquent, même sans que tu cherches. Ta difficulté : ralentir assez pour laisser les autres t'approcher.",
+  Taureau: "tu apaises juste en arrivant. On te fait confiance avant même que tu aies parlé. Mais attention : cette présence calme peut attirer celleux qui cherchent à se poser sur toi sans te rencontrer vraiment.",
+  Gemeaux: "tu parles avec les yeux, les mains, tout le corps. Tu attrapes l'ambiance d'une pièce en trois secondes. Les autres te trouvent vif·ve — certain·es pensent que tu ne t'arrêtes jamais. Iels se trompent : tu te poses, mais dans la parole.",
+  Cancer: "tu arrives avec une douceur qui rassure et qui fait parler. Les gens te racontent leur vie au bout de cinq minutes. Garde ton énergie : tu n'es pas le dépotoir émotionnel de tout le monde.",
+  Lion: "tu occupes l'espace sans le vouloir. Ton entrée se remarque. Tu souris en ouvrant les portes. Ce qu'on ne voit pas, c'est combien tu as besoin d'un vrai retour — pas des applaudissements, un vrai regard.",
+  Vierge: "tu arrives discret·ète, observateur·trice, les détails en mémoire. On te prend parfois pour timide. Tu es juste en train d'évaluer. Ta grâce : une élégance qui ne cherche pas à être vue.",
+  Balance: "tu arrives avec le réflexe de l'accord. Tu lis la pièce, tu ajustes ton ton, tu cherches l'équilibre. Ton risque : disparaître dans le miroir que tu offres aux autres. Apprends à exister en présence de leur désaccord.",
+  Scorpion: "tu arrives et quelque chose se densifie autour de toi. Tu ne dis pas tout, et c'est ça qui intrigue. Les gens te sentent avant de te comprendre. Tu n'as pas besoin de te forcer pour avoir de la présence.",
+  Sagittaire: "tu arrives avec un rire, une question, une histoire. Tu élargis l'espace pour les autres. On te suit volontiers. Attention juste : ton enthousiasme peut voiler que tu fuis parfois le silence.",
+  Capricorne: "tu arrives avec une dignité qui impressionne — même les plus jeunes parmi vous. On te prend au sérieux. Ton travail à long terme : autoriser aussi la légèreté, sans y voir une perte de tenue.",
+  Verseau: "tu arrives différemment. Il y a toujours un détail qui te distingue — un angle, un geste, une manière de répondre à côté. Tu attires celleux qui ont soif d'air, tu refroidis celleux qui cherchent du conforme.",
+  Poissons: "tu arrives avec une présence floue, presque sans bords, et ça désarme. Les gens se laissent aller près de toi. Ton travail : rester tenu·e dans ton propre contour quand l'autre t'appelle à fondre.",
 };
 
 const ASC_EN: Record<string, string> = {
-  Belier: "you arrive in the world with a direct, magnetic energy.",
-  Taureau: "you present yourself with a calm, reassuring presence.",
-  Gemeaux: "you project a lively, communicative and adaptable image.",
-  Cancer: "you show yourself to the world with a protective, intuitive gentleness.",
-  Lion: "you enter a room with a warm, luminous presence.",
-  Vierge: "you present yourself with a discreet elegance and attentive intelligence.",
-  Balance: "you project an image of harmony and natural grace.",
-  Scorpion: "you arrive with a magnetic intensity that doesn't go unnoticed.",
-  Sagittaire: "you radiate enthusiasm and a contagious open-mindedness.",
-  Capricorne: "you present yourself with a mature dignity and an aura of competence.",
-  Verseau: "you project an originality and independence that set you apart.",
-  Poissons: "you arrive in the world with an ethereal gentleness and visible empathy.",
+  Belier: "you enter a room like you just had a good idea. People notice, even when you don't try. Your difficulty: slowing down enough to let others approach.",
+  Taureau: "you calm things just by arriving. People trust you before you've spoken. But careful — this still presence can attract those who want to lean on you without really meeting you.",
+  Gemeaux: "you speak with your eyes, your hands, your whole body. You catch the mood of a room in three seconds. People find you quick — some think you never stop. They're wrong: you do rest, but in speech.",
+  Cancer: "you arrive with a gentleness that reassures and makes people talk. They'll tell you their life in five minutes. Mind your energy: you're not everyone's emotional bin.",
+  Lion: "you occupy space without meaning to. Your entrance shows. You smile through doors. What's not seen is how much you need real response — not applause, a real gaze.",
+  Vierge: "you arrive discreet, observant, details in mind. People sometimes take you for shy. You're just assessing. Your grace: an elegance that doesn't ask to be seen.",
+  Balance: "you arrive with the reflex of agreement. You read the room, adjust your tone, seek balance. Your risk: disappearing into the mirror you offer others. Learn to exist in the presence of their disagreement.",
+  Scorpion: "you arrive and something densifies around you. You don't say everything, and that's what intrigues. People feel you before they understand you. You don't need to try for presence.",
+  Sagittaire: "you arrive with a laugh, a question, a story. You widen the space for others. People follow you gladly. Just be careful: your enthusiasm can veil that you sometimes flee silence.",
+  Capricorne: "you arrive with a dignity that impresses — even the younger ones among you. People take you seriously. Your long work: allowing yourself lightness too, without seeing it as lost composure.",
+  Verseau: "you arrive differently. There's always a detail that sets you apart — an angle, a gesture, a sideways answer. You attract those hungry for air, you cool those who want the conforming.",
+  Poissons: "you arrive with a blurred, almost borderless presence, and it disarms. People let go near you. Your work: staying held in your own outline when the other calls you to dissolve.",
 };
 
 export function getCosmicPortraitSun(sign: string, locale: string = "fr"): string {

@@ -1,7 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { getRedis } from "./redis";
 
-// Free tier: 3 messages per 24 hours (by IP)
+// Free tier: 5 messages per 24 hours (by IP)
 let _freeLimit: Ratelimit | null = null;
 export function getFreeRateLimit(): Ratelimit | null {
   if (_freeLimit) return _freeLimit;
@@ -10,7 +10,7 @@ export function getFreeRateLimit(): Ratelimit | null {
 
   _freeLimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.fixedWindow(3, "24 h"),
+    limiter: Ratelimit.fixedWindow(5, "24 h"),
     prefix: "rl:free",
     analytics: false,
   });

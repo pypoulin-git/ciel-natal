@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -25,7 +26,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.upstash.io https://api.anthropic.com https://api.openai.com https://nominatim.openstreetmap.org https://secure.geonames.org",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.upstash.io https://api.anthropic.com https://api.openai.com https://nominatim.openstreetmap.org https://secure.geonames.org https://*.sentry.io https://*.ingest.sentry.io",
               "media-src 'self' https://*.supabase.co",
               "frame-src https://js.stripe.com https://checkout.stripe.com",
             ].join("; "),
@@ -42,4 +43,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wrapper — active only when SENTRY_DSN is set. Otherwise a no-op.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  // Tunnel route to bypass ad-blockers (only active when DSN present).
+  tunnelRoute: "/monitoring",
+  // Skip source map upload when token missing (avoids local build errors).
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+});

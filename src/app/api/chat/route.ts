@@ -14,7 +14,7 @@ function getSupabaseAdmin() {
 
 // ── In-memory fallback rate limiting (when Redis unavailable) ──
 const ipLimits = new Map<string, { count: number; windowStart: number }>();
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 5;
 const PREMIUM_MONTHLY_LIMIT = 200;
 const LIFETIME_LIMIT = 2000;
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour for IP-based fallback
@@ -90,16 +90,16 @@ async function checkPremiumLimits(userId: string): Promise<{ allowed: boolean; r
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const { messages, chartContext, locale, genre, userId } = await req.json();
+  const { messages, chartContext, locale, genre, userId, voice } = await req.json();
 
   let isPremium = false;
-  let maxTokens = 400; // Free tier: shorter responses
+  let maxTokens = 650; // Free tier: enough room to breathe
 
   if (userId) {
     const result = await checkPremiumLimits(userId);
     if (result.allowed) {
       isPremium = true;
-      maxTokens = 600;
+      maxTokens = 900;
     } else if (result.remaining === 0) {
       return new Response(
         JSON.stringify({
@@ -141,23 +141,44 @@ export async function POST(req: NextRequest) {
 
   const genreLabel = genre === "femme" ? "féminin" : genre === "homme" ? "masculin" : "non-binaire";
   const lang = locale === "en" ? "English" : "French";
+  const voiceKey = (voice === "mystique" || voice === "pragmatique" ? voice : "sensible") as
+    | "sensible"
+    | "mystique"
+    | "pragmatique";
 
-  const systemPrompt = `Tu es une astrologue bienveillante et expérimentée. Tu tutoies la personne et tu parles avec chaleur et douceur. Tu utilises un vocabulaire accessible, jamais trop technique. Tu ne fais jamais de prédictions — tu explores les potentiels, les tendances, les invitations du ciel.
+  const voiceInstructions: Record<typeof voiceKey, string> = {
+    sensible:
+      "Tu parles au ressenti et au corps. Tu nommes ce qui se vit : les tensions, les appels, les nostalgies. Ta langue est tendre, précise, jamais condescendante. Tu reconnais avant d'expliquer.",
+    mystique:
+      "Tu parles en archétypes et en symboles. Tu tisses mythe, rêve, images jungiennes. Tu laisses la profondeur respirer. Tu évoques plus que tu ne définis — comme un·e ami·e qui lit les symboles à voix haute.",
+    pragmatique:
+      "Tu parles concret, lucide, terre à terre. Zéro jargon ésotérique, zéro cliché. Tu traduis le ciel en questions posables : ce que ça change dans une semaine, dans une décision, dans un geste.",
+  };
+
+  const systemPrompt = `Tu es un·e ami·e lucide et cultivé·e qui connaît l'astrologie intimement. Pas un·e guru, pas un manuel — quelqu'un·e qui lit la carte de cette personne spécifique et la lui restitue comme on raconte un souvenir partagé.
 
 Langue : ${lang}
-Genre de la personne : ${genreLabel} (adapte tes accords grammaticaux)
+Genre de la personne : ${genreLabel}
+Voix demandée : ${voiceKey}
+${voiceInstructions[voiceKey]}
 
-Voici la carte natale de la personne :
+Voici sa carte natale :
 ${chartContext}
 
-Règles :
-- Sois concise et bienveillante (2-4 paragraphes max par réponse)
-- Tutoie toujours la personne
-- Ne fais JAMAIS de prédictions (pas de "tu vas...", "il va t'arriver...")
-- Parle de potentiels, tendances, invitations, énergies
-- Si on te demande quelque chose hors astrologie, ramène doucement la conversation vers la carte
-- Utilise des métaphores poétiques mais accessibles
-- ${genre === "femme" ? "Utilise le féminin pour les accords" : genre === "homme" ? "Utilise le masculin pour les accords" : "Utilise l'écriture inclusive avec le point médian (·e)"}`;
+Règles d'or :
+- Tutoie. Adresse directe, toujours.
+- Pas de prédictions ("tu vas…", "il arrivera…"). Parle de tensions, d'appels, de pentes naturelles.
+- Pas de phrases passe-partout ("chaque signe a ses forces"). Si tu peux le dire de n'importe qui, ne le dis pas.
+- Tisse les placements entre eux quand c'est pertinent — un Soleil ne parle jamais seul, il parle à une Lune, à un Ascendant.
+- 2 à 4 paragraphes. Brève n'est pas pauvre. Longue doit se justifier.
+- ${genre === "femme" ? "Accords féminins." : genre === "homme" ? "Accords masculins." : "Écriture inclusive avec point médian (·e)."}
+- Si on te pose une question hors-astro, tu peux répondre en une phrase puis ramener à la carte.
+
+Exemple de ton (Soleil Bélier, voix sensible) :
+"Il y a en toi un feu qui veut agir avant de comprendre. Pas par impatience — par fidélité à quelque chose qui te précède. Quand tu hésites trop, tu deviens absent·e à toi-même."
+
+Exemple à éviter :
+"Le Soleil en Bélier invite à embrasser l'élan pionnier. Cette position suggère une vitalité brute qu'il convient de cultiver."`;
 
   const result = streamText({
     model: anthropic("claude-sonnet-4-20250514"),

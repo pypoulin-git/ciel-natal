@@ -10,6 +10,7 @@ interface Props {
   prenom: string;
   genre: string;
   locale: string;
+  voice?: "sensible" | "mystique" | "pragmatique";
 }
 
 const SUGGESTIONS_FR = [
@@ -28,7 +29,7 @@ const SUGGESTIONS_EN = [
 
 const FREE_MSG_LIMIT = 3;
 
-export default function ChartChat({ chartContext, prenom, genre, locale }: Props) {
+export default function ChartChat({ chartContext, prenom, genre, locale, voice = "sensible" }: Props) {
   const { isPremium, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -37,8 +38,8 @@ export default function ChartChat({ chartContext, prenom, genre, locale }: Props
   const inputRef = useRef<HTMLInputElement>(null);
 
   const transport = useMemo(
-    () => new TextStreamChatTransport({ api: "/api/chat", body: { chartContext, locale, genre, userId: user?.id } }),
-    [chartContext, locale, genre, user?.id]
+    () => new TextStreamChatTransport({ api: "/api/chat", body: { chartContext, locale, genre, userId: user?.id, voice } }),
+    [chartContext, locale, genre, user?.id, voice]
   );
 
   const { messages, sendMessage, status, error } = useChat({ transport });
