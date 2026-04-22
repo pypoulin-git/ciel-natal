@@ -1,27 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 
-export default function InscriptionPage() {
+function InscriptionInner() {
   const { locale } = useLocale();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const intent = searchParams.get("intent") ?? ""; // "pdf" | ""
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [wantPremium, setWantPremium] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hasPendingPdf, setHasPendingPdf] = useState(false);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    try {
+      setHasPendingPdf(!!sessionStorage.getItem("cielnatal.pendingPdf"));
+    } catch {
+      /* noop */
+    }
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error: err } = await supabase.auth.signUp({
+    const { data, error: err } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -32,17 +47,54 @@ export default function InscriptionPage() {
 
     if (err) {
       setError(locale === "fr" ? "Erreur lors de l'inscription. Réessaie." : "Signup error. Please try again.");
-    } else {
-      setSuccess(true);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    // If email confirmation is enabled, Supabase returns user but no session.
+    // If disabled (our current config for QA), we're auto-logged in.
+    if (!data.session) {
+      setSuccess(true);
+      setLoading(false);
+      return;
+    }
+
+    // ── Process pending PDF if any ──
+    await processPendingPdf(data.session.access_token);
+
+    // ── Premium upsell → Stripe checkout ──
+    if (wantPremium && data.session?.user?.id) {
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.session.user.id, email: data.session.user.email }),
+        });
+        if (res.ok) {
+          const { url } = await res.json();
+          if (url) {
+            window.location.href = url;
+            return;
+          }
+        }
+      } catch {
+        /* fall through to lectures */
+      }
+    }
+
+    // Default success: go to lectures
+    router.push(intent === "pdf" ? "/mon-compte/lectures" : "/");
   };
 
   const handleGoogleSignup = async () => {
     setError("");
+    // Preserve intent across OAuth round-trip
+    const redirectUrl = intent === "pdf"
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent("/mon-compte/lectures?from=oauth")}`
+      : `${window.location.origin}/auth/callback`;
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: redirectUrl },
     });
     if (err) setError(err.message);
   };
@@ -51,7 +103,7 @@ export default function InscriptionPage() {
     return (
       <main className="relative min-h-screen">
         <Starfield />
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 pt-20">
           <div className="glass p-8 max-w-sm text-center">
             <div className="text-3xl mb-4 text-[var(--color-accent-lavender)]">✦</div>
             <h1 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
@@ -74,31 +126,55 @@ export default function InscriptionPage() {
   return (
     <main className="relative min-h-screen">
       <Starfield />
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
+      <div className="relative z-10 min-h-screen flex items-start justify-center px-4 pt-20 pb-10">
+        <div className="w-full max-w-md">
+          {/* ─── Contextual banner for intent=pdf ─── */}
+          {intent === "pdf" && hasPendingPdf && (
+            <div className="glass p-4 mb-5 flex items-start gap-3 border-[var(--color-accent-lavender)]/30">
+              <span className="text-xl text-[var(--color-accent-lavender)]">✦</span>
+              <div className="flex-1">
+                <p className="text-sm text-[var(--color-text-primary)] font-medium mb-0.5">
+                  {locale === "fr" ? "Ton PDF t'attend" : "Your PDF is waiting"}
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {locale === "fr"
+                    ? "Crée ton compte pour recevoir ta carte du ciel par email et la retrouver dans ton historique."
+                    : "Create your account to receive your natal chart by email and keep it in your history."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mb-6">
             <a href="/" className="inline-block text-2xl text-[var(--color-accent-lavender)] opacity-40 mb-3">✦</a>
             <h1 className="font-cinzel text-2xl text-[var(--color-text-primary)]">
               {locale === "fr" ? "Crée ton compte" : "Create your account"}
             </h1>
             <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-              {locale === "fr" ? "Sauvegarde tes cartes et accède au premium" : "Save your charts and access premium"}
+              {intent === "pdf"
+                ? locale === "fr"
+                  ? "Reçois ton PDF et sauvegarde tes lectures"
+                  : "Get your PDF and save your readings"
+                : locale === "fr"
+                ? "Sauvegarde tes cartes et accède au premium"
+                : "Save your charts and access premium"}
             </p>
           </div>
 
-          <div className="glass p-6 sm:p-8 space-y-5">
+          <div className="glass p-6 sm:p-7 space-y-5">
             {/* Google OAuth */}
             <button
+              type="button"
               onClick={handleGoogleSignup}
               className="w-full flex items-center justify-center gap-3 py-3 min-h-[48px] px-4 rounded-xl border border-[var(--color-glass-border)] bg-white/5 text-sm text-[var(--color-text-primary)] hover:bg-white/10 hover:border-[var(--color-accent-lavender)]/20 transition-all"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              {locale === "fr" ? "S'inscrire avec Google" : "Sign up with Google"}
+              {locale === "fr" ? "Continuer avec Google" : "Continue with Google"}
             </button>
 
             <div className="flex items-center gap-3">
@@ -127,8 +203,6 @@ export default function InscriptionPage() {
                 className="w-full glass-input"
                 required
                 aria-label={locale === "fr" ? "Adresse email" : "Email address"}
-                aria-invalid={error ? true : undefined}
-                aria-describedby={error ? "signup-error" : undefined}
               />
               <input
                 type="password"
@@ -139,41 +213,77 @@ export default function InscriptionPage() {
                 required
                 minLength={6}
                 aria-label={locale === "fr" ? "Mot de passe" : "Password"}
-                aria-invalid={error ? true : undefined}
-                aria-describedby={error ? "signup-error" : undefined}
               />
+
+              {/* ─── Premium upsell ─── */}
+              <label
+                className={`block p-4 rounded-xl border cursor-pointer transition-all ${
+                  wantPremium
+                    ? "border-[var(--color-accent-rose)]/60 bg-[var(--color-accent-rose)]/10"
+                    : "border-[var(--color-glass-border)] bg-white/[0.02] hover:border-[var(--color-accent-rose)]/30"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={wantPremium}
+                    onChange={(e) => setWantPremium(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-[var(--color-accent-rose)] shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-sm font-medium text-[var(--color-text-primary)] flex items-center gap-1.5">
+                        <span className="text-[var(--color-accent-rose)]">✦</span>
+                        {locale === "fr" ? "Débloquer Premium" : "Unlock Premium"}
+                      </span>
+                      <span className="text-xs font-mono text-[var(--color-accent-rose)]">
+                        9,99 $
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed mb-2">
+                      {locale === "fr"
+                        ? "Paiement unique à vie. Aucun abonnement."
+                        : "One-time lifetime payment. No subscription."}
+                    </p>
+                    <ul className="space-y-1 text-[11px] text-[var(--color-text-secondary)]">
+                      <FeatureRow>
+                        {locale === "fr" ? "Historique illimité de lectures" : "Unlimited reading history"}
+                      </FeatureRow>
+                      <FeatureRow>
+                        {locale === "fr" ? "Maisons + transits quotidiens personnalisés" : "Houses + personalized daily transits"}
+                      </FeatureRow>
+                      <FeatureRow>
+                        {locale === "fr" ? "Synastrie + Révolution Solaire" : "Synastry + Solar Return"}
+                      </FeatureRow>
+                      <FeatureRow>
+                        {locale === "fr" ? "Préférences d'interprétation avancées" : "Advanced reading preferences"}
+                      </FeatureRow>
+                    </ul>
+                  </div>
+                </div>
+              </label>
+
               {error && (
-                <div
-                  id="signup-error"
-                  role="alert"
-                  className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/30 animate-fade-in"
-                >
-                  <svg
-                    className="w-4 h-4 flex-shrink-0 mt-0.5 text-[var(--color-accent-rose)]"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
+                <div role="alert" className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/30 animate-fade-in">
+                  <svg className="w-4 h-4 flex-shrink-0 mt-0.5 text-[var(--color-accent-rose)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
-                  <p className="text-xs text-[var(--color-text-primary)]">
-                    <span className="sr-only">{locale === "fr" ? "Erreur : " : "Error: "}</span>
-                    {error}
-                  </p>
+                  <p className="text-xs text-[var(--color-text-primary)]">{error}</p>
                 </div>
               )}
+
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full btn-primary py-3 min-h-[48px] rounded-xl text-sm disabled:opacity-50"
               >
                 {loading
-                  ? (locale === "fr" ? "Inscription..." : "Creating account...")
-                  : (locale === "fr" ? "Créer mon compte" : "Create my account")}
+                  ? locale === "fr" ? "Création..." : "Creating..."
+                  : wantPremium
+                  ? locale === "fr" ? "Créer mon compte + payer 9,99 $" : "Create account + pay $9.99"
+                  : locale === "fr" ? "Créer mon compte gratuit" : "Create free account"}
               </button>
             </form>
           </div>
@@ -187,5 +297,58 @@ export default function InscriptionPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function FeatureRow({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-1.5">
+      <svg className="w-3 h-3 mt-0.5 flex-shrink-0 text-[var(--color-accent-rose)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+// Helper: process a pending PDF stored in sessionStorage (from anonymous flow)
+async function processPendingPdf(accessToken: string) {
+  try {
+    const raw = sessionStorage.getItem("cielnatal.pendingPdf");
+    if (!raw) return;
+    const pending = JSON.parse(raw) as {
+      dataUrl: string;
+      label: string;
+      formData: Record<string, unknown>;
+      chartData?: Record<string, unknown> | null;
+    };
+    // Convert data URL → Blob
+    const res = await fetch(pending.dataUrl);
+    const blob = await res.blob();
+
+    const form = new FormData();
+    form.append("file", blob, `${pending.label}.pdf`);
+    form.append("label", pending.label);
+    form.append("formData", JSON.stringify(pending.formData));
+    form.append("chartData", JSON.stringify(pending.chartData ?? null));
+    form.append("sendEmail", "true");
+
+    await fetch("/api/pdf/save", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+
+    sessionStorage.removeItem("cielnatal.pendingPdf");
+  } catch (err) {
+    console.error("[inscription] processPendingPdf failed:", err);
+  }
+}
+
+export default function InscriptionPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <InscriptionInner />
+    </Suspense>
   );
 }

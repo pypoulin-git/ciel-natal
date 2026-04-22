@@ -12,7 +12,7 @@ import { useScrollReveal } from "@/lib/useScrollReveal";
 import { searchCities, CityResult, UserLocation, CitySearchError } from "@/lib/citySearch";
 import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes, genderize, getGreeting, getIntroSentence, serializeChartForAI, Genre } from "@/lib/chartHelpers";
 import { useAuth } from "@/lib/auth-context";
-import EnhancedSlider from "@/components/EnhancedSlider";
+import { getPlanetInterp, getAspectInterp as getAspectInterpHelper, type InterpModule, type VoiceKey } from "@/lib/getInterp";
 import LoadingMessages from "@/components/LoadingMessages";
 import SectionTransition from "@/components/results/SectionTransition";
 import PremiumGate from "@/components/PremiumGate";
@@ -25,6 +25,7 @@ const HousesMap = dynamic(() => import("@/components/results/HousesMap"), { ssr:
 const ChartChat = dynamic(() => import("@/components/results/ChartChat"), { ssr: false });
 const AudioPlayer = dynamic(() => import("@/components/AudioPlayer"), { ssr: false });
 const SavedCharts = dynamic(() => import("@/components/SavedCharts"), { ssr: false });
+const DateWheelPicker = dynamic(() => import("@/components/ui/date-wheel-picker").then((m) => m.DateWheelPicker), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -39,6 +40,8 @@ interface FormData {
   lieu: string;
   latitude: number;
   longitude: number;
+  voice: VoiceKey;
+  // legacy (kept for URL backwards-compat & legacy getInterpretation fallback)
   tone: number;
   depth: number;
   focus: number;
@@ -63,17 +66,32 @@ const ASPECT_COLORS: Record<string, string> = {
   Conjonction: "#a89ec8", Trigone: "#9a96aa", Sextile: "#8a87a0", Carre: "#b0a8be", Opposition: "#9590a8",
 };
 
-// ─── Slider Config Keys ──────────────────────────────────────────
-const SLIDER_KEYS = [
-  { key: "tone" as const, leftKey: "slider.scientific", leftDescKey: "slider.scientific.desc", rightKey: "slider.esoteric", rightDescKey: "slider.esoteric.desc" },
-  { key: "depth" as const, leftKey: "slider.concise", leftDescKey: "slider.concise.desc", rightKey: "slider.detailed", rightDescKey: "slider.detailed.desc" },
-  { key: "focus" as const, leftKey: "slider.practical", leftDescKey: "slider.practical.desc", rightKey: "slider.introspective", rightDescKey: "slider.introspective.desc" },
+// ─── Voice options (sensible / mystique / pragmatique) ─────────
+const VOICE_OPTIONS: { key: VoiceKey; labelFr: string; labelEn: string; descFr: string; descEn: string }[] = [
+  {
+    key: "sensible",
+    labelFr: "Sensible", labelEn: "Feeling",
+    descFr: "Adresse tendre, ressenti, corps. Reconnaît ce qui se vit.",
+    descEn: "Tender voice, felt sense, body-aware. Names what you live.",
+  },
+  {
+    key: "mystique",
+    labelFr: "Mystique", labelEn: "Mystic",
+    descFr: "Symboles et archétypes. Mythes, rêves, profondeurs jungiennes.",
+    descEn: "Symbols and archetypes. Myths, dreams, Jungian depths.",
+  },
+  {
+    key: "pragmatique",
+    labelFr: "Pragmatique", labelEn: "Grounded",
+    descFr: "Concret, lucide, terre à terre. Zéro jargon ésotérique.",
+    descEn: "Grounded, lucid, practical. Zero esoteric jargon.",
+  },
 ];
 
 // ─── Page ────────────────────────────────────────────────────────
 export default function Home() {
   const { t, locale } = useLocale();
-  const { isPremium } = useAuth();
+  const { user, isPremium, getAccessToken } = useAuth();
   const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_EN;
   const RESULT_TABS = [
     { id: "portrait", label: t("results.portrait"), icon: "✦" },
@@ -89,6 +107,7 @@ export default function Home() {
     prenom: "", genre: "femme" as Genre, jour: 15, mois: 6, annee: 1990,
     heure: 12, minute: 0, hasTime: true,
     lieu: "", latitude: 48.8566, longitude: 2.3522,
+    voice: "sensible",
     tone: 5, depth: 5, focus: 5,
   });
   const [chart, setChart] = useState<NatalChart | null>(null);
@@ -217,9 +236,7 @@ export default function Home() {
     switch (step) {
       case 1: return form.prenom.trim().length >= 1;
       case 2: return form.annee >= 1900 && form.annee <= 2026 && form.mois >= 1 && form.mois <= 12 && form.jour >= 1 && form.jour <= 31;
-      case 3: return true;
-      case 4: return form.lieu.length >= 2;
-      case 5: return true;
+      case 3: return form.lieu.length >= 2;
       default: return true;
     }
   };
@@ -280,9 +297,17 @@ export default function Home() {
     }
   }, [step, chart, form.latitude, form.longitude]);
 
-  // ─── Export PDF ───
-  const exportPdf = useCallback(async () => {
-    if (!resultsRef.current) return;
+  // ─── PDF generation + save flow ──────────────────────────────
+  // - Always generates client-side PDF
+  // - Anonymous: stores in sessionStorage + redirects to /inscription?intent=pdf
+  // - Logged in: uploads to /api/pdf/save (Supabase Storage) + emails + redirects to /mon-compte/lectures
+  const [pdfStatus, setPdfStatus] = useState<
+    "idle" | "generating" | "uploading" | "done" | "error" | "limit"
+  >("idle");
+  const [pdfMessage, setPdfMessage] = useState<string>("");
+
+  const generatePdfBlob = useCallback(async (): Promise<{ blob: Blob; dataUrl: string; filename: string } | null> => {
+    if (!resultsRef.current) return null;
     const html2canvas = (await import("html2canvas-pro")).default;
     const { jsPDF } = await import("jspdf");
     const canvas = await html2canvas(resultsRef.current, {
@@ -303,42 +328,133 @@ export default function Home() {
       pdf.addImage(imgData, "JPEG", 0, -y, imgW, imgH);
       y += pageH;
     }
-    pdf.save(`ciel-natal-${form.prenom.toLowerCase()}.pdf`);
+    const filename = `ciel-natal-${(form.prenom || "lecture").toLowerCase()}.pdf`;
+    const blob = pdf.output("blob");
+    const dataUrl = pdf.output("datauristring");
+    return { blob, dataUrl, filename };
   }, [form.prenom]);
 
+  const handleGetPdf = useCallback(async () => {
+    try {
+      setPdfStatus("generating");
+      setPdfMessage(locale === "fr" ? "Génération du PDF…" : "Generating PDF…");
+      const result = await generatePdfBlob();
+      if (!result) {
+        setPdfStatus("error");
+        setPdfMessage(locale === "fr" ? "Erreur de génération." : "Generation error.");
+        return;
+      }
+      const label =
+        locale === "fr"
+          ? `Carte de ${form.prenom || "lecture"} — ${form.jour}/${form.mois}/${form.annee}`
+          : `${form.prenom || "Chart"}'s chart — ${form.mois}/${form.jour}/${form.annee}`;
+
+      if (!user) {
+        // ── Anonymous: stash in sessionStorage, trigger immediate download too, redirect to signup ──
+        try {
+          sessionStorage.setItem(
+            "cielnatal.pendingPdf",
+            JSON.stringify({
+              dataUrl: result.dataUrl,
+              label,
+              formData: form,
+              chartData: chart,
+            })
+          );
+        } catch {
+          /* sessionStorage full — degrade gracefully */
+        }
+        // Also trigger a local download so user gets it even if signup abandoned
+        const link = document.createElement("a");
+        link.href = result.dataUrl;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        // Redirect to signup
+        window.location.href = "/inscription?intent=pdf";
+        return;
+      }
+
+      // ── Logged in: upload + email ──
+      setPdfStatus("uploading");
+      setPdfMessage(locale === "fr" ? "Envoi à ton compte…" : "Saving to your account…");
+      const token = await getAccessToken();
+      if (!token) {
+        setPdfStatus("error");
+        setPdfMessage(locale === "fr" ? "Session expirée. Reconnecte-toi." : "Session expired. Sign in again.");
+        return;
+      }
+      const formBody = new FormData();
+      formBody.append("file", result.blob, result.filename);
+      formBody.append("label", label);
+      formBody.append("formData", JSON.stringify(form));
+      formBody.append("chartData", JSON.stringify(chart));
+      formBody.append("sendEmail", "true");
+
+      const res = await fetch("/api/pdf/save", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formBody,
+      });
+
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if (data.error === "FREE_LIMIT_REACHED") {
+          setPdfStatus("limit");
+          setPdfMessage(
+            locale === "fr"
+              ? `Tu as atteint la limite gratuite (${data.limit} lectures). Passe Premium pour un historique illimité.`
+              : `Free limit reached (${data.limit} readings). Go Premium for unlimited history.`
+          );
+          // Still trigger local download so user isn't blocked
+          const link = document.createElement("a");
+          link.href = result.dataUrl;
+          link.download = result.filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          return;
+        }
+      }
+
+      if (!res.ok) {
+        setPdfStatus("error");
+        setPdfMessage(locale === "fr" ? "Erreur de sauvegarde." : "Save error.");
+        return;
+      }
+
+      setPdfStatus("done");
+      setPdfMessage(locale === "fr" ? "Envoyé par email ✓" : "Sent by email ✓");
+      // Redirect to history after short delay for feedback
+      setTimeout(() => {
+        window.location.href = "/mon-compte/lectures";
+      }, 900);
+    } catch (err) {
+      console.error("[handleGetPdf]", err);
+      setPdfStatus("error");
+      setPdfMessage(locale === "fr" ? "Erreur inattendue." : "Unexpected error.");
+    }
+  }, [generatePdfBlob, form, chart, user, getAccessToken, locale]);
+
+  // Planets + Aspects are free & complete per recalibrated gating (2026-04-20).
+  // Houses, Transits, Synastrie, SR remain premium.
   const getInterp = (planet: string, sign: string, house?: number): string => {
-    if (!interpretations) return "";
-    const mod = interpretations as {
-      planetInSign: Record<string, Record<string, string>>;
-      planetInHouse: Record<string, Record<number, string>>;
-      getInterpretation?: (p: string, s: string, h: number | undefined, prefs: { tone: number; depth: number; focus: number }) => string;
-    };
-    let text: string;
-    if (mod.getInterpretation) {
-      text = mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus });
-    } else {
-      text = mod.planetInSign?.[planet]?.[sign] || "";
-      if (house && mod.planetInHouse?.[planet]?.[house]) text += "\n\n" + mod.planetInHouse[planet][house];
+    const mod = interpretations as unknown as InterpModule | null;
+    if (mod && !mod.variants?.[form.voice]?.planetInSign?.[planet]?.[sign] && mod.getInterpretation) {
+      const legacy = mod.getInterpretation(planet, sign, house, { tone: form.tone, depth: form.depth, focus: form.focus });
+      return genderize(legacy, form.genre);
     }
-    const gendered = genderize(text, form.genre);
-    // Free users see only the first sentence
-    if (!isPremium && gendered) {
-      const match = gendered.match(/^[^.]+\./);
-      return match ? match[0] : gendered;
-    }
-    return gendered;
+    return getPlanetInterp(mod, planet, sign, house, {
+      voice: form.voice, genre: form.genre, isPremium: true,
+    });
   };
 
   const getAspectInterp = (type: string, p1: string, p2: string): string => {
-    if (!interpretations) return "";
-    const mod = interpretations as { aspectInterpretations: Record<string, Record<string, string>> };
-    const raw = mod.aspectInterpretations?.[type]?.[`${p1}-${p2}`] || mod.aspectInterpretations?.[type]?.[`${p2}-${p1}`] || "";
-    const gendered = genderize(raw, form.genre);
-    if (!isPremium && gendered) {
-      const match = gendered.match(/^[^.]+\./);
-      return match ? match[0] : gendered;
-    }
-    return gendered;
+    const mod = interpretations as unknown as InterpModule | null;
+    return getAspectInterpHelper(mod, type, p1, p2, {
+      voice: form.voice, genre: form.genre, isPremium: true,
+    });
   };
 
   const scrollToTab = (tabId: string) => {
@@ -371,6 +487,7 @@ export default function Home() {
           hasTime: decoded.ht !== 0,
           lieu: (decoded.l as string) || "",
           latitude: decoded.la as number, longitude: decoded.lo as number,
+          voice: (decoded.v as VoiceKey) || "sensible",
           tone: 5, depth: 5, focus: 5,
         };
       }
@@ -385,6 +502,7 @@ export default function Home() {
         hasTime: p.get("ht") !== "0",
         lieu: decodeURIComponent(p.get("l") || ""),
         latitude: parseFloat(p.get("lat") || "48.8566"), longitude: parseFloat(p.get("lon") || "2.3522"),
+        voice: (p.get("v") as VoiceKey) || "sensible",
         tone: 5, depth: 5, focus: 5,
       };
     }
@@ -416,7 +534,7 @@ export default function Home() {
     const payload = {
       n: form.prenom, g: form.genre, j: form.jour, m: form.mois, a: form.annee,
       h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
-      l: form.lieu, la: form.latitude, lo: form.longitude,
+      l: form.lieu, la: form.latitude, lo: form.longitude, v: form.voice,
     };
     return `${base}?c=${encodeURIComponent(encodeChartParams(payload))}`;
   };
@@ -427,7 +545,7 @@ export default function Home() {
     const payload = {
       g: form.genre, j: form.jour, m: form.mois, a: form.annee,
       h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
-      la: form.latitude, lo: form.longitude,
+      la: form.latitude, lo: form.longitude, v: form.voice,
     };
     return `${base}?c=${encodeURIComponent(encodeChartParams(payload))}`;
   };
@@ -492,11 +610,11 @@ export default function Home() {
         )}
 
         {/* ═══ FORM ═══ */}
-        {step >= 1 && step <= 5 && (
+        {step >= 1 && step <= 3 && (
           <section className="min-h-screen flex items-center justify-center px-4 py-8">
             <div className="glass p-6 sm:p-8 md:p-12 max-w-lg w-full glow-lavender step-enter">
               <div className="flex gap-1.5 mb-8">
-                {[1, 2, 3, 4, 5].map((s) => (
+                {[1, 2, 3].map((s) => (
                   <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
                     <div className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-lavender)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
                       style={{ width: s <= step ? "100%" : "0%" }} />
@@ -535,44 +653,18 @@ export default function Home() {
               {step === 2 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step2.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step2.subtitle")}</p>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    <div>
-                      <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.day")}</label>
-                      <select value={form.jour} onChange={(e) => setForm({ ...form, jour: parseInt(e.target.value) })}
-                        className="glass-input w-full text-center text-base sm:text-lg appearance-none">
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                          <option key={d} value={d} className="bg-[var(--color-space-deep)]">{d}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.month")}</label>
-                      <select value={form.mois} onChange={(e) => setForm({ ...form, mois: parseInt(e.target.value) })}
-                        className="glass-input w-full text-center text-base sm:text-lg appearance-none">
-                        {MONTHS.map((m, i) => (
-                          <option key={i} value={i + 1} className="bg-[var(--color-space-deep)]">{m.slice(0, 3)}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step2.year")}</label>
-                      <select value={form.annee} onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) })}
-                        className="glass-input w-full text-center text-base sm:text-lg appearance-none">
-                        {Array.from({ length: 127 }, (_, i) => 2026 - i).map((y) => (
-                          <option key={y} value={y} className="bg-[var(--color-space-deep)]">{y}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step2.subtitle")}</p>
+                  <div className="glass rounded-2xl px-3 py-4 mb-6">
+                    <DateWheelPicker
+                      value={new Date(form.annee, form.mois - 1, form.jour)}
+                      onChange={(d) => setForm({ ...form, annee: d.getFullYear(), mois: d.getMonth() + 1, jour: d.getDate() })}
+                      minYear={1900}
+                      maxYear={new Date().getFullYear()}
+                      size="md"
+                      locale={locale === "fr" ? "fr-FR" : "en-US"}
+                    />
                   </div>
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step3.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step3.subtitle")}</p>
-                  <label className="flex items-center justify-center gap-3 mb-6 cursor-pointer group">
+                  <label className="flex items-center justify-center gap-3 mb-4 cursor-pointer group">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.hasTime ? "bg-[var(--color-accent-lavender)] border-[var(--color-accent-lavender)]" : "border-[var(--color-text-secondary)] bg-transparent"}`}
                       onClick={() => setForm({ ...form, hasTime: !form.hasTime })}>
                       {form.hasTime && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -580,27 +672,15 @@ export default function Home() {
                     <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition">{t("form.step3.knowTime")}</span>
                   </label>
                   {form.hasTime ? (
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="flex-1 max-w-[120px]">
-                        <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.hour")}</label>
-                        <select value={form.heure} onChange={(e) => setForm({ ...form, heure: parseInt(e.target.value) })}
-                          className="glass-input w-full text-center text-lg appearance-none">
-                          {Array.from({ length: 24 }, (_, i) => i).map((h) => (
-                            <option key={h} value={h} className="bg-[var(--color-space-deep)]">{String(h).padStart(2, "0")}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <span className="text-2xl text-[var(--color-text-secondary)] mt-5 font-light">:</span>
-                      <div className="flex-1 max-w-[120px]">
-                        <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">{t("form.step3.minute")}</label>
-                        <select value={form.minute} onChange={(e) => setForm({ ...form, minute: parseInt(e.target.value) })}
-                          className="glass-input w-full text-center text-lg appearance-none">
-                          {Array.from({ length: 60 }, (_, i) => i).map((m) => (
-                            <option key={m} value={m} className="bg-[var(--color-space-deep)]">{String(m).padStart(2, "0")}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                    <input
+                      type="time"
+                      value={`${String(form.heure).padStart(2, "0")}:${String(form.minute).padStart(2, "0")}`}
+                      onChange={(e) => {
+                        const [h, m] = e.target.value.split(":").map((n) => parseInt(n, 10));
+                        if (!isNaN(h) && !isNaN(m)) setForm({ ...form, heure: h, minute: m });
+                      }}
+                      className="glass-input w-full max-w-[240px] mx-auto block text-center text-lg"
+                    />
                   ) : (
                     <div className="glass p-4 text-sm text-[var(--color-text-secondary)] text-center border-l-2 border-[var(--color-accent-lavender)]/30">
                       {t("form.step3.noTime")}
@@ -609,10 +689,10 @@ export default function Home() {
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 3 && (
                 <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
                   <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step4.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step4.subtitle")}</p>
+                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step4.subtitle")}</p>
                   <div className="relative">
                     <input type="text" value={form.lieu} onChange={(e) => handleCitySearch(e.target.value)}
                       placeholder={t("form.step4.placeholder")} className="glass-input w-full text-lg text-center" autoFocus />
@@ -622,12 +702,12 @@ export default function Home() {
                       {geoLoading ? t("geo.detecting") : t("geo.detect")}
                     </button>
                     {cityLoading && (
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <div className="absolute right-4 top-5 -translate-y-1/2">
                         <div className="w-4 h-4 border-2 border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
                       </div>
                     )}
                     {citySuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 glass overflow-hidden z-20">
+                      <div className="mt-2 glass overflow-hidden z-20">
                         {citySuggestions.map((city, i) => (
                           <button key={`${city.lat}-${city.lon}-${i}`} onClick={() => selectCity(city)}
                             className="w-full px-4 py-3 text-left hover:bg-white/5 active:bg-white/10 transition text-[var(--color-text-primary)] text-sm border-b border-[var(--color-glass-border)] last:border-0">
@@ -642,30 +722,42 @@ export default function Home() {
                       </p>
                     )}
                   </div>
-                </div>
-              )}
 
-              {step === 5 && (
-                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step5.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step5.subtitle")}</p>
-                  {form.tone === 5 && form.depth === 5 && form.focus === 5 && (
-                    <div className="glass rounded-xl px-4 py-3 mb-6 text-center border border-white/5">
-                      <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
-                        {locale === "en"
-                          ? "These sliders adjust the writing style of your interpretation — they don't change the astrological calculation."
-                          : "Ces curseurs personnalisent le style de rédaction de ton interprétation. Ils n'affectent pas le calcul astrologique."}
-                      </p>
+                  <div className="mt-8 pt-6 border-t border-white/5">
+                    <h3 className="font-cinzel text-base text-center mb-1 text-[var(--color-text-primary)]">
+                      {locale === "fr" ? "La voix qui te parle" : "The voice that speaks to you"}
+                    </h3>
+                    <p className="text-[12px] text-center text-[var(--color-text-secondary)] mb-4">
+                      {locale === "fr"
+                        ? "Le ton de ta lecture. Les positions restent les mêmes."
+                        : "The tone of your reading. Positions remain the same."}
+                    </p>
+                    <div role="radiogroup" aria-label={locale === "fr" ? "Voix d'interprétation" : "Interpretation voice"} className="flex flex-col gap-2">
+                      {VOICE_OPTIONS.map((opt) => {
+                        const active = form.voice === opt.key;
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setForm({ ...form, voice: opt.key })}
+                            className={`text-left rounded-xl px-4 py-3 transition-all duration-200 border ${
+                              active
+                                ? "bg-[var(--color-accent-lavender)]/15 border-[var(--color-accent-lavender)]/60 shadow-[0_0_20px_-8px_var(--color-accent-lavender)]"
+                                : "bg-white/[0.03] border-white/10 hover:border-white/20"
+                            }`}
+                          >
+                            <div className={`font-cinzel text-base mb-0.5 ${active ? "text-[var(--color-accent-lavender)]" : "text-[var(--color-text-primary)]"}`}>
+                              {locale === "fr" ? opt.labelFr : opt.labelEn}
+                            </div>
+                            <div className="text-[12px] text-[var(--color-text-secondary)] leading-snug">
+                              {locale === "fr" ? opt.descFr : opt.descEn}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
-                  <div className="space-y-8">
-                    {SLIDER_KEYS.map((slider) => (
-                      <EnhancedSlider key={slider.key}
-                        left={{ label: t(slider.leftKey), desc: t(slider.leftDescKey) }}
-                        right={{ label: t(slider.rightKey), desc: t(slider.rightDescKey) }}
-                        value={form[slider.key]}
-                        onChange={(v) => setForm({ ...form, [slider.key]: v })} />
-                    ))}
                   </div>
                 </div>
               )}
@@ -674,17 +766,23 @@ export default function Home() {
                 <p className="text-xs text-red-400/80 text-center mt-4 animate-fade-in" role="alert">
                   {step === 1 && t("validation.nameRequired")}
                   {step === 2 && t("validation.dateInvalid")}
-                  {step === 4 && t("validation.cityRequired")}
+                  {step === 3 && t("validation.cityRequired")}
                 </p>
               )}
 
               <div className="flex justify-between mt-6">
-                <button onClick={() => { setStepDirection("prev"); setShowValidation(false); setStep(step - 1); }} className="btn-ghost px-5 py-2.5 rounded-xl text-sm">{t("form.back")}</button>
-                {step < 5 ? (
+                <button
+                  onClick={() => { setStepDirection("prev"); setShowValidation(false); setStep(Math.max(0, step - 1)); }}
+                  className="btn-ghost px-5 py-2.5 rounded-xl text-sm"
+                >
+                  {t("form.back")}
+                </button>
+                {step < 3 ? (
                   <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setShowValidation(false); setStep(step + 1); } else { setShowValidation(true); } }}
                     className={`btn-primary px-6 py-2.5 rounded-xl text-sm ${!canAdvance() ? "opacity-50" : ""}`}>{t("form.next")}</button>
                 ) : (
-                  <button onClick={doCalculation} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender">{t("form.calculate")}</button>
+                  <button onClick={() => { if (canAdvance()) { doCalculation(); } else { setShowValidation(true); } }}
+                    className={`btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender ${!canAdvance() ? "opacity-50" : ""}`}>{t("form.calculate")}</button>
                 )}
               </div>
             </div>
@@ -971,7 +1069,6 @@ export default function Home() {
                             <div>
                               <span className="inline-flex items-center gap-2">
                                 <span className="text-lg font-medium text-[var(--color-text-primary)]">{translatePlanet(planet.name, locale)}</span>
-                                {!isPremium && <PremiumBadge small />}
                               </span>
                               <span className="text-base text-[var(--color-text-secondary)] ml-2">{translateSign(planet.sign, locale)}</span>
                             </div>
@@ -1051,7 +1148,7 @@ export default function Home() {
                 <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.aspectDesc")}</p>
                 {chart.aspects.length > 0 ? (
                   <div className="space-y-2">
-                    {chart.aspects.slice(0, form.depth >= 7 ? undefined : 12).map((aspect, i) => {
+                    {chart.aspects.slice(0, 12).map((aspect, i) => {
                       const interp = getAspectInterp(aspect.type, aspect.planet1, aspect.planet2);
                       const color = ASPECT_COLORS[aspect.type] || "#c9a0ff";
                       const symbol = ASPECT_SYMBOLS[aspect.type] || "·";
@@ -1106,13 +1203,15 @@ export default function Home() {
                 )}
               </div>
 
-              {/* TRANSITS DU JOUR */}
+              {/* TRANSITS DU JOUR (premium) */}
               {todayTransits && (
                 <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-16 scroll-reveal">
                   <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">◎</span> {t("transits.title")}
+                    {!isPremium && <PremiumBadge small />}
                   </h2>
                   <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("transits.desc")}</p>
+                  <PremiumGate>
                   <div className="space-y-2">
                     {todayTransits.planets.slice(0, 7).map((transit) => {
                       const natal = chart.planets.find((p) => p.name === transit.name);
@@ -1143,6 +1242,7 @@ export default function Home() {
                       );
                     })}
                   </div>
+                  </PremiumGate>
                 </div>
               )}
 
@@ -1175,6 +1275,7 @@ export default function Home() {
                 prenom={form.prenom}
                 genre={form.genre}
                 locale={locale}
+                voice={form.voice}
               />
 
               {/* CLOSING */}
@@ -1233,20 +1334,35 @@ export default function Home() {
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                     {t("results.copyChart")}
                   </button>
-                  {isPremium ? (
-                    <button onClick={exportPdf} className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2">
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
-                      {t("results.exportPdf")}
-                    </button>
-                  ) : (
-                    <a href="/premium" className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2 opacity-60">
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
-                      {t("results.exportPdf")} <PremiumBadge small />
-                    </a>
-                  )}
+                  <button
+                    onClick={handleGetPdf}
+                    disabled={pdfStatus === "generating" || pdfStatus === "uploading"}
+                    className="btn-primary px-5 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-60"
+                  >
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                    {pdfStatus === "generating" || pdfStatus === "uploading"
+                      ? pdfMessage
+                      : user
+                      ? locale === "fr" ? "Recevoir par email" : "Email me the PDF"
+                      : locale === "fr" ? "Obtenir mon PDF" : "Get my PDF"}
+                  </button>
                 </div>
                 {copied && (
                   <p className="text-xs text-[var(--color-accent-lavender)] mb-4 animate-fade-in">{t("results.copied")}</p>
+                )}
+                {pdfStatus !== "idle" && pdfMessage && (
+                  <p
+                    className={`text-xs mb-4 animate-fade-in ${
+                      pdfStatus === "error" || pdfStatus === "limit"
+                        ? "text-[var(--color-accent-rose)]"
+                        : "text-[var(--color-accent-lavender)]"
+                    }`}
+                  >
+                    {pdfMessage}
+                    {pdfStatus === "limit" && (
+                      <> · <a href="/premium" className="underline">{locale === "fr" ? "Passer Premium" : "Go Premium"}</a></>
+                    )}
+                  </p>
                 )}
                 <div className="border-t border-[var(--color-glass-border)] pt-5">
                   <p className="text-xs text-[var(--color-text-secondary)]/50 italic max-w-md mx-auto leading-relaxed">{t("results.disclaimer")}</p>

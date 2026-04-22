@@ -5,7 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
-import TopBar from "@/components/TopBar";
+import TopNav from "@/components/TopNav";
 import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
@@ -81,7 +81,7 @@ export default function RootLayout({
             <a href="#main-content" className="skip-link">
               Skip to content
             </a>
-            <TopBar />
+            <TopNav />
             <ViewTransition>
               <main id="main-content" role="main">
                 {children}
