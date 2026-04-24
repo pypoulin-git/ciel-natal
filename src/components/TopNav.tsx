@@ -90,24 +90,27 @@ export default function TopNav() {
             <LanguageSwitcher />
           </div>
 
-          {!loading && !user && (
+          {/* Anonymous state = loading fallback OR logged-out. Always render something. */}
+          {!user && (
             <>
               <Link
                 href="/connexion"
                 className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
+                aria-busy={loading || undefined}
               >
                 {label("Connexion", "Sign in")}
               </Link>
               <Link
                 href="/inscription"
                 className="px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--color-accent-lavender)]/15 border border-[var(--color-accent-lavender)]/30 text-[var(--color-accent-lavender)] hover:bg-[var(--color-accent-lavender)]/25 transition"
+                aria-busy={loading || undefined}
               >
                 {label("S'inscrire", "Sign up")}
               </Link>
             </>
           )}
 
-          {!loading && user && (
+          {user && (
             <div ref={menuRef} className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}

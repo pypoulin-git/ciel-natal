@@ -123,7 +123,7 @@ function WheelItem({
         className={cn(
           "font-medium transition-colors tabular-nums",
           isSelected
-            ? "text-[var(--color-accent-lavender)]"
+            ? "text-[var(--color-accent-lavender)] font-semibold drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]"
             : "text-[var(--color-text-secondary)]",
         )}
       >
@@ -307,10 +307,11 @@ function WheelColumn({
       />
 
       <div
-        className="pointer-events-none absolute inset-x-0 z-[5] border-y border-[var(--color-accent-lavender)]/40 bg-[var(--color-accent-lavender)]/5"
+        className="pointer-events-none absolute inset-x-0 z-[5] border-y-2 border-[var(--color-accent-lavender)]/70 bg-[var(--color-accent-lavender)]/15 rounded-sm"
         style={{
           top: centerOffset,
           height: itemHeight,
+          boxShadow: "inset 0 0 0 1px rgba(167, 139, 250, 0.25)",
         }}
         aria-hidden="true"
       />

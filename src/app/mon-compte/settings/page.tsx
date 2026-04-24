@@ -68,8 +68,11 @@ export default function SettingsPage() {
     return (
       <main className="relative min-h-screen">
         <Starfield />
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-3">
           <div className="w-8 h-8 border-2 border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            {label("Chargement de ton espace…", "Loading your space…")}
+          </p>
         </div>
       </main>
     );

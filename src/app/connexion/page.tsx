@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 
-export default function ConnexionPage() {
+function ConnexionInner() {
   const { locale } = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") || "/mon-compte";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,17 +26,21 @@ export default function ConnexionPage() {
     const { error: err } = await supabase.auth.signInWithPassword({ email, password });
     if (err) {
       setError(locale === "fr" ? "Email ou mot de passe incorrect." : "Invalid email or password.");
-    } else {
-      window.location.href = "/";
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    // Refresh so Server Components pick up the new auth cookie, then navigate.
+    // We keep `loading` true — the component will unmount on push().
+    router.refresh();
+    router.push(nextPath);
   };
 
   const handleGoogleLogin = async () => {
     setError("");
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo },
     });
     if (err) setError(err.message);
   };
@@ -150,5 +159,13 @@ export default function ConnexionPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ConnexionPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <ConnexionInner />
+    </Suspense>
   );
 }

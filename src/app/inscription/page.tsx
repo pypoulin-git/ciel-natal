@@ -82,8 +82,9 @@ function InscriptionInner() {
       }
     }
 
-    // Default success: go to lectures
-    router.push(intent === "pdf" ? "/mon-compte/lectures" : "/");
+    // Refresh Server Components so middleware picks up the new session
+    router.refresh();
+    router.push(intent === "pdf" ? "/mon-compte/lectures" : "/mon-compte");
   };
 
   const handleGoogleSignup = async () => {
@@ -128,19 +129,33 @@ function InscriptionInner() {
       <Starfield />
       <div className="relative z-10 min-h-screen flex items-start justify-center px-4 pt-20 pb-10">
         <div className="w-full max-w-md">
-          {/* ─── Contextual banner for intent=pdf ─── */}
-          {intent === "pdf" && hasPendingPdf && (
-            <div className="glass p-4 mb-5 flex items-start gap-3 border-[var(--color-accent-lavender)]/30">
-              <span className="text-xl text-[var(--color-accent-lavender)]">✦</span>
-              <div className="flex-1">
-                <p className="text-sm text-[var(--color-text-primary)] font-medium mb-0.5">
-                  {locale === "fr" ? "Ton PDF t'attend" : "Your PDF is waiting"}
-                </p>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  {locale === "fr"
-                    ? "Crée ton compte pour recevoir ta carte du ciel par email et la retrouver dans ton historique."
-                    : "Create your account to receive your natal chart by email and keep it in your history."}
-                </p>
+          {/* ─── Contextual banner for intent=pdf (always shown, even without pending PDF) ─── */}
+          {intent === "pdf" && (
+            <div
+              className="relative mb-6 rounded-2xl p-5 border-2 border-[var(--color-accent-lavender)]/40 overflow-hidden animate-fade-in"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(244, 114, 182, 0.10) 100%)",
+              }}
+              role="status"
+            >
+              <div className="absolute -top-8 -right-8 text-[120px] text-[var(--color-accent-lavender)] opacity-10 leading-none pointer-events-none select-none">✦</div>
+              <div className="relative flex items-start gap-3">
+                <span className="text-2xl text-[var(--color-accent-lavender)] shrink-0">✦</span>
+                <div className="flex-1">
+                  <p className="text-base text-[var(--color-text-primary)] font-semibold mb-1 font-cinzel tracking-wide">
+                    {locale === "fr" ? "Ton PDF t'attend" : "Your PDF is waiting"}
+                  </p>
+                  <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                    {hasPendingPdf
+                      ? locale === "fr"
+                        ? "Crée ton compte en 10 secondes — on t'envoie ta carte du ciel par email et on la garde dans ton historique."
+                        : "Create your account in 10 seconds — we'll email your natal chart and keep it in your history."
+                      : locale === "fr"
+                        ? "Crée ton compte gratuit pour recevoir tes lectures par email et accéder à ton historique."
+                        : "Create your free account to receive your readings by email and access your history."}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -215,7 +230,7 @@ function InscriptionInner() {
                 aria-label={locale === "fr" ? "Mot de passe" : "Password"}
               />
 
-              {/* ─── Premium upsell ─── */}
+              {/* ─── Premium upsell (collapsible feature list) ─── */}
               <label
                 className={`block p-4 rounded-xl border cursor-pointer transition-all ${
                   wantPremium
@@ -240,25 +255,44 @@ function InscriptionInner() {
                         9,99 $
                       </span>
                     </div>
-                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed mb-2">
+                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
                       {locale === "fr"
                         ? "Paiement unique à vie. Aucun abonnement."
                         : "One-time lifetime payment. No subscription."}
                     </p>
-                    <ul className="space-y-1 text-[11px] text-[var(--color-text-secondary)]">
-                      <FeatureRow>
-                        {locale === "fr" ? "Historique illimité de lectures" : "Unlimited reading history"}
-                      </FeatureRow>
-                      <FeatureRow>
-                        {locale === "fr" ? "Maisons + transits quotidiens personnalisés" : "Houses + personalized daily transits"}
-                      </FeatureRow>
-                      <FeatureRow>
-                        {locale === "fr" ? "Synastrie + Révolution Solaire" : "Synastry + Solar Return"}
-                      </FeatureRow>
-                      <FeatureRow>
-                        {locale === "fr" ? "Préférences d'interprétation avancées" : "Advanced reading preferences"}
-                      </FeatureRow>
-                    </ul>
+                    <details
+                      className="mt-1.5 group"
+                      open={wantPremium}
+                    >
+                      <summary
+                        className="text-[11px] text-[var(--color-accent-rose)] cursor-pointer hover:underline list-none inline-flex items-center gap-1 select-none"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="group-open:hidden">
+                          {locale === "fr" ? "Voir les avantages" : "See benefits"}
+                        </span>
+                        <span className="hidden group-open:inline">
+                          {locale === "fr" ? "Masquer" : "Hide"}
+                        </span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="transition-transform group-open:rotate-180">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </summary>
+                      <ul className="mt-2 space-y-1 text-[11px] text-[var(--color-text-secondary)]">
+                        <FeatureRow>
+                          {locale === "fr" ? "Historique illimité de lectures" : "Unlimited reading history"}
+                        </FeatureRow>
+                        <FeatureRow>
+                          {locale === "fr" ? "Maisons + transits quotidiens personnalisés" : "Houses + personalized daily transits"}
+                        </FeatureRow>
+                        <FeatureRow>
+                          {locale === "fr" ? "Synastrie + Révolution Solaire" : "Synastry + Solar Return"}
+                        </FeatureRow>
+                        <FeatureRow>
+                          {locale === "fr" ? "Préférences d'interprétation avancées" : "Advanced reading preferences"}
+                        </FeatureRow>
+                      </ul>
+                    </details>
                   </div>
                 </div>
               </label>
