@@ -17,6 +17,7 @@ import LoadingMessages from "@/components/LoadingMessages";
 import SectionTransition from "@/components/results/SectionTransition";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
+import { stashPendingPdf } from "@/lib/pending-pdf";
 
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
@@ -350,19 +351,17 @@ export default function Home() {
           : `${form.prenom || "Chart"}'s chart — ${form.mois}/${form.jour}/${form.annee}`;
 
       if (!user) {
-        // ── Anonymous: stash in sessionStorage, trigger immediate download too, redirect to signup ──
+        // ── Anonymous: stash Blob in IndexedDB, trigger immediate download, redirect to signup ──
+        // (IndexedDB, not sessionStorage — PDF blobs routinely exceed 5 MB quota)
         try {
-          sessionStorage.setItem(
-            "cielnatal.pendingPdf",
-            JSON.stringify({
-              dataUrl: result.dataUrl,
-              label,
-              formData: form,
-              chartData: chart,
-            })
-          );
+          await stashPendingPdf({
+            blob: result.blob,
+            label,
+            formData: form as unknown as Record<string, unknown>,
+            chartData: chart as unknown as Record<string, unknown> | null,
+          });
         } catch {
-          /* sessionStorage full — degrade gracefully */
+          /* IndexedDB unavailable (private mode on some browsers) — degrade gracefully */
         }
         // Also trigger a local download so user gets it even if signup abandoned
         const link = document.createElement("a");

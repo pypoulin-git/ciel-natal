@@ -6,6 +6,7 @@ import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 import AccountTabs from "@/components/AccountTabs";
+import { readPendingPdf, clearPendingPdf } from "@/lib/pending-pdf";
 
 interface SavedChart {
   id: string;
@@ -25,37 +26,37 @@ export default function LecturesPage() {
   const [pendingProcessed, setPendingProcessed] = useState(false);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
-  // Process any pending PDF from anonymous → signup flow (sessionStorage)
+  // Process any pending PDF from anonymous → signup flow (IndexedDB fallback
+  // when /inscription didn't drain it — e.g. OAuth signup or direct navigation)
   useEffect(() => {
     if (!user || pendingProcessed) return;
     const run = async () => {
       try {
-        const raw = sessionStorage.getItem("cielnatal.pendingPdf");
-        if (!raw) {
+        const pending = await readPendingPdf();
+        if (!pending) {
           setPendingProcessed(true);
           return;
         }
         const token = await getAccessToken();
         if (!token) return;
-        const pending = JSON.parse(raw);
-        const res = await fetch(pending.dataUrl);
-        const blob = await res.blob();
         const form = new FormData();
-        form.append("file", blob, `${pending.label}.pdf`);
+        form.append("file", pending.blob, `${pending.label}.pdf`);
         form.append("label", pending.label);
         form.append("formData", JSON.stringify(pending.formData));
         form.append("chartData", JSON.stringify(pending.chartData ?? null));
         form.append("sendEmail", "true");
-        await fetch("/api/pdf/save", {
+        const res = await fetch("/api/pdf/save", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: form,
         });
-        sessionStorage.removeItem("cielnatal.pendingPdf");
-        setToast({
-          kind: "ok",
-          msg: locale === "fr" ? "Ta lecture a été sauvegardée et envoyée par email." : "Your reading was saved and emailed.",
-        });
+        if (res.ok) {
+          await clearPendingPdf();
+          setToast({
+            kind: "ok",
+            msg: locale === "fr" ? "Ta lecture a été sauvegardée et envoyée par email." : "Your reading was saved and emailed.",
+          });
+        }
       } catch {
         /* noop */
       } finally {

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
+import { hasPendingPdf as checkPendingPdf, readPendingPdf, clearPendingPdf } from "@/lib/pending-pdf";
 
 function InscriptionInner() {
   const { locale } = useLocale();
@@ -24,11 +25,17 @@ function InscriptionInner() {
   const supabase = createClient();
 
   useEffect(() => {
-    try {
-      setHasPendingPdf(!!sessionStorage.getItem("cielnatal.pendingPdf"));
-    } catch {
-      /* noop */
-    }
+    let cancelled = false;
+    checkPendingPdf()
+      .then((v) => {
+        if (!cancelled) setHasPendingPdf(v);
+      })
+      .catch(() => {
+        /* IndexedDB unavailable — fine, banner adapts */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -345,35 +352,30 @@ function FeatureRow({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Helper: process a pending PDF stored in sessionStorage (from anonymous flow)
+// Helper: process a pending PDF stored in IndexedDB (from anonymous flow)
 async function processPendingPdf(accessToken: string) {
   try {
-    const raw = sessionStorage.getItem("cielnatal.pendingPdf");
-    if (!raw) return;
-    const pending = JSON.parse(raw) as {
-      dataUrl: string;
-      label: string;
-      formData: Record<string, unknown>;
-      chartData?: Record<string, unknown> | null;
-    };
-    // Convert data URL → Blob
-    const res = await fetch(pending.dataUrl);
-    const blob = await res.blob();
+    const pending = await readPendingPdf();
+    if (!pending) return;
 
     const form = new FormData();
-    form.append("file", blob, `${pending.label}.pdf`);
+    form.append("file", pending.blob, `${pending.label}.pdf`);
     form.append("label", pending.label);
     form.append("formData", JSON.stringify(pending.formData));
     form.append("chartData", JSON.stringify(pending.chartData ?? null));
     form.append("sendEmail", "true");
 
-    await fetch("/api/pdf/save", {
+    const res = await fetch("/api/pdf/save", {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
       body: form,
     });
 
-    sessionStorage.removeItem("cielnatal.pendingPdf");
+    if (res.ok) {
+      await clearPendingPdf();
+    } else {
+      console.error("[inscription] processPendingPdf: /api/pdf/save returned", res.status);
+    }
   } catch (err) {
     console.error("[inscription] processPendingPdf failed:", err);
   }
