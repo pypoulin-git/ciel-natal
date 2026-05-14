@@ -1104,7 +1104,7 @@ export default function Home() {
               />
 
               {/* ELEMENTS */}
-              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16 scroll-reveal">
+              <div ref={(el) => { sectionRefs.current.elements = el; }} className="scroll-mt-16">
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">◆</span> {t("results.elements")}
                 </h2>
@@ -1123,7 +1123,7 @@ export default function Home() {
 
               {/* HOUSES */}
               {chart.ascendant && (
-                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16 scroll-reveal">
+                <div ref={(el) => { sectionRefs.current.houses = el; }} className="scroll-mt-16">
                   <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">⌂</span> {t("results.houses")}
                   </h2>
@@ -1140,7 +1140,7 @@ export default function Home() {
               />
 
               {/* ASPECTS */}
-              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16 scroll-reveal">
+              <div ref={(el) => { sectionRefs.current.aspects = el; }} className="scroll-mt-16">
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">△</span> {t("results.aspects")}
                 </h2>
@@ -1204,7 +1204,7 @@ export default function Home() {
 
               {/* TRANSITS DU JOUR (premium) */}
               {todayTransits && (
-                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-16 scroll-reveal">
+                <div ref={(el) => { sectionRefs.current.transits = el; }} className="scroll-mt-16">
                   <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                     <span className="text-[var(--color-accent-lavender)] opacity-50">◎</span> {t("transits.title")}
                     {!isPremium && <PremiumBadge small />}

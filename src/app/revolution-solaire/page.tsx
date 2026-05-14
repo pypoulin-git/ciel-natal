@@ -44,18 +44,18 @@ async function searchCities(query: string): Promise<CityResult[]> {
 }
 
 const SR_THEMES: Record<string, { fr: string; en: string }> = {
-  Belier: { fr: "Une annee d'initiatives et de nouveaux departs.", en: "A year of initiatives and new beginnings." },
-  Taureau: { fr: "Une annee de stabilisation et de construction patiente.", en: "A year of stabilization and patient building." },
-  Gemeaux: { fr: "Une annee de communication, d'apprentissage et de connexions.", en: "A year of communication, learning, and connections." },
-  Cancer: { fr: "Une annee tournee vers la famille, le foyer et les emotions.", en: "A year focused on family, home, and emotions." },
-  Lion: { fr: "Une annee de creativite, d'expression personnelle et de rayonnement.", en: "A year of creativity, self-expression, and radiance." },
-  Vierge: { fr: "Une annee d'organisation, de sante et de perfectionnement.", en: "A year of organization, health, and refinement." },
-  Balance: { fr: "Une annee centree sur les relations, l'harmonie et la justice.", en: "A year centered on relationships, harmony, and justice." },
-  Scorpion: { fr: "Une annee de transformation profonde et de regeneration.", en: "A year of deep transformation and regeneration." },
-  Sagittaire: { fr: "Une annee d'expansion, de voyages et de quete de sens.", en: "A year of expansion, travel, and searching for meaning." },
-  Capricorne: { fr: "Une annee de responsabilites, d'ambition et de maturite.", en: "A year of responsibility, ambition, and maturity." },
-  Verseau: { fr: "Une annee d'originalite, de liberte et d'innovation.", en: "A year of originality, freedom, and innovation." },
-  Poissons: { fr: "Une annee d'intuition, de compassion et de croissance spirituelle.", en: "A year of intuition, compassion, and spiritual growth." },
+  Belier: { fr: "Une année d'initiatives et de nouveaux départs.", en: "A year of initiatives and new beginnings." },
+  Taureau: { fr: "Une année de stabilisation et de construction patiente.", en: "A year of stabilization and patient building." },
+  Gemeaux: { fr: "Une année de communication, d'apprentissage et de connexions.", en: "A year of communication, learning, and connections." },
+  Cancer: { fr: "Une année tournée vers la famille, le foyer et les émotions.", en: "A year focused on family, home, and emotions." },
+  Lion: { fr: "Une année de créativité, d'expression personnelle et de rayonnement.", en: "A year of creativity, self-expression, and radiance." },
+  Vierge: { fr: "Une année d'organisation, de santé et de perfectionnement.", en: "A year of organization, health, and refinement." },
+  Balance: { fr: "Une année centrée sur les relations, l'harmonie et la justice.", en: "A year centered on relationships, harmony, and justice." },
+  Scorpion: { fr: "Une année de transformation profonde et de régénération.", en: "A year of deep transformation and regeneration." },
+  Sagittaire: { fr: "Une année d'expansion, de voyages et de quête de sens.", en: "A year of expansion, travel, and searching for meaning." },
+  Capricorne: { fr: "Une année de responsabilités, d'ambition et de maturité.", en: "A year of responsibility, ambition, and maturity." },
+  Verseau: { fr: "Une année d'originalité, de liberté et d'innovation.", en: "A year of originality, freedom, and innovation." },
+  Poissons: { fr: "Une année d'intuition, de compassion et de croissance spirituelle.", en: "A year of intuition, compassion, and spiritual growth." },
 };
 
 export default function RevolutionSolaire() {
@@ -145,9 +145,9 @@ export default function RevolutionSolaire() {
     }, 500);
   };
 
-  const title = locale === "fr" ? "Revolution Solaire" : "Solar Return";
+  const title = locale === "fr" ? "Révolution Solaire" : "Solar Return";
   const subtitle = locale === "fr"
-    ? "Decouvre les themes de ton annee en cours"
+    ? "Découvre les thèmes de ton année en cours"
     : "Discover the themes of your current year";
 
   return (
@@ -189,7 +189,7 @@ export default function RevolutionSolaire() {
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-1.5 block text-center">
-                    {locale === "fr" ? "Annee" : "Year"}
+                    {locale === "fr" ? "Année" : "Year"}
                   </label>
                   <select value={form.annee} onChange={(e) => setForm({ ...form, annee: parseInt(e.target.value) })}
                     className="glass-input w-full text-center appearance-none">
@@ -229,7 +229,7 @@ export default function RevolutionSolaire() {
                 className="btn-primary w-full py-3 rounded-xl font-medium disabled:opacity-30">
                 {calculating
                   ? (locale === "fr" ? "Calcul en cours..." : "Calculating...")
-                  : (locale === "fr" ? "Calculer ma revolution solaire" : "Calculate my solar return")}
+                  : (locale === "fr" ? "Calculer ma révolution solaire" : "Calculate my solar return")}
               </button>
             </div>
           ) : (
@@ -237,7 +237,7 @@ export default function RevolutionSolaire() {
               {/* SR Wheel */}
               <div className="glass p-4 sm:p-6">
                 <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4 text-center">
-                  {locale === "fr" ? `Revolution Solaire ${new Date().getFullYear()}` : `Solar Return ${new Date().getFullYear()}`}
+                  {locale === "fr" ? `Révolution Solaire ${new Date().getFullYear()}` : `Solar Return ${new Date().getFullYear()}`}
                 </h2>
                 <ZodiacWheel planets={srChart.planets} ascendant={srChart.ascendant} />
               </div>
@@ -246,11 +246,11 @@ export default function RevolutionSolaire() {
               {srChart.ascendant && (
                 <div className="glass p-6">
                   <h3 className="font-cinzel text-base text-[var(--color-accent-lavender)] mb-2">
-                    {locale === "fr" ? "Ascendant de Revolution" : "Return Ascendant"}: {srChart.ascendant.sign}
+                    {locale === "fr" ? "Ascendant de Révolution" : "Return Ascendant"}: {srChart.ascendant.sign}
                   </h3>
                   <p className="text-sm text-[var(--color-text-primary)]/80 leading-relaxed">
                     {SR_THEMES[srChart.ascendant.sign]?.[locale] ||
-                      (locale === "fr" ? "L'Ascendant de ta revolution solaire colore le theme de ton annee." : "The Ascendant of your solar return colors your year's theme.")}
+                      (locale === "fr" ? "L'Ascendant de ta révolution solaire colore le thème de ton année." : "The Ascendant of your solar return colors your year's theme.")}
                   </p>
                 </div>
               )}
@@ -260,7 +260,7 @@ export default function RevolutionSolaire() {
                 <div className="space-y-6">
                   <div className="glass p-6">
                     <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                      {locale === "fr" ? "Positions planetaires de l'annee" : "Planetary positions for the year"}
+                      {locale === "fr" ? "Positions planétaires de l'année" : "Planetary positions for the year"}
                       {!isPremium && <PremiumBadge />}
                     </h3>
                     <div className="space-y-2">
@@ -283,7 +283,7 @@ export default function RevolutionSolaire() {
                   {natalChart && (
                     <div className="glass p-6">
                       <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-4">
-                        {locale === "fr" ? "Comparaison avec ton theme natal" : "Comparison with your natal chart"}
+                        {locale === "fr" ? "Comparaison avec ton thème natal" : "Comparison with your natal chart"}
                       </h3>
                       <div className="space-y-2">
                         {srChart.planets.slice(0, 7).map((srPlanet) => {
