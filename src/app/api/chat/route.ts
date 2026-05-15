@@ -12,6 +12,21 @@ function getSupabaseAdmin() {
   );
 }
 
+// Verify Bearer token and return the authenticated userId, or null for anonymous.
+// We never trust a userId supplied in the request body — that was an IDOR vector
+// that let a caller consume someone else's Premium quota.
+async function verifyAuth(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice(7);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { data } = await supabase.auth.getUser(token);
+  return data?.user?.id ?? null;
+}
+
 // ── In-memory fallback rate limiting (when Redis unavailable) ──
 const ipLimits = new Map<string, { count: number; windowStart: number }>();
 const FREE_LIMIT = 5;
@@ -90,13 +105,16 @@ async function checkPremiumLimits(userId: string): Promise<{ allowed: boolean; r
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const { messages, chartContext, locale, genre, userId, voice } = await req.json();
+  const { messages, chartContext, locale, genre, voice } = await req.json();
+
+  // Trust the userId from the verified Bearer token only (never from body).
+  const authedUserId = await verifyAuth(req);
 
   let isPremium = false;
   let maxTokens = 650; // Free tier: enough room to breathe
 
-  if (userId) {
-    const result = await checkPremiumLimits(userId);
+  if (authedUserId) {
+    const result = await checkPremiumLimits(authedUserId);
     if (result.allowed) {
       isPremium = true;
       maxTokens = 900;

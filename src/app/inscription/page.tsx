@@ -74,8 +74,10 @@ function InscriptionInner() {
       try {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.session.user.id, email: data.session.user.email }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.session.access_token}`,
+          },
         });
         if (res.ok) {
           const { url } = await res.json();

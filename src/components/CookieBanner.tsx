@@ -26,7 +26,9 @@ export default function CookieBanner() {
   const { locale } = useLocale();
   const [visible, setVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [analytics, setAnalytics] = useState(true);
+  // OPT-IN by default per RGPD / Loi 25 — analytics stays off until the user
+  // explicitly accepts. Vercel Analytics is also gated on this flag in layout.tsx.
+  const [analytics, setAnalytics] = useState(false);
 
   useEffect(() => {
     if (!getConsent()) setVisible(true);
@@ -39,6 +41,8 @@ export default function CookieBanner() {
       timestamp: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    // Notify same-tab listeners (e.g. ConsentedAnalytics) that consent changed.
+    window.dispatchEvent(new Event("ciel-natal:consent-changed"));
     setVisible(false);
   };
 

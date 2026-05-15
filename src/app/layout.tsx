@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { ViewTransition } from "react";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
 import TopNav from "@/components/TopNav";
 import CookieBanner from "@/components/CookieBanner";
+import ConsentedAnalytics from "@/components/ConsentedAnalytics";
 
 export const metadata: Metadata = {
   title: "Ciel Natal — Découvre ta carte du ciel",
@@ -88,8 +87,7 @@ export default function RootLayout({
               </main>
             </ViewTransition>
             <CookieBanner />
-            <Analytics />
-            <SpeedInsights />
+            <ConsentedAnalytics />
           </AuthProvider>
         </LocaleProvider>
       </body>

@@ -43,7 +43,7 @@ const FEATURES_EN = [
 ];
 
 export default function PremiumPage() {
-  const { user, isPremium, loading } = useAuth();
+  const { user, isPremium, loading, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const features = locale === "en" ? FEATURES_EN : FEATURES_FR;
 
@@ -52,10 +52,17 @@ export default function PremiumPage() {
       window.location.href = "/connexion";
       return;
     }
+    const token = await getAccessToken();
+    if (!token) {
+      window.location.href = "/connexion";
+      return;
+    }
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;

@@ -30,16 +30,36 @@ const SUGGESTIONS_EN = [
 const FREE_MSG_LIMIT = 3;
 
 export default function ChartChat({ chartContext, prenom, genre, locale, voice = "sensible" }: Props) {
-  const { isPremium, user } = useAuth();
+  const { isPremium, user, getAccessToken } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [hitLimit, setHitLimit] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Refresh the access token any time the user changes. The server reads
+  // userId from this Bearer header (never from body) to prevent quota theft.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setAuthToken(null);
+      return;
+    }
+    getAccessToken()
+      .then((t) => { if (!cancelled) setAuthToken(t); })
+      .catch(() => { if (!cancelled) setAuthToken(null); });
+    return () => { cancelled = true; };
+  }, [user, getAccessToken]);
+
   const transport = useMemo(
-    () => new TextStreamChatTransport({ api: "/api/chat", body: { chartContext, locale, genre, userId: user?.id, voice } }),
-    [chartContext, locale, genre, user?.id, voice]
+    () =>
+      new TextStreamChatTransport({
+        api: "/api/chat",
+        body: { chartContext, locale, genre, voice },
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      }),
+    [chartContext, locale, genre, voice, authToken]
   );
 
   const { messages, sendMessage, status, error } = useChat({ transport });
