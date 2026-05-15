@@ -32,3 +32,19 @@ export function getPremiumRateLimit(): Ratelimit | null {
   });
   return _premiumLimit;
 }
+
+// Contact form: 3 messages per hour (by IP). Serverless-safe via Upstash.
+let _contactLimit: Ratelimit | null = null;
+export function getContactRateLimit(): Ratelimit | null {
+  if (_contactLimit) return _contactLimit;
+  const redis = getRedis();
+  if (!redis) return null;
+
+  _contactLimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.fixedWindow(3, "1 h"),
+    prefix: "rl:contact",
+    analytics: false,
+  });
+  return _contactLimit;
+}

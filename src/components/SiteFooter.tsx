@@ -19,28 +19,28 @@ export default function SiteFooter() {
             </p>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2" aria-label="Footer">
-            <Link href="/a-propos" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/a-propos" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.about")}
             </Link>
-            <Link href="/contact" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/contact" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.contact")}
             </Link>
-            <Link href="/confidentialite" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/confidentialite" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.privacy")}
             </Link>
-            <Link href="/conditions" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/conditions" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.terms")}
             </Link>
-            <Link href="/signe" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/signe" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.signs")}
             </Link>
-            <Link href="/synastrie" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/synastrie" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {locale === "fr" ? "Synastrie" : "Synastry"}
             </Link>
-            <Link href="/blog" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/blog" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.blog")}
             </Link>
-            <Link href="/revolution-solaire" className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition">
+            <Link href="/revolution-solaire" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {locale === "fr" ? "Révolution solaire" : "Solar Return"}
             </Link>
           </nav>

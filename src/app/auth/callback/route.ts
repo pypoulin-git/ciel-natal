@@ -58,7 +58,11 @@ export async function GET(request: Request) {
             // Don't await — non-blocking
             fetch(`${origin}/api/email/welcome`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                // Internal-only endpoint — proves the call comes from our server.
+                "x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+              },
               body: JSON.stringify({ email: data.user.email, displayName, locale }),
             })
               .then(async (res) => {

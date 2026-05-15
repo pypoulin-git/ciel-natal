@@ -72,7 +72,7 @@ export default function TopNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-1.5 rounded-full text-xs transition-all ${
+                className={`px-3 py-2 rounded-full text-sm transition-all ${
                   active
                     ? "text-[var(--color-accent-lavender)] bg-[var(--color-accent-lavender)]/10"
                     : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5"
@@ -95,14 +95,14 @@ export default function TopNav() {
             <>
               <Link
                 href="/connexion"
-                className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
+                className="hidden sm:inline-flex px-3 py-2 rounded-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
                 aria-busy={loading || undefined}
               >
                 {label("Connexion", "Sign in")}
               </Link>
               <Link
                 href="/inscription"
-                className="px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--color-accent-lavender)]/15 border border-[var(--color-accent-lavender)]/30 text-[var(--color-accent-lavender)] hover:bg-[var(--color-accent-lavender)]/25 transition"
+                className="px-3 py-2 rounded-full text-sm font-medium bg-[var(--color-accent-lavender)]/15 border border-[var(--color-accent-lavender)]/30 text-[var(--color-accent-lavender)] hover:bg-[var(--color-accent-lavender)]/25 transition"
                 aria-busy={loading || undefined}
               >
                 {label("S'inscrire", "Sign up")}

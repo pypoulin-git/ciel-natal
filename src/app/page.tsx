@@ -585,27 +585,189 @@ export default function Home() {
 
         {/* ═══ HERO ═══ */}
         {step === 0 && (
-          <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-            <div className="animate-fade-in-up">
-              <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">&#10022;</div>
-              <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
-                {t("hero.title")}
-              </h1>
-              <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
-                {t("hero.subtitle1")}
-              </p>
-              <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-10 font-light">
-                {t("hero.subtitle2")}
+          <>
+            <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+              <div className="animate-fade-in-up">
+                <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">&#10022;</div>
+                <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
+                  {t("hero.title")}
+                </h1>
+                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
+                  {t("hero.subtitle1")}
+                </p>
+                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-10 font-light">
+                  {t("hero.subtitle2")}
+                </p>
+                <button onClick={() => setStep(1)}
+                  className="btn-primary px-8 py-4 rounded-full text-white font-medium text-lg">
+                  {t("hero.cta")}
+                </button>
+                <div className="mt-12">
+                  <DailySign />
+                </div>
+              </div>
+            </section>
+
+            {/* ═══ COMMENT ÇA MARCHE ═══ */}
+            <section className="max-w-5xl mx-auto px-4 py-20 sm:py-28">
+              <div className="text-center mb-12">
+                <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-3">
+                  {locale === "fr" ? "Comment ça marche" : "How it works"}
+                </p>
+                <h2 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)]">
+                  {locale === "fr" ? "Trois minutes, et le ciel te parle" : "Three minutes, and the sky speaks"}
+                </h2>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-6">
+                {[
+                  {
+                    n: "1",
+                    fr: { title: "Tes données de naissance", desc: "Date, heure, lieu. Plus l'heure est précise, plus la lecture est juste." },
+                    en: { title: "Your birth details", desc: "Date, time, place. The more precise the time, the truer the reading." },
+                  },
+                  {
+                    n: "2",
+                    fr: { title: "Calcul instantané", desc: "Positions planétaires, ascendant, maisons, aspects — tout est calculé directement dans ton navigateur." },
+                    en: { title: "Instant calculation", desc: "Planets, ascendant, houses, aspects — everything computed right in your browser." },
+                  },
+                  {
+                    n: "3",
+                    fr: { title: "Lecture personnelle", desc: "Un portrait écrit pour toi, à ton rythme. Et un PDF si tu veux le garder." },
+                    en: { title: "A personal reading", desc: "A portrait written for you, at your own pace. And a PDF if you want to keep it." },
+                  },
+                ].map((step) => (
+                  <div key={step.n} className="glass p-6 text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-accent-lavender)]/15 text-[var(--color-accent-lavender)] font-cinzel text-xl mb-4">
+                      {step.n}
+                    </div>
+                    <h3 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-2">
+                      {locale === "fr" ? step.fr.title : step.en.title}
+                    </h3>
+                    <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                      {locale === "fr" ? step.fr.desc : step.en.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ═══ CE QUE TU OBTIENS ═══ */}
+            <section className="max-w-4xl mx-auto px-4 py-12 sm:py-16">
+              <div className="text-center mb-10">
+                <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-3">
+                  {locale === "fr" ? "Ce que tu obtiens" : "What you get"}
+                </h2>
+                <p className="text-sm text-[var(--color-text-secondary)] max-w-xl mx-auto">
+                  {locale === "fr"
+                    ? "Le calcul de carte est gratuit. Sans compte, sans email, sans engagement."
+                    : "The chart calculation is free. No account, no email, no strings attached."}
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="glass p-5">
+                  <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-2">
+                    {locale === "fr" ? "Gratuit · sans compte" : "Free · no account"}
+                  </p>
+                  <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
+                    <li>✦ {locale === "fr" ? "Ta carte natale complète (roue zodiacale)" : "Your full birth chart (zodiac wheel)"}</li>
+                    <li>✦ {locale === "fr" ? "Portrait Soleil, Lune, Ascendant" : "Sun, Moon and Ascendant portrait"}</li>
+                    <li>✦ {locale === "fr" ? "Maisons, aspects, éléments" : "Houses, aspects, elements"}</li>
+                    <li>✦ {locale === "fr" ? "Aperçu des transits du jour" : "Today's transits preview"}</li>
+                  </ul>
+                </div>
+                <div className="glass p-5 border border-[var(--color-accent-lavender)]/30">
+                  <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)] mb-2">
+                    {locale === "fr" ? "Premium · 9,99 $ une fois" : "Premium · $9.99 one-time"}
+                  </p>
+                  <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
+                    <li>✦ {locale === "fr" ? "Interprétations complètes et détaillées" : "Full detailed interpretations"}</li>
+                    <li>✦ {locale === "fr" ? "Chat avec un astrologue IA bienveillant" : "Chat with a caring AI astrologer"}</li>
+                    <li>✦ {locale === "fr" ? "Synastrie + révolution solaire" : "Synastry + solar return"}</li>
+                    <li>✦ {locale === "fr" ? "Export PDF, sauvegarde et email" : "PDF export, save and email"}</li>
+                  </ul>
+                  <p className="mt-3 text-xs text-[var(--color-text-secondary)]/70 italic">
+                    {locale === "fr" ? "Paiement unique. Pas d'abonnement. À vie." : "One-time payment. No subscription. Forever."}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* ═══ CONFIANCE / FAQ COURTE ═══ */}
+            <section className="max-w-3xl mx-auto px-4 py-12 sm:py-16">
+              <div className="text-center mb-8">
+                <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-3">
+                  {locale === "fr" ? "Les questions qu'on se pose" : "The questions you might have"}
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {[
+                  {
+                    fr: {
+                      q: "Et si je ne connais pas mon heure de naissance ?",
+                      a: "Tu peux quand même calculer ta carte sans l'heure — on te donne ce qui est sûr (Soleil, Lune approximative, planètes). L'Ascendant et les maisons nécessitent l'heure exacte. Renseigne-toi à l'état civil de ta ville de naissance, c'est souvent dans ton acte de naissance.",
+                    },
+                    en: {
+                      q: "What if I don't know my birth time?",
+                      a: "You can still calculate without a time — we give you what's certain (Sun, approximate Moon, planets). The Ascendant and houses need the exact time. Check your birth certificate or contact the civil registry of your birthplace.",
+                    },
+                  },
+                  {
+                    fr: {
+                      q: "Mes données sont-elles en sécurité ?",
+                      a: "Sans compte : tout reste dans ton navigateur, rien n'est envoyé ailleurs. Avec un compte : on stocke uniquement ce qui est nécessaire (email, prénom, cartes sauvegardées), et tu peux tout effacer en un clic. Détails sur la page Confidentialité.",
+                    },
+                    en: {
+                      q: "Is my data safe?",
+                      a: "Without an account: everything stays in your browser, nothing is sent elsewhere. With an account: we store only what's needed (email, name, saved charts), and you can erase everything in one click. See the Privacy page for details.",
+                    },
+                  },
+                  {
+                    fr: {
+                      q: "C'est de l'astrologie « sérieuse » ou un horoscope de magazine ?",
+                      a: "Astrologie psychologique inspirée de Carl Jung, Liz Greene et Howard Sasportas. Pas de prédictions, pas de fatalité. C'est un outil de réflexion sur soi, basé sur des calculs astronomiques réels (théorie VSOP87).",
+                    },
+                    en: {
+                      q: "Is this serious astrology or magazine horoscopes?",
+                      a: "Psychological astrology inspired by Carl Jung, Liz Greene and Howard Sasportas. No predictions, no fate. It's a tool for self-reflection grounded in real astronomical calculations (VSOP87 theory).",
+                    },
+                  },
+                  {
+                    fr: {
+                      q: "Comment passer à Premium et puis-je annuler ?",
+                      a: "9,99 $ CAD une seule fois, paiement sécurisé via Stripe. C'est un achat unique, pas un abonnement — il n'y a donc rien à annuler. Et si tu changes d'avis dans les 14 jours, on te rembourse simplement.",
+                    },
+                    en: {
+                      q: "How do I go Premium and can I cancel?",
+                      a: "$9.99 CAD once, secure payment through Stripe. It's a one-time purchase, not a subscription — so there's nothing to cancel. If you change your mind within 14 days, we'll refund you simply.",
+                    },
+                  },
+                ].map((item, i) => (
+                  <details key={i} className="glass p-4 group">
+                    <summary className="cursor-pointer flex items-center justify-between text-sm font-medium text-[var(--color-text-primary)]">
+                      <span>{locale === "fr" ? item.fr.q : item.en.q}</span>
+                      <span className="text-[var(--color-accent-lavender)] text-lg transition-transform group-open:rotate-45 ml-3">+</span>
+                    </summary>
+                    <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                      {locale === "fr" ? item.fr.a : item.en.a}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </section>
+
+            {/* ═══ CTA FINAL ═══ */}
+            <section className="max-w-2xl mx-auto px-4 pb-20 text-center">
+              <p className="text-sm text-[var(--color-text-secondary)] mb-5">
+                {locale === "fr"
+                  ? "Prêt·e à voir ce que ton ciel disait ce jour-là ?"
+                  : "Ready to see what your sky was saying that day?"}
               </p>
               <button onClick={() => setStep(1)}
-                className="btn-primary px-8 py-4 rounded-full text-white font-medium text-lg">
+                className="btn-primary px-8 py-4 rounded-full text-white font-medium text-base">
                 {t("hero.cta")}
               </button>
-              <div className="mt-12">
-                <DailySign />
-              </div>
-            </div>
-          </section>
+            </section>
+          </>
         )}
 
         {/* ═══ FORM ═══ */}

@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getContactRateLimit } from "@/lib/ratelimit";
+import { escapeHtml, singleLine, isSameOrigin } from "@/lib/security";
 
-// Simple in-memory rate limiter (per deployment instance)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 3; // max 3 messages per window
-const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+// In-memory fallback ONLY for local dev where Upstash isn't configured.
+// In serverless prod the Upstash limiter (Redis) is the source of truth.
+const fallbackMap = new Map<string, { count: number; resetAt: number }>();
+const FALLBACK_LIMIT = 3;
+const FALLBACK_WINDOW = 60 * 60 * 1000; // 1 hour
 
-function isRateLimited(ip: string): boolean {
+function fallbackRateLimited(ip: string): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  const entry = fallbackMap.get(ip);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    fallbackMap.set(ip, { count: 1, resetAt: now + FALLBACK_WINDOW });
     return false;
   }
   entry.count++;
-  return entry.count > RATE_LIMIT;
+  return entry.count > FALLBACK_LIMIT;
 }
 
-// Send email via Resend API (no SDK required)
 async function sendEmail(name: string, email: string, message: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const toEmail = process.env.CONTACT_EMAIL || "contact@ciel-natal.com";
@@ -25,6 +27,12 @@ async function sendEmail(name: string, email: string, message: string): Promise<
     console.warn("[Contact] RESEND_API_KEY not set — email not sent, logging only.");
     return false;
   }
+
+  // Escape every user-controlled field before interpolating into HTML/subject.
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeMessage = escapeHtml(message).replace(/\n/g, "<br/>");
+  const subjectName = singleLine(name).slice(0, 80);
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -37,9 +45,9 @@ async function sendEmail(name: string, email: string, message: string): Promise<
         from: "Ciel Natal <noreply@ciel-natal.vercel.app>",
         to: [toEmail],
         reply_to: email,
-        subject: `[Ciel Natal] Message de ${name}`,
+        subject: `[Ciel Natal] Message de ${subjectName}`,
         text: `De: ${name} <${email}>\n\n${message}`,
-        html: `<p><strong>De:</strong> ${name} &lt;${email}&gt;</p><hr/><p>${message.replace(/\n/g, "<br/>")}</p>`,
+        html: `<p><strong>De:</strong> ${safeName} &lt;${safeEmail}&gt;</p><hr/><p>${safeMessage}</p>`,
       }),
     });
 
@@ -57,9 +65,26 @@ async function sendEmail(name: string, email: string, message: string): Promise<
 
 export async function POST(request: NextRequest) {
   try {
+    // Defense-in-depth: refuse cross-origin browser POSTs. Server-to-server
+    // callers without an Origin header pass through and are filtered by the
+    // honeypot + rate limit + Resend signature.
+    if (!isSameOrigin(request)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 
-    if (isRateLimited(ip)) {
+    // Persistent rate limit via Upstash; fallback to in-memory only in dev.
+    const limiter = getContactRateLimit();
+    if (limiter) {
+      const { success } = await limiter.limit(ip);
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many messages. Please try again later." },
+          { status: 429 }
+        );
+      }
+    } else if (fallbackRateLimited(ip)) {
       return NextResponse.json(
         { error: "Too many messages. Please try again later." },
         { status: 429 }
@@ -69,12 +94,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, message, honeypot } = body;
 
-    // Honeypot check — if filled, silently reject (bot)
+    // Honeypot — silently succeed if filled (bot)
     if (honeypot) {
       return NextResponse.json({ success: true });
     }
 
-    // Validate
     if (!name || typeof name !== "string" || name.trim().length < 1) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
@@ -89,7 +113,6 @@ export async function POST(request: NextRequest) {
     const trimmedEmail = email.trim();
     const trimmedMessage = message.trim().slice(0, 2000);
 
-    // Always log
     console.log("[Contact Form]", {
       name: trimmedName,
       email: trimmedEmail,
@@ -98,7 +121,6 @@ export async function POST(request: NextRequest) {
       ip,
     });
 
-    // Send email if Resend is configured
     await sendEmail(trimmedName, trimmedEmail, trimmedMessage);
 
     return NextResponse.json({ success: true });

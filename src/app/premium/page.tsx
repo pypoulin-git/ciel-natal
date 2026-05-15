@@ -109,14 +109,14 @@ export default function PremiumPage() {
               <button
                 onClick={handleCheckout}
                 disabled={loading}
-                className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #a06080)" }}
+                className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
               >
                 {loading
                   ? "..."
                   : user
                     ? (locale === "fr" ? "Passer Premium ✦" : "Go Premium ✦")
-                    : (locale === "fr" ? "Connecte-toi pour acheter" : "Sign in to purchase")}
+                    : (locale === "fr" ? "Se connecter et acheter ✦" : "Sign in and purchase ✦")}
               </button>
             )}
           </div>

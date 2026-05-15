@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { escapeHtml, singleLine } from "@/lib/security";
 
 // Free tier: 3 lifetime saved lectures. Premium: unlimited.
 const FREE_TIER_LIMIT = 3;
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
             await resend.emails.send({
               from,
               to: email,
-              subject: `✦ Ta carte du ciel — ${label}`,
+              subject: `✦ Ta carte du ciel — ${singleLine(label).slice(0, 120)}`,
               html: emailTemplate({ firstName, label, pdfUrl: signed.signedUrl }),
             });
             emailStatus = "sent";
@@ -174,6 +175,14 @@ function emailTemplate({
   label: string;
   pdfUrl: string;
 }) {
+  // Every interpolated value comes from user input (display_name, chart label,
+  // and a signed Supabase URL). Escape HTML and reject any pdfUrl that isn't
+  // http(s) to neutralize a `javascript:` payload in the unlikely event that
+  // Supabase ever returned one.
+  const safeFirstName = escapeHtml(firstName);
+  const safeLabel = escapeHtml(label);
+  const safePdfUrl = /^https?:\/\//i.test(pdfUrl) ? pdfUrl : "#";
+
   return `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#09090f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e5ec">
@@ -182,13 +191,13 @@ function emailTemplate({
       <span style="font-size:32px;color:#b8a6ff">✦</span>
       <h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;letter-spacing:3px;color:#e5e5ec;margin:12px 0 0;font-size:24px">CIEL NATAL</h1>
     </div>
-    <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;color:#e5e5ec;font-size:22px;margin:0 0 8px">Bonjour ${firstName},</h2>
+    <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;color:#e5e5ec;font-size:22px;margin:0 0 8px">Bonjour ${safeFirstName},</h2>
     <p style="color:#a8a8b3;font-size:15px;line-height:1.6;margin:0 0 24px">
-      Voici ta carte du ciel : <strong style="color:#e5e5ec">${label}</strong>.
+      Voici ta carte du ciel : <strong style="color:#e5e5ec">${safeLabel}</strong>.
       Clique ci-dessous pour télécharger ton PDF.
     </p>
     <div style="text-align:center;margin:32px 0">
-      <a href="${pdfUrl}" style="display:inline-block;padding:14px 28px;background:#b8a6ff;color:#09090f;text-decoration:none;border-radius:12px;font-weight:500;font-size:14px">
+      <a href="${safePdfUrl}" style="display:inline-block;padding:14px 28px;background:#b8a6ff;color:#09090f;text-decoration:none;border-radius:12px;font-weight:500;font-size:14px">
         Télécharger mon PDF
       </a>
     </div>

@@ -1,15 +1,28 @@
 import { NextResponse } from "next/server";
+import { escapeHtml, singleLine } from "@/lib/security";
 
 /**
  * POST /api/email/welcome
  * Body: { email: string, displayName?: string, locale?: "fr" | "en" }
+ * Header: x-internal-secret (required) — prevents the endpoint from being
+ *   used as a spam relay against arbitrary email addresses. Only the
+ *   /auth/callback handler should call this route.
  *
  * Sends a welcome email via Resend REST API. Requires RESEND_API_KEY
- * and RESEND_FROM (e.g. "Ciel Natal <hello@ciel-natal.vercel.app>") env vars.
- * Fails gracefully with 503 when not configured.
+ * and RESEND_FROM env vars. Fails gracefully with 503 when not configured.
  */
 export async function POST(req: Request) {
   try {
+    // Internal-only: refuse calls that don't carry the shared secret.
+    const internalSecret = process.env.INTERNAL_API_SECRET;
+    if (!internalSecret) {
+      return NextResponse.json({ error: "Service not configured" }, { status: 503 });
+    }
+    const provided = req.headers.get("x-internal-secret");
+    if (provided !== internalSecret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { email, displayName, locale } = await req.json();
 
     if (!email || typeof email !== "string") {
@@ -24,11 +37,14 @@ export async function POST(req: Request) {
     }
 
     const fr = locale !== "en";
-    const name = displayName || (fr ? "étoile" : "star");
+    // Escape EVERY interpolation point — displayName comes from the user.
+    const rawName = displayName || (fr ? "étoile" : "star");
+    const safeName = escapeHtml(rawName);
+    const subjectName = singleLine(rawName).slice(0, 80);
 
     const subject = fr
-      ? `Bienvenue chez Ciel Natal, ${name} ✦`
-      : `Welcome to Ciel Natal, ${name} ✦`;
+      ? `Bienvenue chez Ciel Natal, ${subjectName} ✦`
+      : `Welcome to Ciel Natal, ${subjectName} ✦`;
 
     const html = fr
       ? `
@@ -43,7 +59,7 @@ export async function POST(req: Request) {
           <p style="font-size:32px;text-align:center;margin:0 0 16px;color:#a78bfa;opacity:0.4;">✦</p>
           <h1 style="font-size:28px;text-align:center;margin:0 0 12px;color:#e8e3f5;font-weight:400;">Bienvenue chez Ciel Natal</h1>
           <p style="font-size:16px;line-height:1.7;text-align:center;margin:0 0 24px;color:#a8a3b5;">
-            Bonjour ${name}, et merci d'avoir rejoint Ciel Natal. Ton espace personnel est prêt pour explorer les étoiles qui t'habitent.
+            Bonjour ${safeName}, et merci d'avoir rejoint Ciel Natal. Ton espace personnel est prêt pour explorer les étoiles qui t'habitent.
           </p>
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;color:#c8c3d5;">
             Voici ce que tu peux faire dès maintenant :
@@ -79,7 +95,7 @@ export async function POST(req: Request) {
           <p style="font-size:32px;text-align:center;margin:0 0 16px;color:#a78bfa;opacity:0.4;">✦</p>
           <h1 style="font-size:28px;text-align:center;margin:0 0 12px;color:#e8e3f5;font-weight:400;">Welcome to Ciel Natal</h1>
           <p style="font-size:16px;line-height:1.7;text-align:center;margin:0 0 24px;color:#a8a3b5;">
-            Hello ${name}, and thank you for joining Ciel Natal. Your personal space is ready to explore the stars within you.
+            Hello ${safeName}, and thank you for joining Ciel Natal. Your personal space is ready to explore the stars within you.
           </p>
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;color:#c8c3d5;">
             Here is what you can do right now:

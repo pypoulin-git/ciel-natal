@@ -61,15 +61,16 @@ export default function SignesContent() {
             <Link
               key={s.slug}
               href={`/signe/${s.slug}`}
-              className="glass p-4 flex flex-col items-center gap-2 hover:border-[var(--color-accent-lavender)] transition group"
+              aria-label={fr ? `Découvrir le signe ${name}` : `Explore the ${name} sign`}
+              className="glass p-4 flex flex-col items-center gap-2 hover:border-[var(--color-accent-lavender)] hover:bg-white/[0.03] hover:-translate-y-0.5 transition group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-lavender)]"
             >
               <span className="group-hover:scale-110 transition-transform">
                 <SignIcon name={s.nameFr} size={32} color="var(--color-accent-lavender)" glow />
               </span>
-              <span className="font-cinzel text-sm text-[var(--color-text-primary)]">
+              <span className="font-cinzel text-base text-[var(--color-text-primary)]">
                 {name}
               </span>
-              <span className="text-xs text-[var(--color-text-secondary)]">
+              <span className="text-sm text-[var(--color-text-secondary)]">
                 {dates}
               </span>
               <span
@@ -80,6 +81,9 @@ export default function SignesContent() {
                 }}
               >
                 {element}
+              </span>
+              <span className="mt-1 text-xs text-[var(--color-accent-lavender)] opacity-70 group-hover:opacity-100 transition">
+                {fr ? "Voir le signe →" : "Explore →"}
               </span>
             </Link>
           );
