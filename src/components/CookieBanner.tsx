@@ -73,9 +73,16 @@ export default function CookieBanner() {
       role="dialog"
       aria-label={t.title}
       aria-modal="false"
-      className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up"
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up pointer-events-none"
     >
-      <div className="max-w-xl mx-auto glass px-5 py-4">
+      <div
+        className="max-w-xl mx-auto px-5 py-4 pointer-events-auto rounded-2xl border border-[var(--color-glass-border)] shadow-2xl"
+        style={{
+          background: "rgba(15, 15, 22, 0.98)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+        }}
+      >
         {!showDetails ? (
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
             <p className="text-xs text-[var(--color-text-secondary)] flex-1 text-center sm:text-left">
