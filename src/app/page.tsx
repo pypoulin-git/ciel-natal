@@ -126,6 +126,15 @@ export default function Home() {
   const [showValidation, setShowValidation] = useState(false);
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
+  // Auto-save UX state: surfaces a toast when a chart is silently saved
+  // to the user's account so the user understands their reading is now
+  // findable in /mon-compte/lectures without any extra click.
+  const [autoSaveToast, setAutoSaveToast] = useState<
+    | { kind: "ok"; msg: string }
+    | { kind: "limit"; msg: string }
+    | null
+  >(null);
+  const autoSavedLabelRef = useRef<string | null>(null);
   const [showTabsHint, setShowTabsHint] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
@@ -297,6 +306,62 @@ export default function Home() {
       setTodayTransits(transit);
     }
   }, [step, chart, form.latitude, form.longitude]);
+
+  // ─── Auto-save chart for logged-in users ─────────────────────
+  // The flow used to be "calculate → click Obtenir mon PDF to save". That
+  // confused users who assumed calculation alone was enough — their charts
+  // never showed up in /mon-compte/lectures. Now: as soon as a logged-in
+  // user has a computed chart we POST /api/charts (data only, no PDF).
+  // Server de-dupes by label so reloads / recalculations don't pile up.
+  // The PDF route remains the manual path and adds the actual PDF file.
+  useEffect(() => {
+    if (!user?.id || !chart || step < 7) return;
+    const label =
+      locale === "fr"
+        ? `Carte de ${form.prenom || "lecture"} — ${form.jour}/${form.mois}/${form.annee}`
+        : `${form.prenom || "Chart"}'s chart — ${form.mois}/${form.jour}/${form.annee}`;
+    // Skip if we already saved this exact label in this session — avoids
+    // hitting the API every time React re-runs the effect on tab change.
+    if (autoSavedLabelRef.current === label) return;
+    autoSavedLabelRef.current = label;
+
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+        const res = await fetch("/api/charts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ label, formData: form, chartData: chart }),
+        });
+        if (res.status === 201) {
+          setAutoSaveToast({
+            kind: "ok",
+            msg:
+              locale === "fr"
+                ? "Carte sauvegardée dans Mes lectures."
+                : "Chart saved to My readings.",
+          });
+          // Auto-dismiss after 5s — non-blocking confirmation.
+          setTimeout(() => setAutoSaveToast(null), 5000);
+        } else if (res.status === 403) {
+          const data = await res.json().catch(() => ({}));
+          if (data.error === "LIMIT_REACHED") {
+            setAutoSaveToast({
+              kind: "limit",
+              msg: data.message ||
+                (locale === "fr"
+                  ? "Limite de cartes atteinte. Passe Premium pour plus."
+                  : "Saved-chart limit reached. Go Premium for more."),
+            });
+          }
+        }
+        // 200 deduped → silent, user already has this chart.
+      } catch {
+        /* network error — silent, the user can still manually click PDF */
+      }
+    })();
+  }, [user?.id, chart, step, locale, form, getAccessToken]);
 
   // ─── PDF generation + save flow ──────────────────────────────
   // - Always generates client-side PDF
@@ -966,6 +1031,37 @@ export default function Home() {
         {/* ═══ RESULTS ═══ */}
         {step === 7 && chart && (
           <section className="min-h-screen pb-24" aria-live="polite">
+            {/* Auto-save confirmation — fades in then auto-dismisses */}
+            {autoSaveToast && (
+              <div
+                role="status"
+                className={`max-w-xl mx-auto mt-4 mx-4 sm:mx-auto rounded-xl border px-4 py-3 text-sm flex items-start gap-3 animate-fade-in ${
+                  autoSaveToast.kind === "ok"
+                    ? "bg-[var(--color-accent-lavender)]/10 border-[var(--color-accent-lavender)]/30 text-[var(--color-text-primary)]"
+                    : "bg-[var(--color-accent-rose)]/10 border-[var(--color-accent-rose)]/30 text-[var(--color-text-primary)]"
+                }`}
+              >
+                <span className="text-[var(--color-accent-lavender)] mt-0.5">
+                  {autoSaveToast.kind === "ok" ? "✓" : "✦"}
+                </span>
+                <span className="flex-1">
+                  {autoSaveToast.msg}{" "}
+                  <a href="/mon-compte/lectures" className="underline text-[var(--color-accent-lavender)] hover:no-underline">
+                    {locale === "fr" ? "Voir mes lectures →" : "View my readings →"}
+                  </a>
+                </span>
+                <button
+                  onClick={() => setAutoSaveToast(null)}
+                  aria-label={locale === "fr" ? "Fermer" : "Close"}
+                  className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] -mr-1"
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             <div className="text-center pt-8 pb-4 px-4">
               <div className="text-2xl mb-2 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
               <h1 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)] mb-2">

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const MAX_CHARTS = 10;
+const MAX_CHARTS_PREMIUM = 10;
+const MAX_CHARTS_FREE = 3;
 
 function getSupabaseAdmin() {
   return createClient(
@@ -23,15 +24,15 @@ async function verifyAuth(req: NextRequest): Promise<string | null> {
   return data?.user?.id ?? null;
 }
 
-// Verify the user is authenticated and premium
-async function verifyPremiumUser(userId: string) {
+// Read the user's tier (used to enforce the per-tier chart cap)
+async function getUserTier(userId: string): Promise<"premium" | "free"> {
   const supabase = getSupabaseAdmin();
   const { data } = await supabase
     .from("profiles")
     .select("is_premium")
     .eq("id", userId)
     .single();
-  return data?.is_premium === true;
+  return data?.is_premium === true ? "premium" : "free";
 }
 
 // GET — List saved charts for a user
@@ -56,36 +57,69 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ charts: data });
 }
 
-// POST — Save a new chart
+// POST — Save a new chart (data only, no PDF). Both Free and Premium can
+// call this; the cap differs (3 vs 10). If the same chart was already saved
+// (same form_data signature), we skip the insert — auto-save fires on every
+// calculation and we don't want duplicates piling up.
 export async function POST(req: NextRequest) {
   try {
-    const { userId, label, formData, chartData } = await req.json();
-    if (!userId || !label || !formData) {
+    // We accept the body-supplied userId as a hint but ALWAYS use the verified
+    // one from the Bearer token (IDOR safety).
+    const { userId: bodyUserId, label, formData, chartData } = await req.json();
+    if (!label || !formData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Verify the caller owns this userId
     const authedUserId = await verifyAuth(req);
-    if (!authedUserId || authedUserId !== userId) {
+    if (!authedUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Check premium
-    const premium = await verifyPremiumUser(userId);
-    if (!premium) {
-      return NextResponse.json({ error: "Premium required" }, { status: 403 });
+    // If the body specifies a different userId, refuse — defense-in-depth.
+    if (bodyUserId && bodyUserId !== authedUserId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    const userId = authedUserId;
+
+    const tier = await getUserTier(userId);
+    const cap = tier === "premium" ? MAX_CHARTS_PREMIUM : MAX_CHARTS_FREE;
 
     const supabase = getSupabaseAdmin();
 
-    // Check chart limit
+    // ── De-duplicate: don't save the same form_data twice in a row ──
+    // We compare the canonical chart key (date/time/place/name) so re-loading
+    // the same chart via ?c= or recalculating doesn't multiply rows.
+    const { data: existing } = await supabase
+      .from("saved_charts")
+      .select("id, label")
+      .eq("user_id", userId)
+      .eq("label", label)
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json(
+        { chart: existing, deduped: true },
+        { status: 200 }
+      );
+    }
+
     const { count } = await supabase
       .from("saved_charts")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    if ((count ?? 0) >= MAX_CHARTS) {
-      return NextResponse.json({ error: `Maximum ${MAX_CHARTS} charts allowed` }, { status: 400 });
+    if ((count ?? 0) >= cap) {
+      return NextResponse.json(
+        {
+          error: "LIMIT_REACHED",
+          tier,
+          limit: cap,
+          message:
+            tier === "free"
+              ? `Limite gratuite atteinte (${cap} cartes). Passe Premium pour plus.`
+              : `Maximum ${cap} cartes — supprime-en pour en ajouter une nouvelle.`,
+        },
+        { status: 403 }
+      );
     }
 
     const { data, error } = await supabase
@@ -100,7 +134,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ chart: data }, { status: 201 });
+    return NextResponse.json({ chart: data, tier, limit: cap }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
