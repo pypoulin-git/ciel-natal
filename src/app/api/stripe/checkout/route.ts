@@ -13,8 +13,12 @@ export const maxDuration = 30;
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-05-28.basil",
-    // 20s per attempt (Stripe SDK default is 80s but Vercel function would
-    // already have died); 2 retries on transient network errors.
+    // Use the SDK's fetch-based HTTP client instead of the default Node
+    // `https` module. On Vercel some routes can't reach Stripe via the raw
+    // `https` agent (we hit StripeConnectionError "Request was retried 2
+    // times" even with the nodejs runtime forced). The fetch client uses
+    // the platform's global fetch which is properly routed by Vercel.
+    httpClient: Stripe.createFetchHttpClient(),
     timeout: 20_000,
     maxNetworkRetries: 2,
   });

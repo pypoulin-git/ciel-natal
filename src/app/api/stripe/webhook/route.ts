@@ -9,6 +9,9 @@ export const maxDuration = 30;
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-05-28.basil",
+    // See checkout route for rationale — Vercel's outbound https module is
+    // unreliable; the fetch HTTP client uses the platform's global fetch.
+    httpClient: Stripe.createFetchHttpClient(),
     timeout: 20_000,
     maxNetworkRetries: 2,
   });
