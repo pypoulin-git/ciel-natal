@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
@@ -46,26 +47,60 @@ export default function PremiumPage() {
   const { user, isPremium, loading, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const features = locale === "en" ? FEATURES_EN : FEATURES_FR;
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
+  // Surfaces every failure mode to the user. Previously a silent
+  // `if (data.url) window.location.href = data.url;` left the page frozen
+  // when the API returned 401/500 or when Stripe live mode rejected the
+  // request — the user clicked the button and nothing happened.
   const handleCheckout = async () => {
+    setCheckoutError(null);
     if (!user) {
       window.location.href = "/connexion";
       return;
     }
-    const token = await getAccessToken();
-    if (!token) {
-      window.location.href = "/connexion";
-      return;
+    setCheckoutBusy(true);
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        window.location.href = "/connexion";
+        return;
+      }
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      let data: { url?: string; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        /* non-JSON body — fall through to the !res.ok branch */
+      }
+      if (!res.ok || !data.url) {
+        const msg = data.error || `HTTP ${res.status}`;
+        console.error("[checkout] failed:", msg, data);
+        setCheckoutError(
+          locale === "fr"
+            ? `Le paiement n'a pas pu démarrer (${msg}). Recharge la page ou écris-nous via Contact si ça persiste.`
+            : `Could not start payment (${msg}). Reload the page or reach out via Contact if it persists.`
+        );
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("[checkout] threw:", err);
+      setCheckoutError(
+        locale === "fr"
+          ? "Erreur réseau. Vérifie ta connexion et réessaie."
+          : "Network error. Check your connection and try again."
+      );
+    } finally {
+      setCheckoutBusy(false);
     }
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
   };
 
   return (
@@ -108,16 +143,21 @@ export default function PremiumPage() {
             ) : (
               <button
                 onClick={handleCheckout}
-                disabled={loading}
+                disabled={loading || checkoutBusy}
                 className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
               >
-                {loading
-                  ? "..."
+                {loading || checkoutBusy
+                  ? (locale === "fr" ? "Préparation…" : "Preparing…")
                   : user
                     ? (locale === "fr" ? "Passer Premium ✦" : "Go Premium ✦")
                     : (locale === "fr" ? "Se connecter et acheter ✦" : "Sign in and purchase ✦")}
               </button>
+              {checkoutError && (
+                <div className="mt-4 mx-auto max-w-md rounded-lg border border-[var(--color-accent-rose)]/40 bg-[var(--color-accent-rose)]/10 p-3 text-sm text-[var(--color-accent-rose)]">
+                  {checkoutError}
+                </div>
+              )}
             )}
           </div>
 
