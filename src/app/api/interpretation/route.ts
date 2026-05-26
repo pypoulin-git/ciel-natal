@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderLabel, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
@@ -68,7 +68,7 @@ Tâche :
 ${sectionPrompt}`;
 
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: google("gemini-2.5-flash"),
       system: systemPrompt,
       prompt: locale === "en" ? "Write the reading now." : "Écris la lecture maintenant.",
       maxOutputTokens: 1800,

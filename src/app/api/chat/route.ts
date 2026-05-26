@@ -1,5 +1,5 @@
 import { streamText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getFreeRateLimit, getPremiumRateLimit } from "@/lib/ratelimit";
@@ -199,7 +199,10 @@ Exemple à éviter :
 "Le Soleil en Bélier invite à embrasser l'élan pionnier. Cette position suggère une vitalité brute qu'il convient de cultiver."`;
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-20250514"),
+    // Gemini 2.5 Flash: cost-effective for psychological-astrology prose
+    // (~10× cheaper than Claude Sonnet, comparable quality for narrative
+    // conversational use). Free tier covers casual usage.
+    model: google("gemini-2.5-flash"),
     system: systemPrompt,
     messages,
     maxOutputTokens: maxTokens,

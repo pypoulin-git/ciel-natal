@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function AudioPlayer({ narrativeText, chartParams }: Props) {
-  const { user, isPremium } = useAuth();
+  const { user, isPremium, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -29,19 +29,23 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
     setError(null);
 
     try {
+      const token = await getAccessToken();
+      if (!token) throw new Error("Session expirée — reconnecte-toi.");
       const res = await fetch("/api/audio", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          userId: user.id,
           text: narrativeText,
           chartParams,
         }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate audio");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || data.error || `HTTP ${res.status}`);
       }
 
       const data = await res.json();

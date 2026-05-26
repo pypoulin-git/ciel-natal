@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
@@ -72,7 +72,7 @@ ${sections.join("\n")}
 Environ 500 mots au total. Adresse directe (tu). Pas de prédictions déterministes. Tisse natal et révolution ensemble — la révolution module le natal, elle ne le remplace pas.`;
 
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: google("gemini-2.5-flash"),
       system: systemPrompt,
       prompt: locale === "en" ? "Write the solar return reading now." : "Écris la lecture de révolution solaire maintenant.",
       maxOutputTokens: 1200,

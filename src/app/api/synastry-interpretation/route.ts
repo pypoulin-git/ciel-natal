@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
@@ -82,7 +82,7 @@ ${sections.join("\n")}
 Chaque section : 2 à 3 paragraphes. Adresse-toi au lecteur (celui/celle qui lit). Pas de prédictions. Pas de verdict "vous êtes faits l'un pour l'autre". Juste ce qui se joue.`;
 
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: google("gemini-2.5-flash"),
       system: systemPrompt,
       prompt: locale === "en" ? "Write the synastry reading now." : "Écris la lecture de synastrie maintenant.",
       maxOutputTokens: 2200,

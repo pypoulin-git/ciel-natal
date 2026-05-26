@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { calculateNatalChart } from "@/lib/astro";
 
 // ─────────────────────────────────────────────────────────────
@@ -69,7 +69,8 @@ Exigences :
 Réponds uniquement avec le JSON, rien d'autre.`;
 
   const { text } = await generateText({
-    model: anthropic("claude-haiku-4-5"),
+    // Daily forecast = 3-4 sentences, low-stakes → Flash-Lite is plenty.
+    model: google("gemini-2.5-flash-lite"),
     prompt,
     temperature: 0.85,
   });
