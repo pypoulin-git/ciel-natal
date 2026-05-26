@@ -28,17 +28,37 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
-  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+  // Diagnostic log — surfaces ANY mismatch between the secret loaded by the
+  // function and the one Stripe used to sign. Logged values are intentionally
+  // truncated: never the full secret, just a fingerprint.
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  console.log("[stripe-webhook] hit", {
+    bodyLen: body.length,
+    hasSig: !!sig,
+    sigPrefix: sig?.slice(0, 30),
+    secretSet: !!secret,
+    secretLen: secret?.length,
+    secretFingerprint: secret ? `${secret.slice(0, 8)}…${secret.slice(-4)}` : null,
+  });
+
+  if (!sig || !secret) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
   let event: Stripe.Event;
   try {
+    // Async variant uses Web Crypto under the hood, which avoids subtle Buffer
+    // vs string encoding mismatches that can plague constructEvent on certain
+    // Vercel function pools.
     const stripe = getStripe();
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = await stripe.webhooks.constructEventAsync(body, sig, secret);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    const e = err as { message?: string };
+    console.error("[stripe-webhook] signature verification failed:", e?.message);
+    return NextResponse.json(
+      { error: "Invalid signature", detail: e?.message || "unknown" },
+      { status: 400 }
+    );
   }
 
   const supabaseAdmin = getSupabaseAdmin();
