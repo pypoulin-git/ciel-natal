@@ -11,11 +11,14 @@ export const runtime = "nodejs";
  *   curl -H "x-internal-secret: $S" https://ciel-natal.vercel.app/api/_diag/env
  */
 export async function GET(req: NextRequest) {
-  const secret = process.env.INTERNAL_API_SECRET;
+  // .trim() defends against trailing-newline corruption from
+  // `echo "$X" | vercel env add` (echo appends a real newline to stdin).
+  const secret = process.env.INTERNAL_API_SECRET?.trim();
   if (!secret) {
     return NextResponse.json({ error: "Service not configured" }, { status: 503 });
   }
-  if (req.headers.get("x-internal-secret") !== secret) {
+  const provided = req.headers.get("x-internal-secret")?.trim();
+  if (provided !== secret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
