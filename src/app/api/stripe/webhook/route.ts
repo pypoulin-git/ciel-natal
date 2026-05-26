@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+// Node runtime required for the Stripe SDK + crypto used by signature verify.
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-05-28.basil",
+    timeout: 20_000,
+    maxNetworkRetries: 2,
   });
 }
 

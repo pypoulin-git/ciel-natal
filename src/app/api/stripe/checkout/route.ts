@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+// Force Node.js runtime — the Stripe SDK relies on the Node `https` module
+// and Edge runtime emits StripeConnectionError on outbound requests.
+export const runtime = "nodejs";
+// Bump the function budget: Stripe's default is to retry network errors
+// twice with backoff; we want enough headroom for that without timing out
+// the function itself (Vercel free tier defaults to 10s).
+export const maxDuration = 30;
+
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-05-28.basil",
+    // 20s per attempt (Stripe SDK default is 80s but Vercel function would
+    // already have died); 2 retries on transient network errors.
+    timeout: 20_000,
+    maxNetworkRetries: 2,
   });
 }
 
