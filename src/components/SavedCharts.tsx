@@ -122,7 +122,7 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
             </div>
           ) : charts.length === 0 ? (
             <div className="px-4 py-3 text-xs text-[var(--color-text-secondary)] italic">
-              {locale === "fr" ? "Aucune carte sauvegardee" : "No saved charts"}
+              {locale === "fr" ? "Aucune carte sauvegardée" : "No saved charts"}
             </div>
           ) : (
             charts.map((chart) => (

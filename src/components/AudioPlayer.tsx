@@ -135,10 +135,10 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
           </svg>
         </div>
         <p className="text-sm text-[var(--color-text-primary)] mb-1 font-medium">
-          {locale === "fr" ? "Ecoute ton portrait cosmique" : "Listen to your cosmic portrait"}
+          {locale === "fr" ? "Écoute ton portrait cosmique" : "Listen to your cosmic portrait"}
         </p>
         <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-          {locale === "fr" ? "Une narration audio douce de ton theme natal." : "A gentle audio narration of your natal chart."}
+          {locale === "fr" ? "Une narration audio douce de ton thème natal." : "A gentle audio narration of your natal chart."}
         </p>
         <button
           onClick={generateAudio}
@@ -149,14 +149,14 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
           {loading ? (
             <>
               <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
-              {locale === "fr" ? "Generation en cours..." : "Generating..."}
+              {locale === "fr" ? "Génération en cours..." : "Generating..."}
             </>
           ) : (
             <>
               <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              {locale === "fr" ? "Generer la narration" : "Generate narration"}
+              {locale === "fr" ? "Générer la narration" : "Generate narration"}
             </>
           )}
         </button>

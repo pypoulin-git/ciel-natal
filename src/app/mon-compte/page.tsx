@@ -137,7 +137,7 @@ export default function MonComptePage() {
               <svg width="18" height="18" fill="none" stroke="var(--color-accent-lavender)" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
               </svg>
-              {locale === "fr" ? "Cartes sauvegardees" : "Saved charts"} ({charts.length}/10)
+              {locale === "fr" ? "Cartes sauvegardées" : "Saved charts"} ({charts.length}/10)
             </h2>
 
             {chartsLoading ? (
@@ -147,7 +147,7 @@ export default function MonComptePage() {
             ) : charts.length === 0 ? (
               <p className="text-sm text-[var(--color-text-secondary)] italic">
                 {locale === "fr"
-                  ? "Aucune carte sauvegardee. Calcule un theme natal et sauvegarde-le !"
+                  ? "Aucune carte sauvegardée. Calcule un thème natal et sauvegarde-le !"
                   : "No saved charts. Calculate a natal chart and save it!"}
               </p>
             ) : (
@@ -184,7 +184,7 @@ export default function MonComptePage() {
             onClick={signOut}
             className="btn-ghost px-6 py-3 rounded-xl text-sm"
           >
-            {locale === "fr" ? "Se deconnecter" : "Sign out"}
+            {locale === "fr" ? "Se déconnecter" : "Sign out"}
           </button>
         </div>
       </div>
