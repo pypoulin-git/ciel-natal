@@ -4,6 +4,14 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 
+/**
+ * One audio "channel" per section, e.g. portrait / houses / aspects / transits.
+ * Each section gets its own button, its own cache key, and its own warm
+ * intro/outro so the narration feels like a focused voice note rather than
+ * a long unbroken monologue.
+ */
+export type AudioSection = "portrait" | "houses" | "aspects" | "transits";
+
 interface Props {
   /** The narrative text to convert to speech */
   narrativeText: string;
@@ -11,35 +19,133 @@ interface Props {
   chartParams: Record<string, unknown>;
   /** First name used to personalize the intro/outro */
   prenom?: string;
+  /**
+   * Section this audio belongs to. Drives the button label, the intro/outro
+   * wording, and is folded into the cache key so the four sections can
+   * co-exist without collisions.
+   */
+  section?: AudioSection;
 }
 
 const PLAYBACK_RATES = [1, 1.25, 1.5] as const;
 type Rate = (typeof PLAYBACK_RATES)[number];
 
+interface SectionCopy {
+  buttonLabelFr: string;
+  buttonLabelEn: string;
+  introFr: (prenom: string) => string;
+  introEn: (prenom: string) => string;
+  outroFr: string;
+  outroEn: string;
+  titleFr: string;
+  titleEn: string;
+  hintFr: string;
+  hintEn: string;
+}
+
 /**
- * Wrap the raw chart prose with a warm opening + closing the narrator can
- * "breathe" into. Without this the audio felt clinical — it started cold and
- * cut off mid-sentence. We treat the audio as a tiny voice note: address the
- * person, invite them in, deliver the chart, exhale at the end.
+ * Per-section narrative copy. Kept centralized so the tone stays consistent
+ * — every intro should feel like the same friend pausing for breath, not
+ * four different scripts.
  */
-function wrapForNarration(text: string, prenom: string, locale: string): string {
+const SECTION_COPY: Record<AudioSection, SectionCopy> = {
+  portrait: {
+    buttonLabelFr: "Générer la narration de ton portrait cosmique",
+    buttonLabelEn: "Generate your cosmic portrait narration",
+    titleFr: "Ton portrait cosmique",
+    titleEn: "Your cosmic portrait",
+    hintFr: "Soleil, Lune, Ascendant — qui tu es, comment tu te montres, ce qui te traverse.",
+    hintEn: "Sun, Moon, Ascendant — who you are, how you show up, what moves through you.",
+    introFr: (p) =>
+      p
+        ? `Bonjour ${p}. Prends un instant pour t'installer. Respire si tu veux. Voici ce que ton Soleil, ta Lune et ton Ascendant racontent de toi.`
+        : `Prends un instant pour t'installer. Respire si tu veux. Voici ce que ton Soleil, ta Lune et ton Ascendant racontent de toi.`,
+    introEn: (p) =>
+      p
+        ? `Hello ${p}. Take a moment, settle in. Here's what your Sun, Moon and Ascendant have to say about you.`
+        : `Take a moment, settle in. Here's what your Sun, Moon and Ascendant have to say about you.`,
+    outroFr:
+      "Voilà ton portrait. Garde-le avec toi, sans l'enfermer. Le ciel propose — c'est toi qui décides ce que tu en fais.",
+    outroEn:
+      "That's your portrait. Carry it gently. The sky offers — you decide what to do with it.",
+  },
+  houses: {
+    buttonLabelFr: "Générer la narration de tes 12 maisons",
+    buttonLabelEn: "Generate your 12 houses narration",
+    titleFr: "Tes 12 maisons",
+    titleEn: "Your 12 houses",
+    hintFr: "Les douze domaines de ta vie, là où tes planètes s'incarnent.",
+    hintEn: "The twelve fields of your life — where your planets actually live.",
+    introFr: (p) =>
+      p
+        ? `${p}, on regarde maintenant le décor. Les maisons, c'est la scène sur laquelle tes planètes jouent. Voici les domaines de ta vie qui appellent le plus d'attention.`
+        : `On regarde maintenant le décor. Les maisons, c'est la scène sur laquelle tes planètes jouent. Voici les domaines de ta vie qui appellent le plus d'attention.`,
+    introEn: (p) =>
+      p
+        ? `${p}, now we look at the stage. Houses are where your planets actually play. Here are the life fields that ask for the most attention.`
+        : `Now we look at the stage. Houses are where your planets actually play. Here are the life fields that ask for the most attention.`,
+    outroFr:
+      "Les maisons sont des terrains. Tu peux toujours en cultiver d'autres — rien n'est figé.",
+    outroEn:
+      "Houses are grounds. You can always cultivate others — nothing is set in stone.",
+  },
+  aspects: {
+    buttonLabelFr: "Générer la narration de tes aspects clés",
+    buttonLabelEn: "Generate your key aspects narration",
+    titleFr: "Tes aspects clés",
+    titleEn: "Your key aspects",
+    hintFr: "Comment tes planètes se parlent entre elles — harmonies et tensions créatrices.",
+    hintEn: "How your planets talk to each other — harmonies and creative tensions.",
+    introFr: (p) =>
+      p
+        ? `${p}, écoutons la conversation. Les aspects, c'est ce que tes planètes se disent entre elles. Voici les dialogues les plus chargés de ton ciel.`
+        : `Écoutons la conversation. Les aspects, c'est ce que tes planètes se disent entre elles. Voici les dialogues les plus chargés de ton ciel.`,
+    introEn: (p) =>
+      p
+        ? `${p}, let's listen in. Aspects are what your planets tell each other. Here are the most charged conversations in your sky.`
+        : `Let's listen in. Aspects are what your planets tell each other. Here are the most charged conversations in your sky.`,
+    outroFr:
+      "Les tensions, ce ne sont pas des défauts — ce sont les endroits où ton thème pousse.",
+    outroEn:
+      "Tensions aren't flaws — they're the places where your chart actively grows.",
+  },
+  transits: {
+    buttonLabelFr: "Générer la narration de tes transits du jour",
+    buttonLabelEn: "Generate today's transits narration",
+    titleFr: "Tes transits du jour",
+    titleEn: "Today's transits",
+    hintFr: "L'énergie astrale d'aujourd'hui croisée avec ta carte natale.",
+    hintEn: "Today's astral energy crossed with your natal chart.",
+    introFr: (p) =>
+      p
+        ? `${p}, voici ce que le ciel d'aujourd'hui te dit. Pas une prédiction — juste une lecture de l'énergie du moment, en dialogue avec ta carte.`
+        : `Voici ce que le ciel d'aujourd'hui te dit. Pas une prédiction — juste une lecture de l'énergie du moment, en dialogue avec ta carte.`,
+    introEn: (p) =>
+      p
+        ? `${p}, here's what today's sky is saying. Not a prediction — just a read of this moment's energy in conversation with your chart.`
+        : `Here's what today's sky is saying. Not a prediction — just a read of this moment's energy in conversation with your chart.`,
+    outroFr:
+      "Le ciel du jour passe. Reviens demain si tu veux voir ce qui aura bougé.",
+    outroEn:
+      "Today's sky passes. Come back tomorrow to see what shifts.",
+  },
+};
+
+function wrapForNarration(text: string, prenom: string, locale: string, section: AudioSection): string {
+  const copy = SECTION_COPY[section];
   const trimmed = text.trim();
-  if (locale === "en") {
-    const intro = prenom
-      ? `Hello ${prenom}. Take a moment, settle in. Here's what your sky has to say about you.`
-      : `Take a moment, settle in. Here's what your sky has to say about you.`;
-    const outro = `That's it. Take this gently with you. The sky offers — you decide what to do with it.`;
-    return `${intro}\n\n${trimmed}\n\n${outro}`;
-  }
-  // FR (default)
-  const intro = prenom
-    ? `Bonjour ${prenom}. Prends un instant pour t'installer. Respire si tu veux. Voici ce que ton ciel raconte de toi.`
-    : `Prends un instant pour t'installer. Respire si tu veux. Voici ce que ton ciel raconte de toi.`;
-  const outro = `Voilà. Garde ces mots avec toi, sans les enfermer. Le ciel propose — c'est toi qui décides ce que tu en fais.`;
+  const intro = locale === "en" ? copy.introEn(prenom) : copy.introFr(prenom);
+  const outro = locale === "en" ? copy.outroEn : copy.outroFr;
   return `${intro}\n\n${trimmed}\n\n${outro}`;
 }
 
-export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }: Props) {
+export default function AudioPlayer({
+  narrativeText,
+  chartParams,
+  prenom = "",
+  section = "portrait",
+}: Props) {
+  const copy = SECTION_COPY[section];
   const { user, isPremium, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -80,7 +186,7 @@ export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }:
 
       // Build the narrator-friendly text just before sending to keep the
       // server payload self-contained (good for caching too).
-      const styledText = wrapForNarration(narrativeText, prenom, locale);
+      const styledText = wrapForNarration(narrativeText, prenom, locale, section);
 
       const res = await fetch("/api/audio", {
         method: "POST",
@@ -90,9 +196,10 @@ export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }:
         },
         body: JSON.stringify({
           text: styledText,
-          // Adding `prenom` to the cache key prevents two users named the
-          // same from sharing each other's personalized intro.
-          chartParams: { ...chartParams, _intro: prenom || null, _locale: locale },
+          // Cache key includes prenom, locale, AND section so the four audio
+          // channels never collide (and two users with different names get
+          // different generated intros).
+          chartParams: { ...chartParams, _intro: prenom || null, _locale: locale, _section: section },
         }),
       });
 
@@ -192,12 +299,10 @@ export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }:
           </svg>
         </div>
         <p className="text-sm text-[var(--color-text-primary)] mb-1 font-medium">
-          {locale === "fr" ? "Écoute ton portrait cosmique" : "Listen to your cosmic portrait"}
+          {locale === "fr" ? `Écoute ${copy.titleFr.toLowerCase()}` : `Listen — ${copy.titleEn.toLowerCase()}`}
         </p>
         <p className="text-xs text-[var(--color-text-secondary)] mb-1">
-          {locale === "fr"
-            ? "Une narration audio douce, écrite et lue pour toi."
-            : "A gentle audio narration, written and read just for you."}
+          {locale === "fr" ? copy.hintFr : copy.hintEn}
         </p>
         <p className="text-xs text-[var(--color-text-secondary)] opacity-60 mb-4">
           {locale === "fr"
@@ -222,7 +327,7 @@ export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }:
               <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              {locale === "fr" ? "Générer la narration" : "Generate narration"}
+              {locale === "fr" ? copy.buttonLabelFr : copy.buttonLabelEn}
             </>
           )}
         </button>
@@ -324,7 +429,7 @@ export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }:
       </div>
 
       <p className="text-xs text-[var(--color-text-secondary)] opacity-50 mt-2 text-center">
-        {locale === "fr" ? "Portrait cosmique — narration IA" : "Cosmic portrait — AI narration"}
+        {locale === "fr" ? `${copy.titleFr} — narration IA` : `${copy.titleEn} — AI narration`}
       </p>
     </div>
   );

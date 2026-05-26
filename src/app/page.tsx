@@ -1292,6 +1292,43 @@ export default function Home() {
                   </h2>
                   <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.houseDesc")}</p>
                   <HousesMap planets={chart.planets} locale={locale} genre={form.genre} isPremium={isPremium} />
+
+                  {/* Houses audio narration (premium) */}
+                  {isPremium && (
+                    <div className="mt-6">
+                      <AudioPlayer
+                        section="houses"
+                        prenom={form.prenom}
+                        chartParams={{ asc: chart.ascendant.sign, planets: chart.planets.map(p => `${p.name}-${p.sign}-M${p.house}`).join("|") }}
+                        narrativeText={(() => {
+                          // Group planets by house. Only mention the houses that
+                          // actually have at least one planet — empty houses are
+                          // narratively dull and would dilute the audio.
+                          const byHouse = new Map<number, string[]>();
+                          for (const p of chart.planets) {
+                            if (typeof p.house === "number") {
+                              if (!byHouse.has(p.house)) byHouse.set(p.house, []);
+                              byHouse.get(p.house)!.push(`${p.name} en ${translateSign(p.sign, locale)}`);
+                            }
+                          }
+                          const ascSign = chart.ascendant ? translateSign(chart.ascendant.sign, locale) : "";
+                          const lines = [
+                            locale === "fr"
+                              ? `Ton Ascendant en ${ascSign} ouvre ta première maison : la manière dont tu arrives au monde, le seuil entre toi et les autres.`
+                              : `Your Ascendant in ${ascSign} opens your first house: the way you arrive in the world, the threshold between you and others.`,
+                          ];
+                          for (const [h, planets] of [...byHouse.entries()].sort((a, b) => a[0] - b[0])) {
+                            if (locale === "fr") {
+                              lines.push(`Maison ${h} : ${planets.join(", ")}. Ce domaine te demande de l'attention.`);
+                            } else {
+                              lines.push(`House ${h}: ${planets.join(", ")}. This field asks for your attention.`);
+                            }
+                          }
+                          return lines.join(" ");
+                        })()}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1363,6 +1400,24 @@ export default function Home() {
                 ) : (
                   <div className="glass p-5 text-sm text-[var(--color-text-secondary)] text-center">{t("results.noAspects")}</div>
                 )}
+
+                {/* Aspects audio narration (premium) */}
+                {isPremium && chart.aspects.length > 0 && (
+                  <div className="mt-6">
+                    <AudioPlayer
+                      section="aspects"
+                      prenom={form.prenom}
+                      chartParams={{ aspects: chart.aspects.slice(0, 5).map(a => `${a.planet1}-${a.type}-${a.planet2}`).join("|") }}
+                      narrativeText={chart.aspects.slice(0, 5).map((aspect) => {
+                        const interp = getAspectInterp(aspect.type, aspect.planet1, aspect.planet2);
+                        const head = locale === "fr"
+                          ? `${translatePlanet(aspect.planet1, locale)} en ${aspect.type.toLowerCase()} avec ${translatePlanet(aspect.planet2, locale)}.`
+                          : `${translatePlanet(aspect.planet1, locale)} ${aspect.type.toLowerCase()} ${translatePlanet(aspect.planet2, locale)}.`;
+                        return interp ? `${head} ${interp}` : head;
+                      }).join(" ")}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* TRANSITS DU JOUR (premium) */}
@@ -1405,6 +1460,32 @@ export default function Home() {
                     })}
                   </div>
                   </PremiumGate>
+
+                  {/* Transits audio narration (premium) */}
+                  {isPremium && (
+                    <div className="mt-6">
+                      <AudioPlayer
+                        section="transits"
+                        prenom={form.prenom}
+                        chartParams={{
+                          date: new Date().toISOString().slice(0, 10),
+                          transits: todayTransits.planets.slice(0, 7).map(p => `${p.name}-${p.sign}`).join("|"),
+                        }}
+                        narrativeText={todayTransits.planets.slice(0, 7).map((transit) => {
+                          const natal = chart.planets.find((p) => p.name === transit.name);
+                          if (!natal) return "";
+                          const sameSgn = transit.sign === natal.sign;
+                          const head = locale === "fr"
+                            ? `${translatePlanet(transit.name, locale)} aujourd'hui en ${translateSign(transit.sign, locale)}, contre ${translateSign(natal.sign, locale)} dans ton natal.`
+                            : `${translatePlanet(transit.name, locale)} today in ${translateSign(transit.sign, locale)}, against ${translateSign(natal.sign, locale)} in your natal.`;
+                          const flavor = sameSgn
+                            ? (locale === "fr" ? "Un retour aux sources de cette énergie." : "A return to the source of this energy.")
+                            : "";
+                          return [head, flavor].filter(Boolean).join(" ");
+                        }).filter(Boolean).join(" ")}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
