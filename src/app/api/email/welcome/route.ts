@@ -14,11 +14,13 @@ import { escapeHtml, singleLine } from "@/lib/security";
 export async function POST(req: Request) {
   try {
     // Internal-only: refuse calls that don't carry the shared secret.
-    const internalSecret = process.env.INTERNAL_API_SECRET;
+    // .trim() defends against trailing-newline corruption when the secret was
+    // piped to `vercel env add` via `echo` (which appends a real newline).
+    const internalSecret = process.env.INTERNAL_API_SECRET?.trim();
     if (!internalSecret) {
       return NextResponse.json({ error: "Service not configured" }, { status: 503 });
     }
-    const provided = req.headers.get("x-internal-secret");
+    const provided = req.headers.get("x-internal-secret")?.trim();
     if (provided !== internalSecret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
