@@ -141,23 +141,25 @@ export default function PremiumPage() {
                 {locale === "fr" ? "Tu es déjà Premium !" : "You're already Premium!"}
               </div>
             ) : (
-              <button
-                onClick={handleCheckout}
-                disabled={loading || checkoutBusy}
-                className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
-              >
-                {loading || checkoutBusy
-                  ? (locale === "fr" ? "Préparation…" : "Preparing…")
-                  : user
-                    ? (locale === "fr" ? "Passer Premium ✦" : "Go Premium ✦")
-                    : (locale === "fr" ? "Se connecter et acheter ✦" : "Sign in and purchase ✦")}
-              </button>
-              {checkoutError && (
-                <div className="mt-4 mx-auto max-w-md rounded-lg border border-[var(--color-accent-rose)]/40 bg-[var(--color-accent-rose)]/10 p-3 text-sm text-[var(--color-accent-rose)]">
-                  {checkoutError}
-                </div>
-              )}
+              <>
+                <button
+                  onClick={handleCheckout}
+                  disabled={loading || checkoutBusy}
+                  className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
+                >
+                  {loading || checkoutBusy
+                    ? (locale === "fr" ? "Préparation…" : "Preparing…")
+                    : user
+                      ? (locale === "fr" ? "Passer Premium ✦" : "Go Premium ✦")
+                      : (locale === "fr" ? "Se connecter et acheter ✦" : "Sign in and purchase ✦")}
+                </button>
+                {checkoutError && (
+                  <div className="mt-4 mx-auto max-w-md rounded-lg border border-[var(--color-accent-rose)]/40 bg-[var(--color-accent-rose)]/10 p-3 text-sm text-[var(--color-accent-rose)]">
+                    {checkoutError}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
