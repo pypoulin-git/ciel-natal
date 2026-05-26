@@ -17,10 +17,10 @@ export default function NotFound() {
             Page introuvable
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mb-6 leading-relaxed">
-            Cette page n&apos;existe pas, ou les astres l&apos;ont emportee ailleurs.
+            Cette page n&apos;existe pas, ou les astres l&apos;ont emportée ailleurs.
           </p>
           <a href="/" className="btn-primary px-6 py-3 rounded-xl text-sm inline-block">
-            Retour a l&apos;accueil
+            Retour à l&apos;accueil
           </a>
         </div>
       </div>
