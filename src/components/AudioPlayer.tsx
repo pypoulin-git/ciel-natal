@@ -9,19 +9,65 @@ interface Props {
   narrativeText: string;
   /** Chart parameters for cache key */
   chartParams: Record<string, unknown>;
+  /** First name used to personalize the intro/outro */
+  prenom?: string;
 }
 
-export default function AudioPlayer({ narrativeText, chartParams }: Props) {
+const PLAYBACK_RATES = [1, 1.25, 1.5] as const;
+type Rate = (typeof PLAYBACK_RATES)[number];
+
+/**
+ * Wrap the raw chart prose with a warm opening + closing the narrator can
+ * "breathe" into. Without this the audio felt clinical — it started cold and
+ * cut off mid-sentence. We treat the audio as a tiny voice note: address the
+ * person, invite them in, deliver the chart, exhale at the end.
+ */
+function wrapForNarration(text: string, prenom: string, locale: string): string {
+  const trimmed = text.trim();
+  if (locale === "en") {
+    const intro = prenom
+      ? `Hello ${prenom}. Take a moment, settle in. Here's what your sky has to say about you.`
+      : `Take a moment, settle in. Here's what your sky has to say about you.`;
+    const outro = `That's it. Take this gently with you. The sky offers — you decide what to do with it.`;
+    return `${intro}\n\n${trimmed}\n\n${outro}`;
+  }
+  // FR (default)
+  const intro = prenom
+    ? `Bonjour ${prenom}. Prends un instant pour t'installer. Respire si tu veux. Voici ce que ton ciel raconte de toi.`
+    : `Prends un instant pour t'installer. Respire si tu veux. Voici ce que ton ciel raconte de toi.`;
+  const outro = `Voilà. Garde ces mots avec toi, sans les enfermer. Le ciel propose — c'est toi qui décides ce que tu en fais.`;
+  return `${intro}\n\n${trimmed}\n\n${outro}`;
+}
+
+export default function AudioPlayer({ narrativeText, chartParams, prenom = "" }: Props) {
   const { user, isPremium, getAccessToken } = useAuth();
   const { locale } = useLocale();
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [rate, setRate] = useState<Rate>(1);
+
+  // Tick a counter every second while generating, so the user sees something
+  // is happening (Gemini TTS sometimes takes 30-60s for long narrations).
+  useEffect(() => {
+    if (!loading) {
+      setLoadingSeconds(0);
+      return;
+    }
+    const t = setInterval(() => setLoadingSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [loading]);
+
+  // Apply the selected playback rate live to the <audio>.
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = rate;
+  }, [rate, audioUrl]);
 
   const generateAudio = async () => {
     if (!user?.id || !isPremium || loading) return;
@@ -30,7 +76,12 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
 
     try {
       const token = await getAccessToken();
-      if (!token) throw new Error("Session expirée — reconnecte-toi.");
+      if (!token) throw new Error(locale === "fr" ? "Session expirée — reconnecte-toi." : "Session expired — sign in again.");
+
+      // Build the narrator-friendly text just before sending to keep the
+      // server payload self-contained (good for caching too).
+      const styledText = wrapForNarration(narrativeText, prenom, locale);
+
       const res = await fetch("/api/audio", {
         method: "POST",
         headers: {
@@ -38,8 +89,10 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          text: narrativeText,
-          chartParams,
+          text: styledText,
+          // Adding `prenom` to the cache key prevents two users named the
+          // same from sharing each other's personalized intro.
+          chartParams: { ...chartParams, _intro: prenom || null, _locale: locale },
         }),
       });
 
@@ -128,7 +181,7 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
 
   if (!isPremium) return null;
 
-  // Not yet generated — show generate button
+  // Not yet generated — show generate button + expectation copy.
   if (!audioUrl) {
     return (
       <div className="glass p-5 text-center">
@@ -141,19 +194,28 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
         <p className="text-sm text-[var(--color-text-primary)] mb-1 font-medium">
           {locale === "fr" ? "Écoute ton portrait cosmique" : "Listen to your cosmic portrait"}
         </p>
-        <p className="text-xs text-[var(--color-text-secondary)] mb-4">
-          {locale === "fr" ? "Une narration audio douce de ton thème natal." : "A gentle audio narration of your natal chart."}
+        <p className="text-xs text-[var(--color-text-secondary)] mb-1">
+          {locale === "fr"
+            ? "Une narration audio douce, écrite et lue pour toi."
+            : "A gentle audio narration, written and read just for you."}
+        </p>
+        <p className="text-xs text-[var(--color-text-secondary)] opacity-60 mb-4">
+          {locale === "fr"
+            ? "Génération : jusqu'à une minute. C'est normal — Gemini tisse ta voix."
+            : "Generation: up to one minute. That's normal — Gemini is weaving your voice."}
         </p>
         <button
           onClick={generateAudio}
           disabled={loading}
-          className="btn-primary px-5 py-2.5 rounded-xl text-xs inline-flex items-center gap-2 disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #a06080)" }}
+          className="btn-primary px-5 py-2.5 rounded-xl text-xs inline-flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
         >
           {loading ? (
             <>
               <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
-              {locale === "fr" ? "Génération en cours..." : "Generating..."}
+              {locale === "fr"
+                ? `Génération… ${loadingSeconds}s (jusqu'à 60s)`
+                : `Generating… ${loadingSeconds}s (up to 60s)`}
             </>
           ) : (
             <>
@@ -184,7 +246,7 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
     );
   }
 
-  // Audio player
+  // Audio player — play + progress + speed control.
   return (
     <div className="glass p-4">
       <audio ref={audioRef} src={audioUrl} preload="auto" />
@@ -195,7 +257,7 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
           onClick={togglePlay}
           aria-label={playing ? (locale === "fr" ? "Pause" : "Pause") : (locale === "fr" ? "Lecture" : "Play")}
           className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition"
-          style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #a06080)" }}
+          style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
         >
           {playing ? (
             <svg width="16" height="16" fill="white" viewBox="0 0 24 24" aria-hidden="true">
@@ -224,7 +286,7 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
           >
             <div
               className="h-full rounded-full transition-[width] duration-100"
-              style={{ width: `${progress}%`, background: "linear-gradient(90deg, var(--color-accent-rose), #a06080)" }}
+              style={{ width: `${progress}%`, background: "linear-gradient(90deg, var(--color-accent-rose), #c87aa0)" }}
             />
           </div>
           <div className="flex justify-between mt-1">
@@ -235,6 +297,29 @@ export default function AudioPlayer({ narrativeText, chartParams }: Props) {
               {formatTime(duration)}
             </span>
           </div>
+        </div>
+
+        {/* Speed selector */}
+        <div className="flex-shrink-0 flex items-center gap-0.5 rounded-full bg-white/[0.04] border border-white/10 p-0.5">
+          {PLAYBACK_RATES.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRate(r)}
+              aria-label={
+                locale === "fr"
+                  ? `Vitesse de lecture ${r}×`
+                  : `Playback speed ${r}×`
+              }
+              aria-pressed={rate === r}
+              className={`px-2 py-1 rounded-full text-[10px] font-mono transition ${
+                rate === r
+                  ? "bg-[var(--color-accent-rose)]/30 text-[var(--color-text-primary)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              }`}
+            >
+              {r}×
+            </button>
+          ))}
         </div>
       </div>
 

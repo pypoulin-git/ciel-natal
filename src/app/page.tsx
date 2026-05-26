@@ -1178,6 +1178,7 @@ export default function Home() {
                       ...getLifeThemes(chart, form.prenom, locale).slice(0, 2).map((t) => t.text),
                     ].filter(Boolean).join(" ")}
                     chartParams={{ sun: chart.planets[0].sign, moon: chart.planets[1].sign, asc: chart.ascendant?.sign }}
+                    prenom={form.prenom}
                   />
                 </div>
               ) : (
