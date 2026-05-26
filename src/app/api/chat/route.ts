@@ -4,6 +4,12 @@ import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getFreeRateLimit, getPremiumRateLimit } from "@/lib/ratelimit";
 
+// Force Node runtime so Gemini SDK + Supabase SSR work consistently.
+// (AI SDK + @ai-sdk/google support Edge too, but several of our helpers
+// — Supabase admin, ratelimit — assume Node.)
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 // ── Supabase admin (lazy init, server-only) ──
 function getSupabaseAdmin() {
   return createClient(
@@ -198,16 +204,40 @@ Exemple de ton (Soleil Bélier, voix sensible) :
 Exemple à éviter :
 "Le Soleil en Bélier invite à embrasser l'élan pionnier. Cette position suggère une vitalité brute qu'il convient de cultiver."`;
 
-  const result = streamText({
-    // Gemini 2.5 Flash: cost-effective for psychological-astrology prose
-    // (~10× cheaper than Claude Sonnet, comparable quality for narrative
-    // conversational use). Free tier covers casual usage.
-    model: google("gemini-2.5-flash"),
-    system: systemPrompt,
-    messages,
-    maxOutputTokens: maxTokens,
-    temperature: 0.7,
+  // Diag: surface presence of the Gemini key + how many messages were received.
+  // Truncated fingerprint — never the full key.
+  const gKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  console.log("[chat] entering streamText", {
+    hasKey: !!gKey,
+    keyLen: gKey?.length,
+    keyFingerprint: gKey ? `${gKey.slice(0, 6)}…${gKey.slice(-3)}` : null,
+    msgCount: Array.isArray(messages) ? messages.length : -1,
+    isPremium,
+    maxTokens,
   });
 
-  return result.toTextStreamResponse();
+  try {
+    const result = streamText({
+      // Gemini 2.5 Flash: cost-effective for psychological-astrology prose
+      // (~40× cheaper than Claude Sonnet, free tier covers casual usage).
+      model: google("gemini-2.5-flash"),
+      system: systemPrompt,
+      messages,
+      maxOutputTokens: maxTokens,
+      temperature: 0.7,
+      onError: ({ error }) => {
+        const e = error as { message?: string; name?: string };
+        console.error("[chat] streamText onError:", e?.name, e?.message);
+      },
+    });
+
+    return result.toTextStreamResponse();
+  } catch (err) {
+    const e = err as Error;
+    console.error("[chat] streamText threw synchronously:", e?.message, e?.stack?.split("\n").slice(0, 3));
+    return new Response(
+      JSON.stringify({ error: "AI service failed", detail: e?.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
