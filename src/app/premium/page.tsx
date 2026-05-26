@@ -74,19 +74,26 @@ export default function PremiumPage() {
           Authorization: `Bearer ${token}`,
         },
       });
-      let data: { url?: string; error?: string } = {};
+      let data: { url?: string; error?: string; detail?: string; code?: string } = {};
       try {
         data = await res.json();
       } catch {
         /* non-JSON body — fall through to the !res.ok branch */
       }
       if (!res.ok || !data.url) {
-        const msg = data.error || `HTTP ${res.status}`;
-        console.error("[checkout] failed:", msg, data);
+        // Build the most informative message we can — include Stripe code+detail
+        // so the user (or PY during the bring-up) can act without server logs.
+        const parts: string[] = [];
+        if (data.error) parts.push(data.error);
+        if (data.code) parts.push(`code: ${data.code}`);
+        if (data.detail) parts.push(data.detail);
+        if (parts.length === 0) parts.push(`HTTP ${res.status}`);
+        const msg = parts.join(" — ");
+        console.error("[checkout] failed:", data);
         setCheckoutError(
           locale === "fr"
-            ? `Le paiement n'a pas pu démarrer (${msg}). Recharge la page ou écris-nous via Contact si ça persiste.`
-            : `Could not start payment (${msg}). Reload the page or reach out via Contact if it persists.`
+            ? `Le paiement n'a pas pu démarrer : ${msg}`
+            : `Could not start payment: ${msg}`
         );
         return;
       }

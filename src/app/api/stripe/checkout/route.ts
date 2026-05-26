@@ -59,7 +59,23 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    console.error("Stripe checkout error:", err);
-    return NextResponse.json({ error: "Payment initialization failed" }, { status: 500 });
+    // Surface the actual Stripe error type/message to the browser console so
+    // we can diagnose "Payment initialization failed" without server access.
+    // (The Stripe error never contains the secret key or PII — it's safe.)
+    const e = err as { message?: string; type?: string; code?: string; statusCode?: number };
+    console.error("Stripe checkout error:", {
+      message: e?.message,
+      type: e?.type,
+      code: e?.code,
+      statusCode: e?.statusCode,
+    });
+    return NextResponse.json(
+      {
+        error: "Payment initialization failed",
+        detail: e?.message || "unknown",
+        code: e?.code || e?.type || null,
+      },
+      { status: 500 }
+    );
   }
 }
