@@ -126,6 +126,10 @@ export default function Home() {
   const [showValidation, setShowValidation] = useState(false);
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
+  // Transit AI interpretation (premium only — same pattern as portrait/houses/etc.)
+  // Without this the transits section showed raw positions but no narrative,
+  // which made a premium feature feel half-baked.
+  const [transitInterp, setTransitInterp] = useState<{ text: string | null; loading: boolean; error: string | null }>({ text: null, loading: false, error: null });
   // Auto-save UX state: surfaces a toast when a chart is silently saved
   // to the user's account so the user understands their reading is now
   // findable in /mon-compte/lectures without any extra click.
@@ -306,6 +310,42 @@ export default function Home() {
       setTodayTransits(transit);
     }
   }, [step, chart, form.latitude, form.longitude]);
+
+  // ─── Fetch transit AI interpretation (premium only) ──────────
+  // Server caches in Supabase by chart + voice + locale + transit day,
+  // so the same chart re-loaded on the same day returns instantly.
+  useEffect(() => {
+    if (!isPremium || !chart || !todayTransits || step < 7) return;
+    let cancelled = false;
+    setTransitInterp({ text: null, loading: true, error: null });
+
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        const transitsLine = todayTransits.planets.slice(0, 7).map((tp) => {
+          const natal = chart.planets.find((p) => p.name === tp.name);
+          if (!natal) return `${tp.name}: ${translateSign(tp.sign, locale)} ${tp.degree}°`;
+          return `${tp.name}: aujourd'hui ${translateSign(tp.sign, locale)} ${tp.degree}° / natal ${translateSign(natal.sign, locale)} ${natal.degree}°`;
+        }).join("; ");
+        const natalSummary = chart.planets.slice(0, 7).map((p) => `${p.name} ${translateSign(p.sign, locale)}`).join(", ");
+        const chartContext = `Carte natale : ${natalSummary}${chart.ascendant ? `, Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}.\nTransits du jour (${new Date().toLocaleDateString(locale === "fr" ? "fr-CA" : "en-CA")}) : ${transitsLine}.`;
+
+        const res = await fetch("/api/interpretation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ chartContext, voice: form.voice, locale, genre: form.genre, section: "transits" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !data.text) throw new Error(data.error || `HTTP ${res.status}`);
+        setTransitInterp({ text: data.text, loading: false, error: null });
+      } catch (err) {
+        if (!cancelled) setTransitInterp({ text: null, loading: false, error: (err as Error).message });
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isPremium, chart, todayTransits, step, form.voice, form.genre, locale, getAccessToken]);
 
   // ─── Auto-save chart for logged-in users ─────────────────────
   // The flow used to be "calculate → click Obtenir mon PDF to save". That
@@ -1524,6 +1564,36 @@ export default function Home() {
                     {!isPremium && <PremiumBadge small />}
                   </h2>
                   <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("transits.desc")}</p>
+
+                  {/* AI interpretation of today's transits (premium only) */}
+                  {isPremium && (transitInterp.loading || transitInterp.text || transitInterp.error) && (
+                    <div className="glass p-5 sm:p-6 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[var(--color-accent-lavender)] opacity-60">✦</span>
+                        <h3 className="font-cinzel text-base text-[var(--color-accent-lavender)]">
+                          {locale === "fr" ? "Le climat d'aujourd'hui" : "Today's climate"}
+                        </h3>
+                      </div>
+                      {transitInterp.loading && (
+                        <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                          <span className="w-3 h-3 border border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
+                          {locale === "fr" ? "Lecture du ciel du jour…" : "Reading today's sky…"}
+                        </div>
+                      )}
+                      {transitInterp.error && (
+                        <p className="text-sm text-[var(--color-accent-rose)]">
+                          {locale === "fr" ? "Impossible de générer la lecture : " : "Could not generate the reading: "}
+                          {transitInterp.error}
+                        </p>
+                      )}
+                      {transitInterp.text && !transitInterp.loading && (
+                        <div className="text-sm sm:text-base text-[var(--color-text-primary)] leading-relaxed whitespace-pre-wrap">
+                          {transitInterp.text}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <PremiumGate>
                   <div className="space-y-2">
                     {todayTransits.planets.slice(0, 7).map((transit) => {

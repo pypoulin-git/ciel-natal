@@ -3,6 +3,7 @@ import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getFreeRateLimit, getPremiumRateLimit } from "@/lib/ratelimit";
+import { readPrefsStyleBlock } from "@/lib/readingPrefs";
 
 // Force Node runtime so Gemini SDK + Supabase SSR work consistently.
 // (AI SDK + @ai-sdk/google support Edge too, but several of our helpers
@@ -179,13 +180,18 @@ export async function POST(req: NextRequest) {
       "Tu parles concret, lucide, terre à terre. Zéro jargon ésotérique, zéro cliché. Tu traduis le ciel en questions posables : ce que ça change dans une semaine, dans une décision, dans un geste.",
   };
 
+  // Per-user style sliders saved on /mon-compte/preferences. Anonymous
+  // callers and free users without prefs just get an empty string back,
+  // so the rest of the prompt is unaffected.
+  const prefsStyleBlock = await readPrefsStyleBlock(req, (locale === "en" ? "en" : "fr"));
+
   const systemPrompt = `Tu es un·e ami·e lucide et cultivé·e qui connaît l'astrologie intimement. Pas un·e guru, pas un manuel — quelqu'un·e qui lit la carte de cette personne spécifique et la lui restitue comme on raconte un souvenir partagé.
 
 Langue : ${lang}
 Genre de la personne : ${genreLabel}
 Voix demandée : ${voiceKey}
 ${voiceInstructions[voiceKey]}
-
+${prefsStyleBlock}
 Voici sa carte natale :
 ${chartContext}
 

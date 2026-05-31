@@ -3,6 +3,7 @@ import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
+import { readPrefsStyleBlock } from "@/lib/readingPrefs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,12 +54,16 @@ export async function POST(req: NextRequest) {
             "**L'invitation** — ce que cette année te demande, pas ce qu'elle te prédit.",
           ];
 
+    // Per-user style sliders saved on /mon-compte/preferences.
+    const prefsStyleBlock = await readPrefsStyleBlock(req, (locale === "en" ? "en" : "fr"));
+
     const systemPrompt = `Tu es un·e ami·e lucide qui lit la révolution solaire de ${prenom} pour l'année ${year}.
 
 Langue : ${lang}
 ${genderAgreementInstruction(genre)}
 
 ${voiceBlock(voice, locale)}
+${prefsStyleBlock}
 
 Carte natale :
 ${natalContext}

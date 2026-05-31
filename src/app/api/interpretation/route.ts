@@ -1,8 +1,58 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderLabel, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
+
+/**
+ * Reads the caller's saved reading preferences (tone/depth/focus sliders
+ * from /mon-compte/preferences) when a valid Bearer is present. Returns
+ * null for anonymous callers — they get the default Gemini behaviour.
+ *
+ * Each slider is 1..10. We translate them into a short style instruction
+ * so Gemini actually changes register, instead of letting the user feel
+ * like they're tuning dead knobs (the previous behaviour).
+ */
+async function readPrefsStyleBlock(req: NextRequest, locale: "fr" | "en"): Promise<string> {
+  const auth = req.headers.get("authorization");
+  if (!auth?.startsWith("Bearer ")) return "";
+  const token = auth.slice(7);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !anonKey || !serviceKey) return "";
+  try {
+    const userClient = createClient(url.trim(), anonKey.trim());
+    const { data: userData } = await userClient.auth.getUser(token);
+    const userId = userData?.user?.id;
+    if (!userId) return "";
+    const admin = createClient(url.trim(), serviceKey.trim());
+    const { data } = await admin
+      .from("profiles")
+      .select("reading_prefs")
+      .eq("id", userId)
+      .maybeSingle();
+    const prefs = (data?.reading_prefs ?? {}) as { tone?: number; depth?: number; focus?: number };
+    const t = typeof prefs.tone === "number" ? prefs.tone : 5;
+    const d = typeof prefs.depth === "number" ? prefs.depth : 5;
+    const f = typeof prefs.focus === "number" ? prefs.focus : 5;
+    if (locale === "en") {
+      return `Reader's preferences (1-10 sliders):
+- Tone (${t}/10): ${t <= 3 ? "playful, casual, light footing" : t >= 7 ? "grave, reverent, weighty" : "balanced — neither too playful nor too solemn"}
+- Depth (${d}/10): ${d <= 3 ? "stay surface, give the gist, don't psychoanalyse" : d >= 7 ? "go deep — symbols, complexes, shadow material" : "moderate depth, hint at the inner work without lecturing"}
+- Focus (${f}/10): ${f <= 3 ? "concrete, daily, actionable angle" : f >= 7 ? "archetypal, mythic, symbolic angle" : "balanced between practical and symbolic"}
+Honor these. They override defaults.`;
+    }
+    return `Préférences du lecteur (curseurs 1-10) :
+- Ton (${t}/10) : ${t <= 3 ? "léger, familier, complice" : t >= 7 ? "grave, intense, recueilli" : "équilibré — ni trop léger ni trop solennel"}
+- Profondeur (${d}/10) : ${d <= 3 ? "reste en surface, donne l'idée, ne psychanalyse pas" : d >= 7 ? "va en profondeur — symboles, complexes, matière d'ombre" : "profondeur modérée, suggère le travail intérieur sans en faire un cours"}
+- Angle (${f}/10) : ${f <= 3 ? "concret, quotidien, exploitable" : f >= 7 ? "archétypal, mythique, symbolique" : "équilibré entre pratique et symbolique"}
+Respecte ces réglages. Ils l'emportent sur les défauts.`;
+  } catch {
+    return "";
+  }
+}
 
 type Section = "portrait" | "houses" | "transits";
 
@@ -41,7 +91,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const cacheKey = makeCacheKey({ section, voice, locale, chartContext, extra: genre });
+    // Mix the prefs hash into the cache key so different sliders yield
+    // different cached versions (otherwise the first generation locks in
+    // for everyone with the same chart).
+    const prefsBlock = await readPrefsStyleBlock(req, locale);
+    const cacheKey = makeCacheKey({
+      section, voice, locale, chartContext,
+      extra: `${genre}|${prefsBlock.length > 0 ? Buffer.from(prefsBlock).toString("base64").slice(0, 24) : "default"}`,
+    });
     const cached = await cacheGet(cacheKey);
     if (cached) {
       return new Response(JSON.stringify({ text: cached, cached: true }), {
@@ -60,7 +117,7 @@ Genre de la personne : ${genderLabel(genre)}
 ${genderAgreementInstruction(genre)}
 
 ${voiceBlock(voice, locale)}
-
+${prefsBlock}
 Carte natale :
 ${chartContext}
 

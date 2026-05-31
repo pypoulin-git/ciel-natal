@@ -3,6 +3,7 @@ import { google } from "@ai-sdk/google";
 import { NextRequest } from "next/server";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
+import { readPrefsStyleBlock } from "@/lib/readingPrefs";
 
 export type RelationType = "amour" | "amitie" | "professionnel" | "indetermine";
 
@@ -92,6 +93,10 @@ export async function POST(req: NextRequest) {
     const relationFrame =
       locale === "en" ? RELATION_FRAME_EN[safeRelation] : RELATION_FRAME_FR[safeRelation];
 
+    // Per-user style sliders — fall back to "" for anonymous callers so the
+    // shared-link recipient still gets a sane default reading.
+    const prefsStyleBlock = await readPrefsStyleBlock(req, (locale === "en" ? "en" : "fr"));
+
     const systemPrompt = `Tu es un·e ami·e lucide qui lit la synastrie entre deux personnes.
 
 Langue : ${lang}
@@ -101,6 +106,7 @@ ${prenomB} — ${genderAgreementInstruction(genreB)}
 ${relationFrame}
 
 ${voiceBlock(voice, locale)}
+${prefsStyleBlock}
 
 Carte de ${prenomA} :
 ${contextA}
