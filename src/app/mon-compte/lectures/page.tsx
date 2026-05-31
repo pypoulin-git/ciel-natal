@@ -230,37 +230,84 @@ export default function LecturesPage() {
                 { year: "numeric", month: "short", day: "numeric" }
               );
               const hasPdf = !!chart.pdf_url;
+              // Build the re-open URL using the same ?c=base64 format the home
+              // page already parses (page.tsx ~line 540). Reuses the user's
+              // stored form_data so the saved chart re-renders identically.
+              const f = chart.form_data as Record<string, unknown>;
+              let openUrl: string | null = null;
+              if (f && typeof f === "object" && f.jour && f.mois && f.annee && f.latitude && f.longitude) {
+                try {
+                  const payload = {
+                    n: f.prenom, g: f.genre, j: f.jour, m: f.mois, a: f.annee,
+                    h: f.heure, mn: f.minute, ht: f.hasTime ? 1 : 0,
+                    l: f.lieu, la: f.latitude, lo: f.longitude, v: f.voice,
+                  };
+                  openUrl = `/?c=${encodeURIComponent(btoa(JSON.stringify(payload)))}`;
+                } catch {
+                  /* malformed form_data — fall back to label-only row */
+                }
+              }
               return (
-                <div key={chart.id} className="glass p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-[var(--color-text-primary)] truncate">{chart.label}</p>
-                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                      {date}
-                      {chart.email_sent_at && (
-                        <> · <span className="text-[var(--color-accent-lavender)]">{locale === "fr" ? "Envoyé par email" : "Emailed"}</span></>
-                      )}
-                    </p>
-                  </div>
+                <div key={chart.id} className="glass p-4 flex items-center justify-between gap-4 transition hover:border-[var(--color-accent-lavender)]/30">
+                  {/* Make the whole text block a link — opens the chart again */}
+                  {openUrl ? (
+                    <a
+                      href={openUrl}
+                      className="min-w-0 flex-1 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-lavender)] rounded-lg -m-1 p-1"
+                      aria-label={locale === "fr" ? `Ouvrir ${chart.label}` : `Open ${chart.label}`}
+                    >
+                      <p className="text-sm text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-accent-lavender)] transition">{chart.label}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                        {date}
+                        {chart.email_sent_at && (
+                          <> · <span className="text-[var(--color-accent-lavender)]">{locale === "fr" ? "Envoyé par email" : "Emailed"}</span></>
+                        )}
+                        {!hasPdf && (
+                          <> · <span className="opacity-60 italic">{locale === "fr" ? "Cliquer pour ouvrir" : "Click to open"}</span></>
+                        )}
+                      </p>
+                    </a>
+                  ) : (
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[var(--color-text-primary)] truncate">{chart.label}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{date}</p>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 shrink-0">
-                    {hasPdf && (
+                    {hasPdf ? (
                       <button
                         onClick={() => handleDownload(chart)}
                         disabled={busyId === chart.id}
+                        aria-label={locale === "fr" ? "Télécharger le PDF" : "Download PDF"}
                         className="inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-[var(--color-glass-border)] bg-white/5 hover:bg-white/10 hover:border-[var(--color-accent-lavender)]/30 text-[var(--color-text-primary)] disabled:opacity-50"
                       >
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                        <span className="hidden sm:inline">{locale === "fr" ? "Télécharger" : "Download"}</span>
+                        <span className="hidden sm:inline">{locale === "fr" ? "PDF" : "PDF"}</span>
                       </button>
-                    )}
+                    ) : openUrl ? (
+                      // No PDF yet → invite the user to open the chart, where
+                      // the "Obtenir mon PDF" button handles the generation.
+                      <a
+                        href={openUrl}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-[var(--color-accent-rose)]/30 bg-[var(--color-accent-rose)]/10 hover:bg-[var(--color-accent-rose)]/20 text-[var(--color-accent-rose)]"
+                        aria-label={locale === "fr" ? "Ouvrir pour générer le PDF" : "Open to generate the PDF"}
+                      >
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <span className="hidden sm:inline">{locale === "fr" ? "Générer PDF" : "Generate PDF"}</span>
+                      </a>
+                    ) : null}
                     <button
                       onClick={() => handleDelete(chart)}
                       disabled={busyId === chart.id}
                       aria-label={locale === "fr" ? "Supprimer" : "Delete"}
                       className="p-2 text-xs rounded-lg border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent-rose)] hover:border-[var(--color-accent-rose)]/40 disabled:opacity-50"
                     >
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                       </svg>
