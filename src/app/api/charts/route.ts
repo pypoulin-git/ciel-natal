@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("saved_charts")
-    .select("id, label, form_data, created_at")
+    .select("id, label, form_data, created_at, pdf_url, email_sent_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
