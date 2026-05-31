@@ -115,7 +115,7 @@ export default function SynastryPage() {
   // Relationship orientation — drives the Gemini prompt frame so an
   // amour/amitié/famille/professionnel reading speaks the right register
   // (no romantic framing for friends, no friendship framing for partners).
-  type RelationType = "amour" | "amitie" | "famille" | "professionnel" | "indetermine";
+  type RelationType = "amour" | "amitie" | "professionnel" | "indetermine";
   const [relationType, setRelationType] = useState<RelationType>("indetermine");
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -389,11 +389,10 @@ export default function SynastryPage() {
               <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/80 mb-3">
                 {locale === "fr" ? "Quel lien lis-tu ?" : "What kind of bond is this?"}
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([
                   { id: "amour" as const, fr: "Amour", en: "Love" },
                   { id: "amitie" as const, fr: "Amitié", en: "Friendship" },
-                  { id: "famille" as const, fr: "Famille", en: "Family" },
                   { id: "professionnel" as const, fr: "Professionnel", en: "Professional" },
                   { id: "indetermine" as const, fr: "Indéterminé", en: "Unspecified" },
                 ]).map((opt) => (
@@ -608,27 +607,39 @@ export default function SynastryPage() {
                   )}
                   {interpText && !interpLoading && (
                     <article className="prose-synastry text-[15px] sm:text-base text-[var(--color-text-primary)] leading-[1.75] space-y-5">
-                      {/* Render the markdown response into styled blocks.
-                          Each section header from Gemini comes as **Title**,
-                          which we lift into a Cinzel subtitle separated by a
-                          delicate hairline so the eye can scan. */}
+                      {/* Robust markdown rendering — Gemini sometimes emits
+                          variants the previous strict regex missed:
+                          "### **Title**", "***Title***", "## Title", etc.
+                          We pre-strip those wrappers, then promote any line
+                          that looks like a heading into a styled subtitle. */}
                       {interpText.split(/\n\n+/).map((para, idx) => {
-                        // [\s\S] instead of /s flag to keep ES2017 compat.
-                        const headerMatch = para.match(/^\*\*(.+?)\*\*\s*([\s\S]*)$/);
-                        if (headerMatch) {
+                        const trimmed = para.trim();
+                        // Normalize header variants to the canonical **Title**
+                        const cleaned = trimmed
+                          .replace(/^\s*#{1,6}\s+/, "")        // strip ### / ## / # prefix
+                          .replace(/^\*{3,}\s*/, "**")           // *** at start → **
+                          .replace(/\s*\*{3,}$/, "**");          // *** at end → **
+                        // Match a header line: either a stand-alone bolded
+                        // phrase, or a bolded phrase followed by prose on
+                        // following lines (Gemini sometimes does that).
+                        const headerMatch = cleaned.match(/^\*\*([^*\n]+?)\*\*\s*([\s\S]*)$/);
+                        if (headerMatch && headerMatch[1].length < 80) {
                           return (
                             <div key={idx}>
-                              <h3 className="font-cinzel text-base sm:text-lg text-[var(--color-accent-rose)] mb-2 pt-1 border-t border-[var(--color-accent-rose)]/15 pt-3">
-                                {headerMatch[1]}
+                              <h3 className="font-cinzel text-base sm:text-lg text-[var(--color-accent-rose)] mb-2 pt-3 border-t border-[var(--color-accent-rose)]/15">
+                                {headerMatch[1].trim()}
                               </h3>
                               {headerMatch[2] && (
-                                <p className="whitespace-pre-wrap">{headerMatch[2]}</p>
+                                <p className="whitespace-pre-wrap">{headerMatch[2].trim()}</p>
                               )}
                             </div>
                           );
                         }
+                        // Plain paragraph — still strip stray ** that wrap
+                        // a whole paragraph (Gemini occasionally does this).
+                        const inlineCleaned = trimmed.replace(/^\*+|\*+$/g, "").trim();
                         return (
-                          <p key={idx} className="whitespace-pre-wrap">{para}</p>
+                          <p key={idx} className="whitespace-pre-wrap">{inlineCleaned}</p>
                         );
                       })}
                     </article>
@@ -637,37 +648,103 @@ export default function SynastryPage() {
               </div>
             )}
 
-            {/* Cross aspects list — Premium gated */}
+            {/* Cross aspects — grouped by type, with a legend explaining
+                what each glyph means. PY's feedback: "on n'en comprends peu
+                la signification" + "très fade comme lecture, regrouper". */}
             <PremiumGate>
               <div>
-                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   {locale === "fr" ? "Aspects croisés" : "Cross aspects"}
                   {!isPremium && <PremiumBadge />}
                 </h2>
-                <div className="space-y-2">
-                  {crossAspects.map((aspect, i) => {
-                    const tint = ASPECT_TINT[aspect.type] || "text-[var(--color-text-secondary)]";
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4">
+                  {locale === "fr"
+                    ? "Cinq familles de connexions entre vos planètes — chacune dit quelque chose de différent sur la dynamique."
+                    : "Five families of connections between your planets — each says something different about the dynamic."}
+                </p>
+
+                {/* Legend / key — five icon swatches with one-line meanings */}
+                <div className="glass p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5">
+                  {([
+                    { type: "Conjonction", fr: "Fusion d'énergie — deux planètes au même endroit, elles se mélangent.", en: "Energy fusion — two planets in the same spot, blending." },
+                    { type: "Trigone",     fr: "Flot harmonieux — un don qui circule sans effort.", en: "Smooth flow — a gift that moves without effort." },
+                    { type: "Sextile",     fr: "Opportunité subtile — une porte qui s'ouvre si tu la pousses.", en: "Subtle opening — a door that opens if you push it." },
+                    { type: "Carre",       fr: "Friction créatrice — ce qui se frotte pour pousser à grandir.", en: "Creative friction — what rubs to push growth." },
+                    { type: "Opposition",  fr: "Polarité — deux pôles à équilibrer, jamais à choisir.", en: "Polarity — two poles to balance, never one to choose." },
+                  ]).map((row) => {
+                    const tint = ASPECT_TINT[row.type] || "text-[var(--color-text-secondary)]";
                     return (
-                      <div key={i} className="glass p-3 sm:p-4 hover:border-[var(--color-accent-lavender)]/20 transition">
-                        <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-3 text-sm">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="text-[var(--color-text-primary)] truncate">{aspect.planet1}</span>
-                            <span className={`flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 ${tint}`} aria-label={aspect.type}>
-                              <AspectIcon type={aspect.type} />
-                            </span>
-                            <span className="text-[var(--color-text-primary)] truncate">{aspect.planet2}</span>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${tint} border-current/30`} style={{ backgroundColor: "rgba(255,255,255,0.03)" }}>
-                              {aspect.type}
-                            </span>
-                            <span className="text-[11px] text-[var(--color-text-secondary)] font-mono opacity-70">{aspect.orb}°</span>
-                          </div>
+                      <div key={row.type} className="flex items-start gap-3">
+                        <span className={`flex-shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/[0.04] border border-white/10 ${tint} mt-0.5`}>
+                          <AspectIcon type={row.type} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-semibold ${tint}`}>
+                            {row.type === "Carre" ? "Carré" : row.type}
+                          </p>
+                          <p className="text-[11px] text-[var(--color-text-secondary)] leading-snug">
+                            {locale === "fr" ? row.fr : row.en}
+                          </p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Grouped by aspect type — order: harmonics first, then tensions */}
+                {(() => {
+                  const order: { type: string; titleFr: string; titleEn: string }[] = [
+                    { type: "Conjonction", titleFr: "Conjonctions", titleEn: "Conjunctions" },
+                    { type: "Trigone",     titleFr: "Trigones",     titleEn: "Trines" },
+                    { type: "Sextile",     titleFr: "Sextiles",     titleEn: "Sextiles" },
+                    { type: "Carre",       titleFr: "Carrés",       titleEn: "Squares" },
+                    { type: "Opposition",  titleFr: "Oppositions",  titleEn: "Oppositions" },
+                  ];
+                  return (
+                    <div className="space-y-4">
+                      {order.map((group) => {
+                        const items = crossAspects.filter((a) => a.type === group.type);
+                        if (items.length === 0) return null;
+                        const tint = ASPECT_TINT[group.type] || "text-[var(--color-text-secondary)]";
+                        return (
+                          <div key={group.type}>
+                            <div className={`flex items-center gap-2 mb-2 ${tint}`}>
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/[0.04] border border-current/30">
+                                <AspectIcon type={group.type} />
+                              </span>
+                              <h3 className="font-cinzel text-base">
+                                {locale === "fr" ? group.titleFr : group.titleEn}
+                              </h3>
+                              <span className="text-[10px] text-[var(--color-text-secondary)] font-mono opacity-70">
+                                ({items.length})
+                              </span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {items.map((aspect, i) => (
+                                <div
+                                  key={i}
+                                  className="rounded-lg bg-white/[0.025] border border-white/[0.06] hover:bg-white/[0.04] transition px-3 py-2 flex items-center justify-between gap-3 text-sm"
+                                  title={locale === "fr" ? `${aspect.type} — orbe ${aspect.orb}°` : `${aspect.type} — orb ${aspect.orb}°`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-[var(--color-text-primary)] truncate">{aspect.planet1}</span>
+                                    <span className={`flex-shrink-0 ${tint} opacity-70`}>
+                                      <AspectIcon type={aspect.type} className="w-3 h-3" />
+                                    </span>
+                                    <span className="text-[var(--color-text-primary)] truncate">{aspect.planet2}</span>
+                                  </div>
+                                  <span className="text-[11px] text-[var(--color-text-secondary)] font-mono opacity-60 flex-shrink-0">
+                                    {aspect.orb}°
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </PremiumGate>
 
