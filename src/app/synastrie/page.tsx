@@ -73,6 +73,12 @@ export default function SynastryPage() {
   const [citySuggestions, setCitySuggestions] = useState<{ target: "A" | "B"; results: CityResult[] }>({ target: "A", results: [] });
   const cityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // AI interpretation state — gated to premium because Gemini calls cost
+  // money even when free (no rate limit on this route yet).
+  const [interpText, setInterpText] = useState<string | null>(null);
+  const [interpLoading, setInterpLoading] = useState(false);
+  const [interpError, setInterpError] = useState<string | null>(null);
+
   const handleCitySearch = useCallback((query: string, target: "A" | "B") => {
     const setter = target === "A" ? setPersonA : setPersonB;
     setter((f) => ({ ...f, lieu: query }));
@@ -118,9 +124,71 @@ export default function SynastryPage() {
       }
     }
     aspects.sort((a, b) => a.orb - b.orb);
-    setCrossAspects(aspects.slice(0, 20));
+    const topAspects = aspects.slice(0, 20);
+    setCrossAspects(topAspects);
     setComputed(true);
+
+    // Fire the AI interpretation for premium users. Free users get the
+    // mechanical cross-aspects list but no narrative — that's the upsell.
+    if (isPremium) {
+      void fetchInterpretation(cA, cB, topAspects);
+    } else {
+      setInterpText(null);
+      setInterpError(null);
+    }
   };
+
+  // Calls /api/synastry-interpretation with a textual summary of both
+  // charts + the top cross aspects. The endpoint streams back a single
+  // {text} response (cached server-side). Errors surface in `interpError`.
+  const fetchInterpretation = useCallback(async (
+    cA: NatalChart,
+    cB: NatalChart,
+    aspects: { planet1: string; sign1: string; planet2: string; sign2: string; type: string; orb: number }[],
+  ) => {
+    setInterpLoading(true);
+    setInterpText(null);
+    setInterpError(null);
+    try {
+      const planetsToString = (chart: NatalChart) =>
+        chart.planets
+          .slice(0, 10)
+          .map((p) => `${p.name} en ${translateSign(p.sign, locale)}${typeof p.house === "number" ? ` (maison ${p.house})` : ""}`)
+          .join(", ");
+      const contextA = `${personA.prenom} : ${planetsToString(cA)}${cA.ascendant ? `, Ascendant ${translateSign(cA.ascendant.sign, locale)}` : ""}`;
+      const contextB = `${personB.prenom} : ${planetsToString(cB)}${cB.ascendant ? `, Ascendant ${translateSign(cB.ascendant.sign, locale)}` : ""}`;
+      const crossText = aspects
+        .slice(0, 12)
+        .map((a) => `${a.planet1} (${a.sign1}) ${a.type.toLowerCase()} ${a.planet2} (${a.sign2}) — orbe ${a.orb}°`)
+        .join("\n");
+
+      const res = await fetch("/api/synastry-interpretation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contextA,
+          contextB,
+          crossAspects: crossText,
+          prenomA: personA.prenom,
+          prenomB: personB.prenom,
+          voice: "sensible",
+          locale,
+          // We don't collect genre on the synastry form; default to neutral.
+          genreA: "neutre",
+          genreB: "neutre",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.text) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      setInterpText(data.text);
+    } catch (err) {
+      setInterpError((err as Error).message);
+    } finally {
+      setInterpLoading(false);
+    }
+  }, [personA.prenom, personB.prenom, locale]);
 
   const canCompute = personA.prenom.length >= 1 && personB.prenom.length >= 1 && personA.lieu.length >= 2 && personB.lieu.length >= 2;
 
@@ -271,6 +339,39 @@ export default function SynastryPage() {
                 </div>
               );
             })()}
+
+            {/* AI interpretation — premium only, fetched right after compute */}
+            {isPremium && (
+              <div className="glass p-5 sm:p-6 mb-2">
+                <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3 flex items-center gap-2">
+                  <span className="text-[var(--color-accent-rose)] opacity-60">✦</span>
+                  {locale === "fr" ? "Lecture de votre rencontre" : "Reading your connection"}
+                </h2>
+                {interpLoading && (
+                  <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                    <span className="w-3 h-3 border border-[var(--color-accent-rose)]/30 border-t-[var(--color-accent-rose)] rounded-full animate-spin" />
+                    {locale === "fr" ? "Tissage de la lecture…" : "Weaving the reading…"}
+                  </div>
+                )}
+                {interpError && (
+                  <div className="text-sm text-[var(--color-accent-rose)]">
+                    {locale === "fr" ? "L'interprétation n'a pas pu être générée : " : "Could not generate interpretation: "}
+                    {interpError}
+                    <button
+                      onClick={() => chartA && chartB && fetchInterpretation(chartA, chartB, crossAspects)}
+                      className="ml-2 underline hover:no-underline"
+                    >
+                      {locale === "fr" ? "Réessayer" : "Retry"}
+                    </button>
+                  </div>
+                )}
+                {interpText && !interpLoading && (
+                  <div className="text-sm sm:text-base text-[var(--color-text-primary)] leading-relaxed whitespace-pre-wrap">
+                    {interpText}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cross aspects list — Premium gated */}
             <PremiumGate>

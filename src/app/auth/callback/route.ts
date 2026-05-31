@@ -61,7 +61,10 @@ export async function GET(request: Request) {
               headers: {
                 "Content-Type": "application/json",
                 // Internal-only endpoint — proves the call comes from our server.
-                "x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+                // .trim() defends against the trailing \n that `vercel env add`
+                // sometimes appends when the value is piped via echo. The
+                // receive side (welcome route) also trims — they must match.
+                "x-internal-secret": (process.env.INTERNAL_API_SECRET || "").trim(),
               },
               body: JSON.stringify({ email: data.user.email, displayName, locale }),
             })

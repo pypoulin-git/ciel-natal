@@ -73,6 +73,54 @@ export default function RevolutionSolaire() {
   const [calculating, setCalculating] = useState(false);
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // AI interpretation state — premium-only; mirrors the synastry page pattern.
+  const [interpText, setInterpText] = useState<string | null>(null);
+  const [interpLoading, setInterpLoading] = useState(false);
+  const [interpError, setInterpError] = useState<string | null>(null);
+
+  const fetchInterpretation = useCallback(async (
+    natal: NatalChart,
+    sr: NatalChart,
+  ) => {
+    setInterpLoading(true);
+    setInterpText(null);
+    setInterpError(null);
+    try {
+      const planetsToString = (chart: NatalChart) =>
+        chart.planets
+          .slice(0, 10)
+          .map((p) => `${p.name} en ${p.sign}${typeof p.house === "number" ? ` (maison ${p.house})` : ""}`)
+          .join(", ");
+      const natalContext = `${planetsToString(natal)}${natal.ascendant ? `, Ascendant ${natal.ascendant.sign}` : ""}`;
+      const returnContext = `${planetsToString(sr)}${sr.ascendant ? `, Ascendant SR ${sr.ascendant.sign}` : ""}`;
+
+      const res = await fetch("/api/solar-return", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          natalContext,
+          returnContext,
+          // We don't collect a prénom on the SR form (it's not a personal
+          // chart per se — it's a year ahead). Use a neutral fallback.
+          prenom: locale === "fr" ? "ami·e" : "friend",
+          year: new Date().getFullYear(),
+          voice: "sensible",
+          locale,
+          genre: "neutre",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.text) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      setInterpText(data.text);
+    } catch (err) {
+      setInterpError((err as Error).message);
+    } finally {
+      setInterpLoading(false);
+    }
+  }, [locale]);
+
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
     if (citySearchTimer.current) clearTimeout(citySearchTimer.current);
@@ -142,6 +190,14 @@ export default function RevolutionSolaire() {
 
       setSrChart(bestChart);
       setCalculating(false);
+
+      // Fire the AI interpretation for premium users only (cost guard).
+      if (isPremium && bestChart) {
+        void fetchInterpretation(natal, bestChart);
+      } else {
+        setInterpText(null);
+        setInterpError(null);
+      }
     }, 500);
   };
 
@@ -252,6 +308,39 @@ export default function RevolutionSolaire() {
                     {SR_THEMES[srChart.ascendant.sign]?.[locale] ||
                       (locale === "fr" ? "L'Ascendant de ta révolution solaire colore le thème de ton année." : "The Ascendant of your solar return colors your year's theme.")}
                   </p>
+                </div>
+              )}
+
+              {/* AI interpretation — premium only */}
+              {isPremium && (interpLoading || interpText || interpError) && (
+                <div className="glass p-5 sm:p-6">
+                  <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mb-3 flex items-center gap-2">
+                    <span className="text-[var(--color-accent-rose)] opacity-60">✦</span>
+                    {locale === "fr" ? "Lecture de ton année" : "Reading your year"}
+                  </h3>
+                  {interpLoading && (
+                    <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                      <span className="w-3 h-3 border border-[var(--color-accent-rose)]/30 border-t-[var(--color-accent-rose)] rounded-full animate-spin" />
+                      {locale === "fr" ? "Tissage de la lecture…" : "Weaving the reading…"}
+                    </div>
+                  )}
+                  {interpError && (
+                    <div className="text-sm text-[var(--color-accent-rose)]">
+                      {locale === "fr" ? "L'interprétation n'a pas pu être générée : " : "Could not generate interpretation: "}
+                      {interpError}
+                      <button
+                        onClick={() => natalChart && srChart && fetchInterpretation(natalChart, srChart)}
+                        className="ml-2 underline hover:no-underline"
+                      >
+                        {locale === "fr" ? "Réessayer" : "Retry"}
+                      </button>
+                    </div>
+                  )}
+                  {interpText && !interpLoading && (
+                    <div className="text-sm sm:text-base text-[var(--color-text-primary)] leading-relaxed whitespace-pre-wrap">
+                      {interpText}
+                    </div>
+                  )}
                 </div>
               )}
 
