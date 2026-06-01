@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 
@@ -79,10 +79,26 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
     } catch { /* ignore */ }
   };
 
+  // Close the dropdown when the user clicks anywhere outside it. Without
+  // this it stayed open while scrolling, overlapping the footer
+  // disclaimer (PY's screenshot showed it bleeding into "L'astrologie
+  // est un outil de réflexion personnelle…").
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [isOpen]);
+
   if (!isPremium) return null;
 
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className="relative">
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -96,9 +112,20 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
         {locale === "fr" ? "Mes cartes" : "My charts"} ({charts.length}/10)
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — anchored to BOTTOM of the toggle button (i.e. opens
+          UPWARD) because the toggle lives near the page footer and an
+          upward-opening menu never collides with the disclaimer below.
+          Solid background + high z-index so it stops the previous overlap
+          where the footer text bled through. */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-72 glass overflow-hidden z-30">
+        <div
+          className="absolute bottom-full right-0 mb-2 w-72 rounded-2xl border border-[var(--color-glass-border)] shadow-2xl overflow-hidden z-50"
+          style={{
+            background: "rgba(15, 15, 22, 0.98)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+          }}
+        >
           {/* Save current */}
           <button
             onClick={saveChart}

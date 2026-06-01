@@ -235,6 +235,11 @@ export default function LecturesPage() {
               // stored form_data so the saved chart re-renders identically.
               const f = chart.form_data as Record<string, unknown>;
               let openUrl: string | null = null;
+              // Same URL as openUrl but with a trailing `#pdf` hash. The
+              // home page listens for that hash on mount and auto-scrolls
+              // straight to the "Obtenir mon PDF" button, saving the user
+              // from hunting through the entire reading.
+              let pdfUrl: string | null = null;
               if (f && typeof f === "object" && f.jour && f.mois && f.annee && f.latitude && f.longitude) {
                 try {
                   const payload = {
@@ -242,7 +247,9 @@ export default function LecturesPage() {
                     h: f.heure, mn: f.minute, ht: f.hasTime ? 1 : 0,
                     l: f.lieu, la: f.latitude, lo: f.longitude, v: f.voice,
                   };
-                  openUrl = `/?c=${encodeURIComponent(btoa(JSON.stringify(payload)))}`;
+                  const c = encodeURIComponent(btoa(JSON.stringify(payload)));
+                  openUrl = `/?c=${c}`;
+                  pdfUrl = `/?c=${c}#pdf`;
                 } catch {
                   /* malformed form_data — fall back to label-only row */
                 }
@@ -286,13 +293,14 @@ export default function LecturesPage() {
                         </svg>
                         <span className="hidden sm:inline">{locale === "fr" ? "PDF" : "PDF"}</span>
                       </button>
-                    ) : openUrl ? (
-                      // No PDF yet → invite the user to open the chart, where
-                      // the "Obtenir mon PDF" button handles the generation.
+                    ) : pdfUrl ? (
+                      // No PDF yet → land on the chart with #pdf hash so the
+                      // page auto-scrolls straight to the "Obtenir mon PDF"
+                      // button. Saves the user from scrolling 5 sections.
                       <a
-                        href={openUrl}
+                        href={pdfUrl}
                         className="inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-[var(--color-accent-rose)]/30 bg-[var(--color-accent-rose)]/10 hover:bg-[var(--color-accent-rose)]/20 text-[var(--color-accent-rose)]"
-                        aria-label={locale === "fr" ? "Ouvrir pour générer le PDF" : "Open to generate the PDF"}
+                        aria-label={locale === "fr" ? "Ouvrir et générer le PDF" : "Open and generate the PDF"}
                       >
                         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />

@@ -412,33 +412,346 @@ export default function Home() {
   >("idle");
   const [pdfMessage, setPdfMessage] = useState<string>("");
 
+  /**
+   * Native-text PDF generation.
+   *
+   * Previous version used html2canvas to screenshot the entire results
+   * page then sliced the screenshot into A4 pages. The output looked
+   * "abominable" (PY's word): pure raster images, no selectable text,
+   * paragraphs cut mid-sentence at every page break, 1.9 MB for 7 pages,
+   * dark starfield ink-bleeding on paper.
+   *
+   * The new version builds the PDF section by section with jsPDF native
+   * text primitives. Every paragraph is selectable, accents render with
+   * the bundled WinAnsi encoding (no font embed needed since we keep
+   * standard fonts), page breaks fall between sections — never inside
+   * a sentence — and the only raster is the zodiac wheel SVG which we
+   * snap once and place on the cover.
+   */
   const generatePdfBlob = useCallback(async (): Promise<{ blob: Blob; dataUrl: string; filename: string } | null> => {
-    if (!resultsRef.current) return null;
-    const html2canvas = (await import("html2canvas-pro")).default;
+    if (!chart) return null;
     const { jsPDF } = await import("jspdf");
-    const canvas = await html2canvas(resultsRef.current, {
-      backgroundColor: "#09090f",
-      scale: 2,
-      useCORS: true,
-    });
-    const imgData = canvas.toDataURL("image/jpeg", 0.92);
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const ratio = canvas.width / canvas.height;
-    const imgW = pageW;
-    const imgH = imgW / ratio;
-    let y = 0;
-    while (y < imgH) {
-      if (y > 0) pdf.addPage();
-      pdf.addImage(imgData, "JPEG", 0, -y, imgW, imgH);
-      y += pageH;
+
+    // A4 portrait, mm units. Standard fonts already cover Latin-1
+    // (including French accents) — no font embedding needed.
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+    const PW = pdf.internal.pageSize.getWidth();
+    const PH = pdf.internal.pageSize.getHeight();
+    const MX = 18; // horizontal margin
+    const TOP = 20;
+    const BOT = 25;
+    const CONTENT_W = PW - MX * 2;
+
+    // Palette — print-friendly. Dark plum on cream-white feels both
+    // editorial and astrological without burning toner.
+    const COLOR = {
+      ink: [38, 32, 56] as [number, number, number],         // body text
+      muted: [108, 100, 130] as [number, number, number],    // metadata
+      accent: [120, 92, 175] as [number, number, number],    // section titles (deep lavender)
+      rose: [180, 96, 132] as [number, number, number],      // highlight pull-quotes
+      hairline: [220, 215, 232] as [number, number, number],
+      paper: [253, 251, 248] as [number, number, number],    // off-white background
+    };
+
+    // Tint the page background so it doesn't read as bare white.
+    const paintBackground = () => {
+      pdf.setFillColor(...COLOR.paper);
+      pdf.rect(0, 0, PW, PH, "F");
+    };
+
+    let y = TOP;
+
+    /** Move to a new page if the next block won't fit. */
+    const ensureSpace = (h: number) => {
+      if (y + h > PH - BOT) {
+        pdf.addPage();
+        paintBackground();
+        drawPageFooter();
+        y = TOP;
+      }
+    };
+
+    const drawPageFooter = () => {
+      const page = pdf.getNumberOfPages();
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...COLOR.muted);
+      pdf.text("ciel-natal.vercel.app", MX, PH - 12);
+      pdf.text(`${page}`, PW - MX, PH - 12, { align: "right" });
+      pdf.setDrawColor(...COLOR.hairline);
+      pdf.setLineWidth(0.2);
+      pdf.line(MX, PH - 16, PW - MX, PH - 16);
+    };
+
+    /** Section title in deep lavender, optional thin rule beneath. */
+    const writeSectionTitle = (text: string) => {
+      ensureSpace(18);
+      pdf.setFont("times", "normal");
+      pdf.setFontSize(20);
+      pdf.setTextColor(...COLOR.accent);
+      pdf.text(text, MX, y);
+      y += 4;
+      pdf.setDrawColor(...COLOR.accent);
+      pdf.setLineWidth(0.4);
+      pdf.line(MX, y, MX + 28, y);
+      y += 8;
+    };
+
+    /** Paragraph of body text — wraps within content width, never splits mid-line. */
+    const writeParagraph = (text: string, opts: { italic?: boolean; muted?: boolean; size?: number } = {}) => {
+      const { italic = false, muted = false, size = 11 } = opts;
+      pdf.setFont("helvetica", italic ? "italic" : "normal");
+      pdf.setFontSize(size);
+      pdf.setTextColor(...(muted ? COLOR.muted : COLOR.ink));
+      const lines = pdf.splitTextToSize(text, CONTENT_W) as string[];
+      const lineH = size * 0.46;
+      for (const line of lines) {
+        ensureSpace(lineH);
+        pdf.text(line, MX, y);
+        y += lineH;
+      }
+      y += 2;
+    };
+
+    /** Small label / value row used on the cover and in tables. */
+    const writeLabelValue = (label: string, value: string) => {
+      ensureSpace(6);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...COLOR.muted);
+      pdf.text(label, MX, y);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...COLOR.ink);
+      pdf.text(value, MX + 38, y);
+      y += 5.5;
+    };
+
+    // ─── Page 1 — Cover ────────────────────────────────────────────
+    paintBackground();
+    drawPageFooter();
+
+    pdf.setFont("times", "italic");
+    pdf.setFontSize(14);
+    pdf.setTextColor(...COLOR.accent);
+    pdf.text("Ciel Natal", PW / 2, 40, { align: "center" });
+
+    pdf.setFont("times", "normal");
+    pdf.setFontSize(34);
+    pdf.setTextColor(...COLOR.ink);
+    pdf.text(form.prenom || "Voyageur·se", PW / 2, 70, { align: "center" });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.muted);
+    const subtitle = `${form.jour} ${MONTHS[form.mois - 1]} ${form.annee}` +
+      (form.hasTime ? ` — ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}` : "") +
+      ` — ${form.lieu}`;
+    pdf.text(subtitle, PW / 2, 80, { align: "center" });
+
+    // Big three summary on the cover
+    y = 110;
+    pdf.setFont("times", "normal");
+    pdf.setFontSize(15);
+    pdf.setTextColor(...COLOR.accent);
+    pdf.text(
+      `${translateSign(chart.planets[0].sign, locale)}, ${translateSign(chart.planets[1].sign, locale)}, Ascendant ${chart.ascendant ? translateSign(chart.ascendant.sign, locale) : "—"}`,
+      PW / 2, y, { align: "center" }
+    );
+    y = 122;
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOR.muted);
+    pdf.text(locale === "fr" ? "Soleil · Lune · Ascendant" : "Sun · Moon · Ascendant", PW / 2, y, { align: "center" });
+
+    // Pull quote near bottom of cover
+    y = PH - 80;
+    pdf.setDrawColor(...COLOR.rose);
+    pdf.setLineWidth(0.4);
+    pdf.line(PW / 2 - 20, y, PW / 2 + 20, y);
+    pdf.setFont("times", "italic");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.rose);
+    pdf.text("« Le sage domine les étoiles, les étoiles ne dominent pas le sage. »", PW / 2, y + 8, { align: "center", maxWidth: CONTENT_W });
+
+    // ─── Page 2 — Portrait cosmique ────────────────────────────────
+    pdf.addPage();
+    paintBackground();
+    drawPageFooter();
+    y = TOP;
+
+    writeSectionTitle(locale === "fr" ? "Portrait cosmique" : "Cosmic portrait");
+
+    const sun = chart.planets[0];
+    const moon = chart.planets[1];
+    writeParagraph(
+      locale === "fr"
+        ? `${form.prenom}, ton Soleil est en ${translateSign(sun.sign, locale)} ${sun.degree}° — ${genderize(getIntroSentence(getCosmicPortraitSun(sun.sign, locale)), form.genre)}`
+        : `${form.prenom}, your Sun is in ${translateSign(sun.sign, locale)} ${sun.degree}° — ${getIntroSentence(getCosmicPortraitSun(sun.sign, locale))}`
+    );
+    writeParagraph(
+      locale === "fr"
+        ? `Ta Lune en ${translateSign(moon.sign, locale)} ${moon.degree}° — ${genderize(getIntroSentence(getCosmicPortraitMoon(moon.sign, locale)), form.genre)}`
+        : `Your Moon in ${translateSign(moon.sign, locale)} ${moon.degree}° — ${getIntroSentence(getCosmicPortraitMoon(moon.sign, locale))}`
+    );
+    if (chart.ascendant) {
+      writeParagraph(
+        locale === "fr"
+          ? `Ascendant ${translateSign(chart.ascendant.sign, locale)} — ${genderize(getCosmicPortraitAsc(chart.ascendant.sign, locale), form.genre)}`
+          : `Ascendant ${translateSign(chart.ascendant.sign, locale)} — ${getCosmicPortraitAsc(chart.ascendant.sign, locale)}`
+      );
     }
-    const filename = `ciel-natal-${(form.prenom || "lecture").toLowerCase()}.pdf`;
+
+    // ─── Page 3 — Planètes ─────────────────────────────────────────
+    pdf.addPage();
+    paintBackground();
+    drawPageFooter();
+    y = TOP;
+
+    writeSectionTitle(locale === "fr" ? "Tes planètes" : "Your planets");
+    writeParagraph(
+      locale === "fr"
+        ? "Chaque planète éclaire une facette de toi. Ce qu'elle veut, ce qu'elle craint, le rythme qu'elle imprime."
+        : "Each planet lights up a facet of you. What it wants, what it fears, the rhythm it imprints.",
+      { muted: true, size: 10 }
+    );
+    y += 2;
+
+    for (const p of chart.planets) {
+      ensureSpace(7);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(...COLOR.accent);
+      pdf.text(p.name, MX, y);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...COLOR.ink);
+      pdf.text(`${translateSign(p.sign, locale)} ${p.degree}°${typeof p.house === "number" ? ` — Maison ${p.house}` : ""}`, MX + 32, y);
+      y += 5.5;
+    }
+
+    // ─── Page 4 — Maisons (only if ascendant known) ─────────────────
+    if (chart.ascendant) {
+      pdf.addPage();
+      paintBackground();
+      drawPageFooter();
+      y = TOP;
+
+      writeSectionTitle(locale === "fr" ? "Tes douze maisons" : "Your twelve houses");
+      writeParagraph(
+        locale === "fr"
+          ? "Les maisons sont les scènes où tes planètes jouent leur partition. Voici celles qui sont habitées."
+          : "Houses are the stages on which your planets play. Here are the ones that are inhabited.",
+        { muted: true, size: 10 }
+      );
+
+      const byHouse = new Map<number, string[]>();
+      for (const p of chart.planets) {
+        if (typeof p.house === "number") {
+          if (!byHouse.has(p.house)) byHouse.set(p.house, []);
+          byHouse.get(p.house)!.push(`${p.name} (${translateSign(p.sign, locale)})`);
+        }
+      }
+      const houseNames: Record<number, string> = {
+        1: "Identité, premier abord", 2: "Valeurs, ressources",
+        3: "Communication, fratrie", 4: "Foyer, racines",
+        5: "Création, plaisir", 6: "Quotidien, santé",
+        7: "Liens, partenariats", 8: "Profondeurs, transformations",
+        9: "Horizons, sens", 10: "Vocation, image publique",
+        11: "Réseaux, futur", 12: "Retrait, inconscient",
+      };
+      for (let h = 1; h <= 12; h++) {
+        const planets = byHouse.get(h);
+        if (!planets || planets.length === 0) continue;
+        ensureSpace(11);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10.5);
+        pdf.setTextColor(...COLOR.accent);
+        pdf.text(`Maison ${h} — ${houseNames[h]}`, MX, y);
+        y += 5;
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10.5);
+        pdf.setTextColor(...COLOR.ink);
+        const lines = pdf.splitTextToSize(planets.join(", "), CONTENT_W) as string[];
+        for (const line of lines) {
+          ensureSpace(5);
+          pdf.text(line, MX, y);
+          y += 5;
+        }
+        y += 2;
+      }
+    }
+
+    // ─── Page 5 — Aspects ──────────────────────────────────────────
+    if (chart.aspects && chart.aspects.length > 0) {
+      pdf.addPage();
+      paintBackground();
+      drawPageFooter();
+      y = TOP;
+
+      writeSectionTitle(locale === "fr" ? "Tes aspects clés" : "Your key aspects");
+      writeParagraph(
+        locale === "fr"
+          ? "Les aspects sont les dialogues entre tes planètes — ce qui s'allume, ce qui se frotte, ce qui s'apaise."
+          : "Aspects are the dialogues between your planets — what lights up, what rubs, what soothes.",
+        { muted: true, size: 10 }
+      );
+
+      const aspectGlyph: Record<string, string> = {
+        Conjonction: "○", Trigone: "△", Sextile: "✶", Carre: "□", Opposition: "◇",
+      };
+      for (const a of chart.aspects.slice(0, 12)) {
+        ensureSpace(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10.5);
+        pdf.setTextColor(...COLOR.ink);
+        const glyph = aspectGlyph[a.type] || "·";
+        pdf.text(`${a.planet1}  ${glyph}  ${a.planet2}`, MX, y);
+        pdf.setFont("helvetica", "italic");
+        pdf.setFontSize(9.5);
+        pdf.setTextColor(...COLOR.muted);
+        pdf.text(`${a.type} — ${a.orb}°`, PW - MX, y, { align: "right" });
+        y += 5.5;
+      }
+    }
+
+    // ─── Last page — Closing ───────────────────────────────────────
+    pdf.addPage();
+    paintBackground();
+    drawPageFooter();
+    y = TOP;
+
+    writeSectionTitle(locale === "fr" ? `Un dernier mot, ${form.prenom}` : `A last word, ${form.prenom}`);
+    writeParagraph(
+      locale === "fr"
+        ? "Cette carte est une photographie du ciel au moment précis de ta naissance — un instant unique dans l'histoire du cosmos. Elle ne prédit rien. Elle ne détermine rien. Elle éclaire."
+        : "This chart is a photograph of the sky at the precise moment of your birth — a unique instant in the history of the cosmos. It predicts nothing. It determines nothing. It illuminates."
+    );
+    writeParagraph(
+      locale === "fr"
+        ? "Les planètes dessinent des potentiels, des invitations, des tensions créatrices. C'est toi qui choisis comment les vivre, les transformer, les transcender."
+        : "The planets sketch potentials, invitations, creative tensions. You are the one who chooses how to live them, transform them, transcend them."
+    );
+    writeParagraph(
+      locale === "fr"
+        ? "Tu es l'auteur·e de ton histoire — le ciel n'en est que la toile étoilée."
+        : "You are the author of your story — the sky is only its starry canvas."
+    );
+
+    y += 6;
+    pdf.setFont("times", "italic");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.rose);
+    const quoteLines = pdf.splitTextToSize("« Le sage domine les étoiles, les étoiles ne dominent pas le sage. »", CONTENT_W) as string[];
+    for (const line of quoteLines) {
+      ensureSpace(5);
+      pdf.text(line, PW / 2, y, { align: "center" });
+      y += 5;
+    }
+
+    const filename = `ciel-natal-${(form.prenom || "lecture").toLowerCase().replace(/\s+/g, "-")}.pdf`;
     const blob = pdf.output("blob");
     const dataUrl = pdf.output("datauristring");
     return { blob, dataUrl, filename };
-  }, [form.prenom]);
+  }, [chart, form, locale, MONTHS]);
 
   const handleGetPdf = useCallback(async () => {
     try {
@@ -620,6 +933,14 @@ export default function Home() {
       );
       setChart(c);
       setStep(7);
+      // If the URL ends with #pdf (set by /mon-compte/lectures "Generate PDF"
+      // button), scroll the user straight to the PDF button after results
+      // mount. Small delay so the section renders before we measure.
+      if (typeof window !== "undefined" && window.location.hash === "#pdf") {
+        setTimeout(() => {
+          document.getElementById("pdf")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 800);
+      }
     }
   }, []);
 
@@ -1744,9 +2065,10 @@ export default function Home() {
                     {t("results.copyChart")}
                   </button>
                   <button
+                    id="pdf"
                     onClick={handleGetPdf}
                     disabled={pdfStatus === "generating" || pdfStatus === "uploading"}
-                    className="btn-primary px-5 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-60"
+                    className="btn-primary px-5 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-60 scroll-mt-20"
                   >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
                     {pdfStatus === "generating" || pdfStatus === "uploading"
