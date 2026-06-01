@@ -44,9 +44,13 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
     setLoading(false);
   }, [user?.id, getAccessToken]);
 
+  // Load the list as soon as the user (premium) lands on the page —
+  // before this the count "Mes cartes (x/10)" stayed stuck at 0 until
+  // the user actually clicked to open the dropdown. PY noticed: had
+  // 3-4 saved charts but the trigger still read (0/10).
   useEffect(() => {
-    if (isOpen && user?.id && isPremium) fetchCharts();
-  }, [isOpen, user?.id, isPremium, fetchCharts]);
+    if (user?.id && isPremium) fetchCharts();
+  }, [user?.id, isPremium, fetchCharts]);
 
   const saveChart = async () => {
     if (!user?.id || saving) return;
