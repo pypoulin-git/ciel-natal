@@ -104,7 +104,11 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
 
   if (!isOpen) {
     return (
-      <div className="glass p-6 sm:p-8 text-center scroll-reveal">
+      // `scroll-reveal` removed: same issue as the tab-target sections —
+      // the intersection observer doesn't refire after the open/close
+      // toggle so the chat would briefly show then snap to opacity:0
+      // (PY's report: "ça apparait puis disparait, grand vide").
+      <div className="glass p-6 sm:p-8 text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/20 flex items-center justify-center">
           <svg width="22" height="22" fill="none" stroke="var(--color-accent-rose)" strokeWidth="1.5" viewBox="0 0 24 24">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -133,7 +137,9 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
   }
 
   return (
-    <div className="glass overflow-hidden scroll-reveal" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
+    // Same fix as above — scroll-reveal removed so the open-state chat
+    // stays visible. The fadeSlideIn animation handles the entrance.
+    <div className="glass overflow-hidden" style={{ animation: "fadeSlideIn 0.4s ease-out" }}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/5">
         <div className="flex items-center gap-3">
