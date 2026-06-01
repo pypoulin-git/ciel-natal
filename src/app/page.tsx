@@ -144,6 +144,8 @@ export default function Home() {
   const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
   useScrollReveal([step]);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+  // Used by the PDF generator to snap the zodiac wheel SVG into a PNG.
+  const zodiacWheelRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bigThreeContentRef = useRef<HTMLDivElement | null>(null);
@@ -432,215 +434,457 @@ export default function Home() {
     if (!chart) return null;
     const { jsPDF } = await import("jspdf");
 
-    // A4 portrait, mm units. Standard fonts already cover Latin-1
-    // (including French accents) — no font embedding needed.
+    // Snap the zodiac wheel SVG to a PNG via html2canvas. We only screenshot
+    // ONE element (the wheel) rather than the whole results page — keeps the
+    // PDF lean while still giving it a real visual centerpiece. If the wheel
+    // isn't mounted yet (e.g. cold load from ?c= URL) we just skip it.
+    let wheelPng: string | null = null;
+    let wheelRatio = 1;
+    try {
+      const wheelEl = zodiacWheelRef.current?.querySelector("svg") as SVGElement | null;
+      if (wheelEl) {
+        const html2canvas = (await import("html2canvas-pro")).default;
+        const wrapper = zodiacWheelRef.current!;
+        const canvas = await html2canvas(wrapper, {
+          backgroundColor: null,
+          scale: 2.5,
+          useCORS: true,
+        });
+        wheelPng = canvas.toDataURL("image/png");
+        wheelRatio = canvas.width / canvas.height;
+      }
+    } catch {
+      /* wheel snap failed — degrade gracefully without the visual */
+    }
+
+    // A4 portrait, mm units. Standard fonts cover Latin-1 (French accents
+    // work). For astrological glyphs (Sun ☉, planets ☿♀♂, aspects ☌△□☍)
+    // we draw native vector primitives rather than relying on unicode
+    // that WinAnsi-only fonts can't render (PY's screenshot showed the
+    // unicode glyphs as garbage like "%Ç %i %³").
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
     const PW = pdf.internal.pageSize.getWidth();
     const PH = pdf.internal.pageSize.getHeight();
-    const MX = 18; // horizontal margin
-    const TOP = 20;
-    const BOT = 25;
+    const MX = 20;
+    const TOP = 22;
+    const BOT = 22;
     const CONTENT_W = PW - MX * 2;
 
-    // Palette — print-friendly. Dark plum on cream-white feels both
-    // editorial and astrological without burning toner.
+    // Brand palette — pulled from the website's CSS variables. Cream
+    // paper / deep plum ink / accent-lavender + accent-rose for headings
+    // and accents. Avoids the dark starfield "school project" look.
     const COLOR = {
-      ink: [38, 32, 56] as [number, number, number],         // body text
-      muted: [108, 100, 130] as [number, number, number],    // metadata
-      accent: [120, 92, 175] as [number, number, number],    // section titles (deep lavender)
-      rose: [180, 96, 132] as [number, number, number],      // highlight pull-quotes
+      ink: [38, 32, 56] as [number, number, number],
+      mutedInk: [108, 100, 130] as [number, number, number],
+      lavender: [120, 92, 175] as [number, number, number],
+      lavenderSoft: [184, 166, 255] as [number, number, number],
+      rose: [200, 122, 160] as [number, number, number],
       hairline: [220, 215, 232] as [number, number, number],
-      paper: [253, 251, 248] as [number, number, number],    // off-white background
+      paper: [253, 251, 248] as [number, number, number],
+      headerBand: [245, 240, 250] as [number, number, number],
     };
 
-    // Tint the page background so it doesn't read as bare white.
-    const paintBackground = () => {
+    /** Background tint + an editorial header band that carries the brand. */
+    const paintPage = (kind: "cover" | "content" = "content") => {
       pdf.setFillColor(...COLOR.paper);
       pdf.rect(0, 0, PW, PH, "F");
+      if (kind === "content") {
+        // Subtle lavender band at the top — gives every page a logo home.
+        pdf.setFillColor(...COLOR.headerBand);
+        pdf.rect(0, 0, PW, 14, "F");
+        // Star glyph + wordmark (drawn as primitives, not unicode).
+        drawStar(MX + 2.5, 8, 2.6, COLOR.lavender);
+        pdf.setFont("times", "italic");
+        pdf.setFontSize(10);
+        pdf.setTextColor(...COLOR.lavender);
+        pdf.text("Ciel Natal", MX + 8, 9.4);
+        // Right side: name of the chart holder, small.
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(...COLOR.mutedInk);
+        pdf.text(`${form.prenom || ""} — ${form.jour}/${form.mois}/${form.annee}`, PW - MX, 9.4, { align: "right" });
+      }
+    };
+
+    /** Star glyph drawn as a 4-point asterisk (matches the site's ✦ logo). */
+    const drawStar = (cx: number, cy: number, r: number, rgb: [number, number, number]) => {
+      pdf.setDrawColor(...rgb);
+      pdf.setLineWidth(0.5);
+      pdf.line(cx, cy - r, cx, cy + r);
+      pdf.line(cx - r, cy, cx + r, cy);
+      pdf.line(cx - r * 0.7, cy - r * 0.7, cx + r * 0.7, cy + r * 0.7);
+      pdf.line(cx - r * 0.7, cy + r * 0.7, cx + r * 0.7, cy - r * 0.7);
+    };
+
+    /** Aspect glyph as vector primitives — fixes PY's unicode garbage. */
+    const drawAspectGlyph = (type: string, cx: number, cy: number) => {
+      const r = 2.2;
+      pdf.setDrawColor(...COLOR.lavender);
+      pdf.setLineWidth(0.55);
+      switch (type) {
+        case "Conjonction":
+          pdf.circle(cx, cy, r * 0.55, "S");
+          pdf.circle(cx, cy, r, "S");
+          break;
+        case "Trigone":
+          pdf.triangle(cx, cy - r, cx - r, cy + r * 0.7, cx + r, cy + r * 0.7, "S");
+          break;
+        case "Sextile":
+          // Six-point asterisk (★) → 3 crossing lines
+          pdf.line(cx, cy - r, cx, cy + r);
+          pdf.line(cx - r * 0.87, cy - r * 0.5, cx + r * 0.87, cy + r * 0.5);
+          pdf.line(cx - r * 0.87, cy + r * 0.5, cx + r * 0.87, cy - r * 0.5);
+          break;
+        case "Carre":
+          pdf.rect(cx - r, cy - r, 2 * r, 2 * r, "S");
+          break;
+        case "Opposition":
+          pdf.circle(cx - r, cy, r * 0.45, "S");
+          pdf.circle(cx + r, cy, r * 0.45, "S");
+          pdf.line(cx - r + 0.55, cy, cx + r - 0.55, cy);
+          break;
+        default:
+          pdf.circle(cx, cy, 0.6, "F");
+      }
     };
 
     let y = TOP;
 
-    /** Move to a new page if the next block won't fit. */
+    /** Move to a new page if the next block won't fit, then re-paint the header. */
     const ensureSpace = (h: number) => {
       if (y + h > PH - BOT) {
         pdf.addPage();
-        paintBackground();
-        drawPageFooter();
+        paintPage("content");
+        drawFooter();
         y = TOP;
       }
     };
 
-    const drawPageFooter = () => {
+    /** Footer with page number + url + hairline rule. */
+    const drawFooter = () => {
       const page = pdf.getNumberOfPages();
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...COLOR.muted);
-      pdf.text("ciel-natal.vercel.app", MX, PH - 12);
-      pdf.text(`${page}`, PW - MX, PH - 12, { align: "right" });
       pdf.setDrawColor(...COLOR.hairline);
       pdf.setLineWidth(0.2);
-      pdf.line(MX, PH - 16, PW - MX, PH - 16);
+      pdf.line(MX, PH - 12, PW - MX, PH - 12);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...COLOR.mutedInk);
+      pdf.text("ciel-natal.vercel.app", MX, PH - 7);
+      pdf.text(`${page}`, PW - MX, PH - 7, { align: "right" });
     };
 
-    /** Section title in deep lavender, optional thin rule beneath. */
-    const writeSectionTitle = (text: string) => {
-      ensureSpace(18);
+    const writeSectionTitle = (text: string, eyebrow?: string) => {
+      ensureSpace(eyebrow ? 22 : 16);
+      if (eyebrow) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(...COLOR.rose);
+        pdf.text(eyebrow.toUpperCase(), MX, y);
+        y += 5;
+      }
       pdf.setFont("times", "normal");
-      pdf.setFontSize(20);
-      pdf.setTextColor(...COLOR.accent);
+      pdf.setFontSize(22);
+      pdf.setTextColor(...COLOR.ink);
       pdf.text(text, MX, y);
       y += 4;
-      pdf.setDrawColor(...COLOR.accent);
-      pdf.setLineWidth(0.4);
-      pdf.line(MX, y, MX + 28, y);
-      y += 8;
+      pdf.setDrawColor(...COLOR.lavender);
+      pdf.setLineWidth(0.6);
+      pdf.line(MX, y, MX + 22, y);
+      y += 9;
     };
 
-    /** Paragraph of body text — wraps within content width, never splits mid-line. */
-    const writeParagraph = (text: string, opts: { italic?: boolean; muted?: boolean; size?: number } = {}) => {
-      const { italic = false, muted = false, size = 11 } = opts;
-      pdf.setFont("helvetica", italic ? "italic" : "normal");
+    const writeParagraph = (text: string, opts: { italic?: boolean; muted?: boolean; size?: number; center?: boolean } = {}) => {
+      const { italic = false, muted = false, size = 11, center = false } = opts;
+      pdf.setFont(italic ? "times" : "helvetica", italic ? "italic" : "normal");
       pdf.setFontSize(size);
-      pdf.setTextColor(...(muted ? COLOR.muted : COLOR.ink));
+      pdf.setTextColor(...(muted ? COLOR.mutedInk : COLOR.ink));
       const lines = pdf.splitTextToSize(text, CONTENT_W) as string[];
-      const lineH = size * 0.46;
+      const lineH = size * 0.5;
       for (const line of lines) {
         ensureSpace(lineH);
-        pdf.text(line, MX, y);
+        if (center) pdf.text(line, PW / 2, y, { align: "center" });
+        else pdf.text(line, MX, y);
         y += lineH;
       }
-      y += 2;
+      y += 3;
     };
 
-    /** Small label / value row used on the cover and in tables. */
-    const writeLabelValue = (label: string, value: string) => {
-      ensureSpace(6);
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(10);
-      pdf.setTextColor(...COLOR.muted);
-      pdf.text(label, MX, y);
+    const writePlanetRow = (planetName: string, signLabel: string, degree: number, house: number | undefined) => {
+      ensureSpace(8);
+      // Tiny bullet
+      pdf.setFillColor(...COLOR.lavenderSoft);
+      pdf.circle(MX + 1, y - 1.5, 0.9, "F");
       pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10.5);
       pdf.setTextColor(...COLOR.ink);
-      pdf.text(value, MX + 38, y);
-      y += 5.5;
+      pdf.text(planetName, MX + 5, y);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...COLOR.mutedInk);
+      pdf.text(`${signLabel} ${degree}°${typeof house === "number" ? ` · M${house}` : ""}`, PW - MX, y, { align: "right" });
+      y += 6;
     };
 
-    // ─── Page 1 — Cover ────────────────────────────────────────────
-    paintBackground();
-    drawPageFooter();
+    // ═══ COVER ═══════════════════════════════════════════════════════
+    paintPage("cover");
 
+    // Big star, brand wordmark
+    drawStar(PW / 2, 30, 5, COLOR.lavender);
     pdf.setFont("times", "italic");
-    pdf.setFontSize(14);
-    pdf.setTextColor(...COLOR.accent);
-    pdf.text("Ciel Natal", PW / 2, 40, { align: "center" });
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.lavender);
+    pdf.text("CIEL NATAL", PW / 2, 42, { align: "center" });
 
     pdf.setFont("times", "normal");
     pdf.setFontSize(34);
     pdf.setTextColor(...COLOR.ink);
-    pdf.text(form.prenom || "Voyageur·se", PW / 2, 70, { align: "center" });
+    pdf.text(form.prenom || (locale === "fr" ? "Voyageur·se" : "Traveller"), PW / 2, 64, { align: "center" });
 
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(11);
-    pdf.setTextColor(...COLOR.muted);
-    const subtitle = `${form.jour} ${MONTHS[form.mois - 1]} ${form.annee}` +
-      (form.hasTime ? ` — ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}` : "") +
-      ` — ${form.lieu}`;
-    pdf.text(subtitle, PW / 2, 80, { align: "center" });
-
-    // Big three summary on the cover
-    y = 110;
-    pdf.setFont("times", "normal");
-    pdf.setFontSize(15);
-    pdf.setTextColor(...COLOR.accent);
-    pdf.text(
-      `${translateSign(chart.planets[0].sign, locale)}, ${translateSign(chart.planets[1].sign, locale)}, Ascendant ${chart.ascendant ? translateSign(chart.ascendant.sign, locale) : "—"}`,
-      PW / 2, y, { align: "center" }
-    );
-    y = 122;
     pdf.setFont("helvetica", "italic");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...COLOR.muted);
-    pdf.text(locale === "fr" ? "Soleil · Lune · Ascendant" : "Sun · Moon · Ascendant", PW / 2, y, { align: "center" });
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.mutedInk);
+    pdf.text(locale === "fr" ? "le ciel à ton arrivée" : "the sky at your arrival", PW / 2, 72, { align: "center" });
 
-    // Pull quote near bottom of cover
-    y = PH - 80;
+    // Date/heure/lieu under a thin rule
     pdf.setDrawColor(...COLOR.rose);
     pdf.setLineWidth(0.4);
-    pdf.line(PW / 2 - 20, y, PW / 2 + 20, y);
-    pdf.setFont("times", "italic");
+    pdf.line(PW / 2 - 18, 78, PW / 2 + 18, 78);
+    pdf.setFont("helvetica", "normal");
     pdf.setFontSize(11);
-    pdf.setTextColor(...COLOR.rose);
-    pdf.text("« Le sage domine les étoiles, les étoiles ne dominent pas le sage. »", PW / 2, y + 8, { align: "center", maxWidth: CONTENT_W });
+    pdf.setTextColor(...COLOR.ink);
+    const subtitle = `${form.jour} ${MONTHS[form.mois - 1]} ${form.annee}` +
+      (form.hasTime ? ` · ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}` : "") +
+      ` · ${form.lieu}`;
+    pdf.text(subtitle, PW / 2, 87, { align: "center" });
 
-    // ─── Page 2 — Portrait cosmique ────────────────────────────────
+    // Zodiac wheel image — the visual heart of the cover
+    if (wheelPng) {
+      const imgMaxW = Math.min(CONTENT_W, 130);
+      const imgH = imgMaxW / wheelRatio;
+      pdf.addImage(wheelPng, "PNG", (PW - imgMaxW) / 2, 96, imgMaxW, imgH);
+      y = 96 + imgH + 8;
+    } else {
+      y = 110;
+    }
+
+    // Big three summary
+    pdf.setFont("times", "normal");
+    pdf.setFontSize(14);
+    pdf.setTextColor(...COLOR.lavender);
+    pdf.text(
+      `${translateSign(chart.planets[0].sign, locale)} · ${translateSign(chart.planets[1].sign, locale)} · ${chart.ascendant ? translateSign(chart.ascendant.sign, locale) : "—"}`,
+      PW / 2, y + 4, { align: "center" }
+    );
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...COLOR.mutedInk);
+    pdf.text(locale === "fr" ? "Soleil  ·  Lune  ·  Ascendant" : "Sun  ·  Moon  ·  Ascendant", PW / 2, y + 11, { align: "center" });
+
+    // Cover footer with pull quote
+    pdf.setDrawColor(...COLOR.hairline);
+    pdf.setLineWidth(0.3);
+    pdf.line(MX, PH - 32, PW - MX, PH - 32);
+    pdf.setFont("times", "italic");
+    pdf.setFontSize(10.5);
+    pdf.setTextColor(...COLOR.rose);
+    pdf.text("« Le sage domine les étoiles, les étoiles ne dominent pas le sage. »", PW / 2, PH - 22, { align: "center", maxWidth: CONTENT_W });
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...COLOR.mutedInk);
+    pdf.text("Marsile Ficin · 1486", PW / 2, PH - 16, { align: "center" });
+
+    // ═══ PAGE — PORTRAIT COSMIQUE ═══════════════════════════════════
     pdf.addPage();
-    paintBackground();
-    drawPageFooter();
+    paintPage("content");
+    drawFooter();
     y = TOP;
 
-    writeSectionTitle(locale === "fr" ? "Portrait cosmique" : "Cosmic portrait");
+    writeSectionTitle(
+      locale === "fr" ? "Portrait cosmique" : "Cosmic portrait",
+      locale === "fr" ? "01 · Les trois piliers" : "01 · The three pillars"
+    );
 
     const sun = chart.planets[0];
     const moon = chart.planets[1];
+
+    // Sun
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.lavender);
+    ensureSpace(8);
+    pdf.text(locale === "fr" ? "Soleil" : "Sun", MX, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(...COLOR.mutedInk);
+    pdf.text(`${translateSign(sun.sign, locale)} ${sun.degree}°${typeof sun.house === "number" ? ` · Maison ${sun.house}` : ""}`, MX + 22, y);
+    y += 6;
     writeParagraph(
       locale === "fr"
-        ? `${form.prenom}, ton Soleil est en ${translateSign(sun.sign, locale)} ${sun.degree}° — ${genderize(getIntroSentence(getCosmicPortraitSun(sun.sign, locale)), form.genre)}`
-        : `${form.prenom}, your Sun is in ${translateSign(sun.sign, locale)} ${sun.degree}° — ${getIntroSentence(getCosmicPortraitSun(sun.sign, locale))}`
+        ? genderize(getCosmicPortraitSun(sun.sign, locale), form.genre)
+        : getCosmicPortraitSun(sun.sign, locale)
     );
+
+    // Moon
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.lavender);
+    ensureSpace(8);
+    pdf.text(locale === "fr" ? "Lune" : "Moon", MX, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(...COLOR.mutedInk);
+    pdf.text(`${translateSign(moon.sign, locale)} ${moon.degree}°${typeof moon.house === "number" ? ` · Maison ${moon.house}` : ""}`, MX + 22, y);
+    y += 6;
     writeParagraph(
       locale === "fr"
-        ? `Ta Lune en ${translateSign(moon.sign, locale)} ${moon.degree}° — ${genderize(getIntroSentence(getCosmicPortraitMoon(moon.sign, locale)), form.genre)}`
-        : `Your Moon in ${translateSign(moon.sign, locale)} ${moon.degree}° — ${getIntroSentence(getCosmicPortraitMoon(moon.sign, locale))}`
+        ? genderize(getCosmicPortraitMoon(moon.sign, locale), form.genre)
+        : getCosmicPortraitMoon(moon.sign, locale)
     );
+
+    // Ascendant
     if (chart.ascendant) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(...COLOR.lavender);
+      ensureSpace(8);
+      pdf.text("Ascendant", MX, y);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...COLOR.mutedInk);
+      pdf.text(`${translateSign(chart.ascendant.sign, locale)} ${chart.ascendant.degree}°`, MX + 28, y);
+      y += 6;
       writeParagraph(
         locale === "fr"
-          ? `Ascendant ${translateSign(chart.ascendant.sign, locale)} — ${genderize(getCosmicPortraitAsc(chart.ascendant.sign, locale), form.genre)}`
-          : `Ascendant ${translateSign(chart.ascendant.sign, locale)} — ${getCosmicPortraitAsc(chart.ascendant.sign, locale)}`
+          ? genderize(getCosmicPortraitAsc(chart.ascendant.sign, locale), form.genre)
+          : getCosmicPortraitAsc(chart.ascendant.sign, locale)
       );
     }
 
-    // ─── Page 3 — Planètes ─────────────────────────────────────────
+    // ═══ PAGE — PLANÈTES ════════════════════════════════════════════
     pdf.addPage();
-    paintBackground();
-    drawPageFooter();
+    paintPage("content");
+    drawFooter();
     y = TOP;
 
-    writeSectionTitle(locale === "fr" ? "Tes planètes" : "Your planets");
+    writeSectionTitle(
+      locale === "fr" ? "Tes planètes" : "Your planets",
+      locale === "fr" ? "02 · Les énergies" : "02 · The energies"
+    );
     writeParagraph(
       locale === "fr"
-        ? "Chaque planète éclaire une facette de toi. Ce qu'elle veut, ce qu'elle craint, le rythme qu'elle imprime."
-        : "Each planet lights up a facet of you. What it wants, what it fears, the rhythm it imprints.",
-      { muted: true, size: 10 }
+        ? "Chaque planète éclaire une facette de toi. Voici leurs positions au moment précis de ta naissance."
+        : "Each planet lights up a facet of you. Here are their positions at the precise moment of your birth.",
+      { italic: true, muted: true, size: 10 }
     );
-    y += 2;
 
     for (const p of chart.planets) {
-      ensureSpace(7);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(11);
-      pdf.setTextColor(...COLOR.accent);
-      pdf.text(p.name, MX, y);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(...COLOR.ink);
-      pdf.text(`${translateSign(p.sign, locale)} ${p.degree}°${typeof p.house === "number" ? ` — Maison ${p.house}` : ""}`, MX + 32, y);
-      y += 5.5;
+      writePlanetRow(p.name, translateSign(p.sign, locale), p.degree, p.house);
     }
 
-    // ─── Page 4 — Maisons (only if ascendant known) ─────────────────
+    // ═══ PAGE — ÉLÉMENTS & MODALITÉS ════════════════════════════════
+    const ELEMENT_BY_SIGN: Record<string, "Feu" | "Terre" | "Air" | "Eau"> = {
+      Belier: "Feu", Lion: "Feu", Sagittaire: "Feu",
+      Taureau: "Terre", Vierge: "Terre", Capricorne: "Terre",
+      Gemeaux: "Air", Balance: "Air", Verseau: "Air",
+      Cancer: "Eau", Scorpion: "Eau", Poissons: "Eau",
+    };
+    const MODALITY_BY_SIGN: Record<string, "Cardinal" | "Fixe" | "Mutable"> = {
+      Belier: "Cardinal", Cancer: "Cardinal", Balance: "Cardinal", Capricorne: "Cardinal",
+      Taureau: "Fixe", Lion: "Fixe", Scorpion: "Fixe", Verseau: "Fixe",
+      Gemeaux: "Mutable", Vierge: "Mutable", Sagittaire: "Mutable", Poissons: "Mutable",
+    };
+    const elementCounts = { Feu: 0, Terre: 0, Air: 0, Eau: 0 };
+    const modalityCounts = { Cardinal: 0, Fixe: 0, Mutable: 0 };
+    for (const p of chart.planets) {
+      const e = ELEMENT_BY_SIGN[p.sign]; if (e) elementCounts[e]++;
+      const m = MODALITY_BY_SIGN[p.sign]; if (m) modalityCounts[m]++;
+    }
+
+    pdf.addPage();
+    paintPage("content");
+    drawFooter();
+    y = TOP;
+
+    writeSectionTitle(
+      locale === "fr" ? "Éléments & modalités" : "Elements & modalities",
+      locale === "fr" ? "03 · L'équilibre" : "03 · The balance"
+    );
+    writeParagraph(
+      locale === "fr"
+        ? "L'équilibre des quatre éléments et des trois modalités révèle la dynamique fondamentale de ton thème."
+        : "The balance of the four elements and three modalities reveals the fundamental dynamic of your chart.",
+      { italic: true, muted: true, size: 10 }
+    );
+
+    // Bar chart for elements
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.ink);
+    pdf.text(locale === "fr" ? "Éléments" : "Elements", MX, y);
+    y += 6;
+    const total = chart.planets.length;
+    const elements: { name: string; count: number; rgb: [number, number, number] }[] = [
+      { name: "Feu", count: elementCounts.Feu, rgb: [218, 102, 102] },
+      { name: "Terre", count: elementCounts.Terre, rgb: [125, 168, 110] },
+      { name: "Air", count: elementCounts.Air, rgb: [110, 158, 200] },
+      { name: "Eau", count: elementCounts.Eau, rgb: [148, 122, 184] },
+    ];
+    for (const el of elements) {
+      ensureSpace(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...COLOR.ink);
+      pdf.text(el.name, MX, y);
+      pdf.setTextColor(...COLOR.mutedInk);
+      pdf.text(`${el.count}/${total}`, MX + 26, y);
+      // bar
+      const barX = MX + 38, barY = y - 3, barW = CONTENT_W - 38, barH = 3;
+      pdf.setFillColor(...COLOR.hairline);
+      pdf.rect(barX, barY, barW, barH, "F");
+      pdf.setFillColor(...el.rgb);
+      pdf.rect(barX, barY, barW * (el.count / total), barH, "F");
+      y += 7;
+    }
+    y += 4;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.ink);
+    pdf.text(locale === "fr" ? "Modalités" : "Modalities", MX, y);
+    y += 6;
+    const modalities: { name: string; count: number; rgb: [number, number, number] }[] = [
+      { name: "Cardinal", count: modalityCounts.Cardinal, rgb: [200, 122, 160] },
+      { name: "Fixe", count: modalityCounts.Fixe, rgb: [120, 92, 175] },
+      { name: "Mutable", count: modalityCounts.Mutable, rgb: [110, 158, 200] },
+    ];
+    for (const mod of modalities) {
+      ensureSpace(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...COLOR.ink);
+      pdf.text(mod.name, MX, y);
+      pdf.setTextColor(...COLOR.mutedInk);
+      pdf.text(`${mod.count}/${total}`, MX + 26, y);
+      const barX = MX + 38, barY = y - 3, barW = CONTENT_W - 38, barH = 3;
+      pdf.setFillColor(...COLOR.hairline);
+      pdf.rect(barX, barY, barW, barH, "F");
+      pdf.setFillColor(...mod.rgb);
+      pdf.rect(barX, barY, barW * (mod.count / total), barH, "F");
+      y += 7;
+    }
+
+    // ═══ PAGE — MAISONS ═════════════════════════════════════════════
     if (chart.ascendant) {
       pdf.addPage();
-      paintBackground();
-      drawPageFooter();
+      paintPage("content");
+      drawFooter();
       y = TOP;
 
-      writeSectionTitle(locale === "fr" ? "Tes douze maisons" : "Your twelve houses");
+      writeSectionTitle(
+        locale === "fr" ? "Tes douze maisons" : "Your twelve houses",
+        locale === "fr" ? "04 · Les domaines de vie" : "04 · Life domains"
+      );
       writeParagraph(
         locale === "fr"
-          ? "Les maisons sont les scènes où tes planètes jouent leur partition. Voici celles qui sont habitées."
-          : "Houses are the stages on which your planets play. Here are the ones that are inhabited.",
-        { muted: true, size: 10 }
+          ? "Les maisons sont les scènes où tes planètes jouent leur partition. Voici les domaines qui appellent ton attention."
+          : "Houses are the stages on which your planets perform. Here are the life areas that ask for your attention.",
+        { italic: true, muted: true, size: 10 }
       );
 
       const byHouse = new Map<number, string[]>();
@@ -651,75 +895,110 @@ export default function Home() {
         }
       }
       const houseNames: Record<number, string> = {
-        1: "Identité, premier abord", 2: "Valeurs, ressources",
-        3: "Communication, fratrie", 4: "Foyer, racines",
-        5: "Création, plaisir", 6: "Quotidien, santé",
-        7: "Liens, partenariats", 8: "Profondeurs, transformations",
-        9: "Horizons, sens", 10: "Vocation, image publique",
-        11: "Réseaux, futur", 12: "Retrait, inconscient",
+        1: locale === "fr" ? "Identité, premier abord" : "Identity, first impression",
+        2: locale === "fr" ? "Valeurs, ressources" : "Values, resources",
+        3: locale === "fr" ? "Communication, fratrie" : "Communication, siblings",
+        4: locale === "fr" ? "Foyer, racines" : "Home, roots",
+        5: locale === "fr" ? "Création, plaisir" : "Creation, pleasure",
+        6: locale === "fr" ? "Quotidien, santé" : "Daily life, health",
+        7: locale === "fr" ? "Liens, partenariats" : "Bonds, partnerships",
+        8: locale === "fr" ? "Profondeurs, transformations" : "Depths, transformations",
+        9: locale === "fr" ? "Horizons, sens" : "Horizons, meaning",
+        10: locale === "fr" ? "Vocation, image publique" : "Vocation, public image",
+        11: locale === "fr" ? "Réseaux, futur" : "Networks, future",
+        12: locale === "fr" ? "Retrait, inconscient" : "Retreat, unconscious",
       };
       for (let h = 1; h <= 12; h++) {
         const planets = byHouse.get(h);
         if (!planets || planets.length === 0) continue;
-        ensureSpace(11);
+        ensureSpace(13);
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(10.5);
-        pdf.setTextColor(...COLOR.accent);
-        pdf.text(`Maison ${h} — ${houseNames[h]}`, MX, y);
+        pdf.setFontSize(11);
+        pdf.setTextColor(...COLOR.lavender);
+        pdf.text(`${locale === "fr" ? "Maison" : "House"} ${h}`, MX, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(...COLOR.mutedInk);
+        pdf.text(houseNames[h], MX + 22, y);
         y += 5;
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(10.5);
+        pdf.setFontSize(10);
         pdf.setTextColor(...COLOR.ink);
-        const lines = pdf.splitTextToSize(planets.join(", "), CONTENT_W) as string[];
+        const lines = pdf.splitTextToSize(planets.join(" · "), CONTENT_W) as string[];
         for (const line of lines) {
           ensureSpace(5);
           pdf.text(line, MX, y);
           y += 5;
         }
-        y += 2;
+        y += 3;
       }
     }
 
-    // ─── Page 5 — Aspects ──────────────────────────────────────────
+    // ═══ PAGE — ASPECTS ═════════════════════════════════════════════
     if (chart.aspects && chart.aspects.length > 0) {
       pdf.addPage();
-      paintBackground();
-      drawPageFooter();
+      paintPage("content");
+      drawFooter();
       y = TOP;
 
-      writeSectionTitle(locale === "fr" ? "Tes aspects clés" : "Your key aspects");
+      writeSectionTitle(
+        locale === "fr" ? "Tes aspects clés" : "Your key aspects",
+        locale === "fr" ? "05 · Les dialogues" : "05 · The dialogues"
+      );
       writeParagraph(
         locale === "fr"
-          ? "Les aspects sont les dialogues entre tes planètes — ce qui s'allume, ce qui se frotte, ce qui s'apaise."
-          : "Aspects are the dialogues between your planets — what lights up, what rubs, what soothes.",
-        { muted: true, size: 10 }
+          ? "Les aspects sont les dialogues entre tes planètes — ce qui s'allume, ce qui se frotte, ce qui s'apaise. Voici les douze plus marqués de ta carte."
+          : "Aspects are the dialogues between your planets — what lights up, what rubs, what soothes. Here are the twelve most pronounced in your chart.",
+        { italic: true, muted: true, size: 10 }
       );
 
-      const aspectGlyph: Record<string, string> = {
-        Conjonction: "○", Trigone: "△", Sextile: "✶", Carre: "□", Opposition: "◇",
-      };
+      // Legend (small)
+      ensureSpace(20);
+      const legendItems: { type: string; label: string }[] = [
+        { type: "Conjonction", label: locale === "fr" ? "Conjonction" : "Conjunction" },
+        { type: "Trigone", label: locale === "fr" ? "Trigone" : "Trine" },
+        { type: "Sextile", label: locale === "fr" ? "Sextile" : "Sextile" },
+        { type: "Carre", label: locale === "fr" ? "Carré" : "Square" },
+        { type: "Opposition", label: locale === "fr" ? "Opposition" : "Opposition" },
+      ];
+      let lx = MX;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(...COLOR.mutedInk);
+      for (const item of legendItems) {
+        drawAspectGlyph(item.type, lx + 3, y);
+        pdf.text(item.label, lx + 7, y + 1);
+        lx += 34;
+      }
+      y += 8;
+
       for (const a of chart.aspects.slice(0, 12)) {
-        ensureSpace(7);
+        ensureSpace(8);
+        drawAspectGlyph(a.type, MX + 2.5, y - 1);
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10.5);
         pdf.setTextColor(...COLOR.ink);
-        const glyph = aspectGlyph[a.type] || "·";
-        pdf.text(`${a.planet1}  ${glyph}  ${a.planet2}`, MX, y);
+        pdf.text(`${a.planet1}  —  ${a.planet2}`, MX + 8, y);
         pdf.setFont("helvetica", "italic");
-        pdf.setFontSize(9.5);
-        pdf.setTextColor(...COLOR.muted);
-        pdf.text(`${a.type} — ${a.orb}°`, PW - MX, y, { align: "right" });
-        y += 5.5;
+        pdf.setFontSize(9);
+        pdf.setTextColor(...COLOR.mutedInk);
+        const typeLabel = locale === "fr"
+          ? (a.type === "Carre" ? "Carré" : a.type)
+          : (a.type === "Carre" ? "Square" : a.type === "Conjonction" ? "Conjunction" : a.type === "Trigone" ? "Trine" : a.type);
+        pdf.text(`${typeLabel} · ${a.orb}°`, PW - MX, y, { align: "right" });
+        y += 6.5;
       }
     }
 
-    // ─── Last page — Closing ───────────────────────────────────────
+    // ═══ FINAL PAGE — CLOSING ═══════════════════════════════════════
     pdf.addPage();
-    paintBackground();
-    drawPageFooter();
-    y = TOP;
+    paintPage("content");
+    drawFooter();
+    y = TOP + 6;
 
-    writeSectionTitle(locale === "fr" ? `Un dernier mot, ${form.prenom}` : `A last word, ${form.prenom}`);
+    writeSectionTitle(
+      locale === "fr" ? `Un dernier mot, ${form.prenom}` : `A last word, ${form.prenom}`,
+      locale === "fr" ? "Fermeture" : "Closing"
+    );
     writeParagraph(
       locale === "fr"
         ? "Cette carte est une photographie du ciel au moment précis de ta naissance — un instant unique dans l'histoire du cosmos. Elle ne prédit rien. Elle ne détermine rien. Elle éclaire."
@@ -732,15 +1011,19 @@ export default function Home() {
     );
     writeParagraph(
       locale === "fr"
-        ? "Tu es l'auteur·e de ton histoire — le ciel n'en est que la toile étoilée."
+        ? `Tu es l'auteur·e de ton histoire — le ciel n'en est que la toile étoilée.`
         : "You are the author of your story — the sky is only its starry canvas."
     );
 
-    y += 6;
+    y += 8;
+    pdf.setDrawColor(...COLOR.rose);
+    pdf.setLineWidth(0.4);
+    pdf.line(PW / 2 - 14, y, PW / 2 + 14, y);
+    y += 8;
     pdf.setFont("times", "italic");
     pdf.setFontSize(11);
     pdf.setTextColor(...COLOR.rose);
-    const quoteLines = pdf.splitTextToSize("« Le sage domine les étoiles, les étoiles ne dominent pas le sage. »", CONTENT_W) as string[];
+    const quoteLines = pdf.splitTextToSize("« Le sage domine les étoiles, les étoiles ne dominent pas le sage. »", CONTENT_W * 0.85) as string[];
     for (const line of quoteLines) {
       ensureSpace(5);
       pdf.text(line, PW / 2, y, { align: "center" });
@@ -1543,7 +1826,9 @@ export default function Home() {
                       </button>
                     )}
                   </div>
-                  <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); if (activeTab !== "planets") { scrollToTab("planets"); setTimeout(() => togglePlanet(p.name), 200); } else { togglePlanet(p.name); } }} />
+                  <div ref={zodiacWheelRef}>
+                    <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); if (activeTab !== "planets") { scrollToTab("planets"); setTimeout(() => togglePlanet(p.name), 200); } else { togglePlanet(p.name); } }} />
+                  </div>
                 </div>
 
                 {/* ── Ton Portrait Cosmique (Big Three fused) ── */}
