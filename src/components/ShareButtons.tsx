@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLocale } from "@/lib/i18n";
+import { blogShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 
 interface Props {
   /** URL to share (absolute). Defaults to current page URL at runtime. */
@@ -23,7 +24,12 @@ export default function ShareButtons({ url, title, compact = false }: Props) {
   const twitter = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
   const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
   const whatsapp = `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
-  const email = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
+  // Email body: warm, contextualized note from a friend rather than just
+  // pasting the URL in the subject line (PY's screenshot was the worst case
+  // — Gmail "Objet" field showed only the raw URL).
+  const email = toMailtoUrl(
+    blogShareMessage({ url: shareUrl, title, locale: locale === "en" ? "en" : "fr" })
+  );
 
   const copyLink = async () => {
     if (!shareUrl) return;

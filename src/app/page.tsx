@@ -18,6 +18,7 @@ import SectionTransition from "@/components/results/SectionTransition";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
 import { stashPendingPdf } from "@/lib/pending-pdf";
+import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
@@ -2321,19 +2322,40 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8 flex-wrap">
                   {/* Share anonymously (default — no name, safe for social) */}
                   <button onClick={() => {
                       const url = getAnonymousShareUrl();
-                      const text = locale === "fr"
-                        ? `Une carte du ciel : Soleil en ${translateSign(chart.planets[0].sign, locale)}, Lune en ${translateSign(chart.planets[1].sign, locale)}${chart.ascendant ? `, Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}. Découvre la tienne !`
-                        : `A natal chart: Sun in ${translateSign(chart.planets[0].sign, locale)}, Moon in ${translateSign(chart.planets[1].sign, locale)}${chart.ascendant ? `, Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}. Discover yours!`;
-                      if (navigator.share) { navigator.share({ title: locale === "fr" ? "Carte du ciel" : "Natal Chart", text, url }); }
-                      else { navigator.clipboard.writeText(text + "\n" + url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+                      const bigThree = `${translateSign(chart.planets[0].sign, locale)} · ${translateSign(chart.planets[1].sign, locale)}${chart.ascendant ? ` · Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}`;
+                      // Reuse the shared message builder so the body matches
+                      // the dedicated Email button below.
+                      const msg = chartShareMessage({ url, bigThree, locale: locale === "en" ? "en" : "fr" });
+                      if (navigator.share) {
+                        navigator.share({ title: msg.subject, text: msg.body, url });
+                      } else {
+                        navigator.clipboard.writeText(`${msg.body}`);
+                        setCopied(true); setTimeout(() => setCopied(false), 2000);
+                      }
                     }} className="btn-primary px-6 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
                     {t("results.shareLink")}
                   </button>
+                  {/* Dedicated email button — opens the default mail client
+                      with a warm, contextual body (PY's feedback: "Pour le
+                      partage via courriel, le sujet brut c'est moche, faut
+                      contextualiser"). */}
+                  <a
+                    href={toMailtoUrl(chartShareMessage({
+                      url: getAnonymousShareUrl(),
+                      bigThree: `${translateSign(chart.planets[0].sign, locale)} · ${translateSign(chart.planets[1].sign, locale)}${chart.ascendant ? ` · Ascendant ${translateSign(chart.ascendant.sign, locale)}` : ""}`,
+                      locale: locale === "en" ? "en" : "fr",
+                    }))}
+                    className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2"
+                    aria-label={locale === "fr" ? "Partager par email" : "Share by email"}
+                  >
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    {locale === "fr" ? "Email" : "Email"}
+                  </a>
                   {/* Copy full personal link (with name) */}
                   <button onClick={() => {
                       navigator.clipboard.writeText(getShareUrl());

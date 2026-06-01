@@ -8,6 +8,7 @@ import PremiumBadge from "@/components/PremiumBadge";
 import { useAuth } from "@/lib/auth-context";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign } from "@/lib/astro";
 import { useLocale } from "@/lib/i18n";
+import { synastryShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 
 interface PersonData {
   prenom: string;
@@ -548,44 +549,67 @@ export default function SynastryPage() {
                     {/* Share button — copies a self-contained URL with both
                         people + relation type. Recipient lands on the same
                         reading without re-typing anything. */}
-                    {interpText && !interpLoading && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            const payload = {
-                              a: { n: personA.prenom, j: personA.jour, m: personA.mois, y: personA.annee, h: personA.heure, mn: personA.minute, ht: personA.hasTime ? 1 : 0, l: personA.lieu, la: personA.latitude, lo: personA.longitude },
-                              b: { n: personB.prenom, j: personB.jour, m: personB.mois, y: personB.annee, h: personB.heure, mn: personB.minute, ht: personB.hasTime ? 1 : 0, l: personB.lieu, la: personB.latitude, lo: personB.longitude },
-                              r: relationType,
-                            };
-                            const encoded = btoa(JSON.stringify(payload));
-                            const url = `${window.location.origin}/synastrie?s=${encodeURIComponent(encoded)}`;
-                            await navigator.clipboard.writeText(url);
-                            setShareCopied(true);
-                            setTimeout(() => setShareCopied(false), 2500);
-                          } catch {
-                            /* clipboard may be denied — fall through silently */
-                          }
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border border-[var(--color-accent-rose)]/30 bg-[var(--color-accent-rose)]/10 text-[var(--color-accent-rose)] hover:bg-[var(--color-accent-rose)]/20 transition flex-shrink-0"
-                      >
-                        {shareCopied ? (
-                          <>
-                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            {locale === "fr" ? "Lien copié" : "Link copied"}
-                          </>
-                        ) : (
-                          <>
+                    {interpText && !interpLoading && (() => {
+                      // Build the share URL once and reuse for both buttons.
+                      const payload = {
+                        a: { n: personA.prenom, j: personA.jour, m: personA.mois, y: personA.annee, h: personA.heure, mn: personA.minute, ht: personA.hasTime ? 1 : 0, l: personA.lieu, la: personA.latitude, lo: personA.longitude },
+                        b: { n: personB.prenom, j: personB.jour, m: personB.mois, y: personB.annee, h: personB.heure, mn: personB.minute, ht: personB.hasTime ? 1 : 0, l: personB.lieu, la: personB.latitude, lo: personB.longitude },
+                        r: relationType,
+                      };
+                      const shareUrl = typeof window !== "undefined"
+                        ? `${window.location.origin}/synastrie?s=${encodeURIComponent(btoa(JSON.stringify(payload)))}`
+                        : "";
+                      const mailtoHref = toMailtoUrl(synastryShareMessage({
+                        url: shareUrl, prenomA: personA.prenom, prenomB: personB.prenom,
+                        relationType, locale: locale === "en" ? "en" : "fr",
+                      }));
+                      return (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Email — opens default mail with a warm body */}
+                          <a
+                            href={mailtoHref}
+                            aria-label={locale === "fr" ? "Envoyer par email" : "Send by email"}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-[var(--color-accent-rose)]/30 bg-[var(--color-accent-rose)]/10 text-[var(--color-accent-rose)] hover:bg-[var(--color-accent-rose)]/20 transition"
+                          >
                             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                              <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                              <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" /><line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                              <polyline points="22,6 12,13 2,6" />
                             </svg>
-                            {locale === "fr" ? "Partager" : "Share"}
-                          </>
-                        )}
-                      </button>
-                    )}
+                            {locale === "fr" ? "Envoyer" : "Send"}
+                          </a>
+                          {/* Copy link */}
+                          <button
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(shareUrl);
+                                setShareCopied(true);
+                                setTimeout(() => setShareCopied(false), 2500);
+                              } catch {
+                                /* clipboard may be denied — fall through silently */
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-[var(--color-glass-border)] bg-white/[0.04] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/[0.08] transition"
+                          >
+                            {shareCopied ? (
+                              <>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                {locale === "fr" ? "Copié" : "Copied"}
+                              </>
+                            ) : (
+                              <>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                                </svg>
+                                {locale === "fr" ? "Lien" : "Link"}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                   {interpLoading && (
                     <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] py-6">
