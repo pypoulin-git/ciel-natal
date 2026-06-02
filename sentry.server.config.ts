@@ -3,12 +3,22 @@
 // Privacy hardening (Loi 25 + Sentry EU region):
 //   - sendDefaultPii: false — no IP, no Authorization header forwarded.
 //   - beforeSend scrubs query strings + a denylist of sensitive headers.
+//
+// AI Monitoring:
+//   - vercelAIIntegration({ force: true }) — required on Vercel because the
+//     `ai` package gets bundled, breaking automatic module detection. With
+//     `force: true` we still get semantic span names (gen_ai.*) and token
+//     metrics on every call wrapped with experimental_telemetry.
+//   - anthropicAIIntegration() — listed defensively (Anthropic isn't currently
+//     called by any route, but if a future route adds it the integration will
+//     auto-instrument).
+//   - recordInputs/recordOutputs follow sendDefaultPii — both default to FALSE
+//     here, so prompts and completions never leave for Sentry. We only get
+//     model name, latency, and token counts.
 import * as Sentry from "@sentry/nextjs";
 
 const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-// Header keys that must NEVER reach Sentry — they would either leak a
-// secret (signature, auth token) or PII (cookie, ip).
 const SENSITIVE_HEADERS = new Set([
   "authorization",
   "cookie",
@@ -21,11 +31,13 @@ const SENSITIVE_HEADERS = new Set([
 if (dsn) {
   Sentry.init({
     dsn,
-    tracesSampleRate: 0.1,
+    tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
     sendDefaultPii: false,
-    // VERCEL_ENV is set automatically by Vercel and distinguishes
-    // production / preview / development. Falls back to NODE_ENV locally.
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+    integrations: [
+      Sentry.vercelAIIntegration({ force: true }),
+      Sentry.anthropicAIIntegration(),
+    ],
     beforeSend(event) {
       if (event.request?.url) {
         try {

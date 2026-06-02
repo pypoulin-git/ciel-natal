@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@supabase/supabase-js";
 
 // ─────────────────────────────────────────────────────────────
@@ -27,6 +28,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Sentry cron monitor — first of each month at 07:00 UTC. 1h hard timeout
+  // since Supabase batch deletes can be slow on cold caches.
+  return Sentry.withMonitor(
+    "cleanup-audio",
+    async () => {
   try {
     const supabase = getSupabaseAdmin();
     const cutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -94,4 +100,12 @@ export async function GET(req: NextRequest) {
     console.error("[cron/cleanup-audio] fatal:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+    },
+    {
+      schedule: { type: "crontab", value: "0 7 1 * *" }, // 1st of month @ 07:00 UTC
+      checkinMargin: 10,  // 10-min grace before "missed"
+      maxRuntime: 60,     // 1h hard timeout
+      timezone: "UTC",
+    },
+  );
 }

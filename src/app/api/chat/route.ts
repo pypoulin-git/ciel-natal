@@ -231,6 +231,10 @@ Exemple à éviter :
       messages,
       maxOutputTokens: maxTokens,
       temperature: 0.7,
+      // Sentry AI Monitoring — captures model, tokens, latency. Prompts and
+      // completions stay private (sendDefaultPii: false → recordInputs/Outputs
+      // default to false).
+      experimental_telemetry: { isEnabled: true, functionId: "chat-stream" },
       onError: ({ error }) => {
         const e = error as { message?: string; name?: string };
         console.error("[chat] streamText onError:", e?.name, e?.message);

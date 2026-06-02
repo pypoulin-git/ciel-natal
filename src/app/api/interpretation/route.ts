@@ -130,6 +130,8 @@ ${sectionPrompt}`;
       prompt: locale === "en" ? "Write the reading now." : "Écris la lecture maintenant.",
       maxOutputTokens: 1800,
       temperature: 0.75,
+      // Sentry AI Monitoring. Prompts stay private via sendDefaultPii:false.
+      experimental_telemetry: { isEnabled: true, functionId: "interpretation" },
     });
 
     const text = result.text.trim();

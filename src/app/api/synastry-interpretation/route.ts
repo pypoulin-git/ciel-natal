@@ -133,6 +133,7 @@ Pour chaque section : 2 à 4 paragraphes pleins, charnus, qui prennent leur temp
       // 5 sections × 3-4 paragraphs needs more headroom.
       maxOutputTokens: 4096,
       temperature: 0.75,
+      experimental_telemetry: { isEnabled: true, functionId: "synastry-interpretation" },
     });
 
     const text = result.text.trim();

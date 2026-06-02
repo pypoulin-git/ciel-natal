@@ -44,12 +44,20 @@ const nextConfig: NextConfig = {
 };
 
 // Sentry wrapper — active only when SENTRY_DSN is set. Otherwise a no-op.
+// org/project are read from SENTRY_ORG / SENTRY_PROJECT env vars (or hard-code
+// them here once the Sentry account exists).
 export default withSentryConfig(nextConfig, {
-  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Wider client file upload for cleaner stack traces in browser errors.
+  widenClientFileUpload: true,
   // Tunnel route to bypass ad-blockers (only active when DSN present).
+  // Must be excluded from src/middleware.ts matcher — already handled.
   tunnelRoute: "/monitoring",
   // Skip source map upload when token missing (avoids local build errors).
   sourcemaps: {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
+  silent: !process.env.CI,
 });

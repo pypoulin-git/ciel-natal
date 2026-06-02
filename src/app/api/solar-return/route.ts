@@ -82,6 +82,7 @@ Environ 500 mots au total. Adresse directe (tu). Pas de prédictions déterminis
       prompt: locale === "en" ? "Write the solar return reading now." : "Écris la lecture de révolution solaire maintenant.",
       maxOutputTokens: 1200,
       temperature: 0.75,
+      experimental_telemetry: { isEnabled: true, functionId: "solar-return" },
     });
 
     const text = result.text.trim();

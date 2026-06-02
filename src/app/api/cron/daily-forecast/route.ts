@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@supabase/supabase-js";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
@@ -45,7 +46,10 @@ async function generateForecast(transitsLine: string): Promise<{
   fr: string;
   en: string;
 }> {
-  const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  // Gate now checks the key actually used (Gemini). The previous
+  // ANTHROPIC_API_KEY check was a leftover from the pre-migration code
+  // — the model call below has always been Gemini Flash-Lite.
+  const hasKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!hasKey) {
     // Graceful fallback: return a neutral cosmic message
     return {
@@ -73,6 +77,7 @@ Réponds uniquement avec le JSON, rien d'autre.`;
     model: google("gemini-2.5-flash-lite"),
     prompt,
     temperature: 0.85,
+    experimental_telemetry: { isEnabled: true, functionId: "daily-forecast" },
   });
 
   // Extract JSON from response (Haiku sometimes wraps in ```json)
@@ -91,42 +96,56 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const chart = todaysTransits();
-    const transitsLine = formatTransits(chart);
+  // Sentry cron monitor — detects missed runs (Vercel cron didn't fire),
+  // timeouts (>5 min), and failures. Monitor slug + schedule upserted from
+  // the SDK on first call.
+  return Sentry.withMonitor(
+    "daily-forecast",
+    async () => {
+      try {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const chart = todaysTransits();
+        const transitsLine = formatTransits(chart);
 
-    const forecast = await generateForecast(transitsLine);
+        const forecast = await generateForecast(transitsLine);
 
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("daily_forecasts").upsert(
-      {
-        forecast_date: today,
-        summary_fr: forecast.fr,
-        summary_en: forecast.en,
-        transits: { planets: chart.planets, line: transitsLine },
-        generated_at: new Date().toISOString(),
-      },
-      { onConflict: "forecast_date" }
-    );
+        const supabase = getSupabaseAdmin();
+        const { error } = await supabase.from("daily_forecasts").upsert(
+          {
+            forecast_date: today,
+            summary_fr: forecast.fr,
+            summary_en: forecast.en,
+            transits: { planets: chart.planets, line: transitsLine },
+            generated_at: new Date().toISOString(),
+          },
+          { onConflict: "forecast_date" }
+        );
 
-    if (error) {
-      console.error("[cron/daily-forecast] supabase error:", error);
-      return NextResponse.json(
-        { error: "DB write failed", detail: error.message },
-        { status: 500 }
-      );
-    }
+        if (error) {
+          console.error("[cron/daily-forecast] supabase error:", error);
+          return NextResponse.json(
+            { error: "DB write failed", detail: error.message },
+            { status: 500 }
+          );
+        }
 
-    return NextResponse.json({
-      ok: true,
-      date: today,
-      transits: transitsLine,
-      forecast,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[cron/daily-forecast] error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+        return NextResponse.json({
+          ok: true,
+          date: today,
+          transits: transitsLine,
+          forecast,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[cron/daily-forecast] error:", msg);
+        return NextResponse.json({ error: msg }, { status: 500 });
+      }
+    },
+    {
+      schedule: { type: "crontab", value: "0 10 * * *" }, // 10:00 UTC daily
+      checkinMargin: 5,   // 5-min grace before declaring "missed"
+      maxRuntime: 5,      // 5-min hard timeout
+      timezone: "UTC",
+    },
+  );
 }

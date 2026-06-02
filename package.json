@@ -17,7 +17,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.79",
     "@ai-sdk/react": "^3.0.148",
-    "@sentry/nextjs": "^10.47.0",
+    "@sentry/nextjs": "10.55.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "@upstash/ratelimit": "^2.0.8",
