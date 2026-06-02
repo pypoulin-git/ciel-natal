@@ -10,7 +10,7 @@ export default function Confidentialite() {
   return (
     <PageShell title={fr ? "Politique de confidentialité" : "Privacy Policy"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 14 mai 2026" : "Last updated: May 14, 2026"}
+        {fr ? "Dernière mise à jour : 2 juin 2026" : "Last updated: June 2, 2026"}
       </p>
 
       <section>
@@ -95,10 +95,17 @@ export default function Confidentialite() {
             <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">stripe.com/privacy</a>
           </li>
           <li>
+            <strong className="text-[var(--color-text-primary)]">Google (Gemini)</strong> —{" "}
+            {fr
+              ? "Génère les interprétations astrologiques personnalisées, le chat IA, et la narration audio. Hébergement États-Unis. Reçoit : ta carte natale (positions planétaires, prénom, genre, préférences de lecture) et tes messages dans le chat. Google s'engage à ne pas utiliser ces données API pour entraîner ses modèles (politique « no training on API data »). Lien : "
+              : "Generates personalized astrological interpretations, AI chat, and audio narration. Hosted in USA. Receives: your natal chart (planet positions, first name, gender, reading preferences) and your chat messages. Google commits not to use API data for training (\"no training on API data\" policy). Link: "}
+            <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">ai.google.dev/gemini-api/terms</a>
+          </li>
+          <li>
             <strong className="text-[var(--color-text-primary)]">Anthropic (Claude)</strong> —{" "}
             {fr
-              ? "Génère les interprétations astrologiques et le chat IA. Hébergement États-Unis. Reçoit : ta carte natale (positions planétaires, prénom, genre) et tes messages dans le chat. Anthropic s'engage à ne pas utiliser ces données pour entraîner ses modèles. Lien : "
-              : "Generates the astrological interpretations and AI chat. Hosted in USA. Receives: your natal chart (planet positions, first name, gender) and your chat messages. Anthropic commits not to use this data for training. Link: "}
+              ? "Utilisé uniquement pour le bulletin quotidien public (12 signes, sans donnée personnelle). Hébergement États-Unis. Aucun envoi de ta carte natale ni de tes messages. Lien : "
+              : "Used only for the public daily forecast (12 zodiac signs, no personal data). Hosted in USA. Your natal chart and chat messages are never sent. Link: "}
             <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">anthropic.com/legal/privacy</a>
           </li>
           <li>
@@ -116,10 +123,10 @@ export default function Confidentialite() {
             <a href="https://upstash.com/trust/privacy.pdf" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">upstash.com/trust</a>
           </li>
           <li>
-            <strong className="text-[var(--color-text-primary)]">Sentry</strong> —{" "}
+            <strong className="text-[var(--color-text-primary)]">Sentry (Functional Software GmbH)</strong> —{" "}
             {fr
-              ? "Suivi des erreurs techniques. Hébergement Europe (Allemagne) ou États-Unis selon la région. Reçoit : pile d'appel, URL, navigateur, parfois ton identifiant utilisateur si l'erreur survient pendant que tu es connecté. Pas de données de naissance. Lien : "
-              : "Technical error tracking. Hosted in Europe (Germany) or USA. Receives: stack trace, URL, browser, and sometimes your user ID if the error happens while signed in. No birth data. Link: "}
+              ? "Suivi des erreurs techniques. Hébergement Union européenne (Francfort, Allemagne) — région choisie explicitement pour rester sous la juridiction RGPD, considérée équivalente par la Loi 25. Reçoit : pile d'appel, URL nettoyée (paramètres retirés), navigateur. Ne reçoit pas : ton adresse IP, ton identifiant utilisateur, tes cookies, l'en-tête Authorization, les en-têtes de signature Stripe, ni aucune donnée de naissance. Un accord de traitement des données (DPA) est en place avec Sentry. Lien : "
+              : "Technical error tracking. Hosted in the European Union (Frankfurt, Germany) — region chosen explicitly to remain under GDPR jurisdiction, considered equivalent under Quebec Law 25. Receives: stack trace, sanitized URL (query strings stripped), browser. Does NOT receive: your IP, user ID, cookies, Authorization header, Stripe signature headers, or any birth data. A Data Processing Agreement (DPA) is in place with Sentry. Link: "}
             <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">sentry.io/privacy</a>
           </li>
           <li>
