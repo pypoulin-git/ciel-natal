@@ -8,8 +8,13 @@ if (dsn) {
   Sentry.init({
     dsn,
     tracesSampleRate: 0.1,
+    // Session replays entirely disabled — Loi 25 / RGPD concerns over
+    // recording user activity even on error. Stack traces + breadcrumbs
+    // are enough for triage.
     replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 1.0,
-    environment: process.env.NODE_ENV,
+    replaysOnErrorSampleRate: 0,
+    // VERCEL_ENV distinguishes production / preview / development; NODE_ENV
+    // would tag every Vercel preview as "production" which makes alerts noisy.
+    environment: process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV,
   });
 }

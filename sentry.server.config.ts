@@ -7,6 +7,8 @@ if (dsn) {
   Sentry.init({
     dsn,
     tracesSampleRate: 0.1,
-    environment: process.env.NODE_ENV,
+    // VERCEL_ENV is set automatically by Vercel and distinguishes
+    // production / preview / development. Falls back to NODE_ENV locally.
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
   });
 }
