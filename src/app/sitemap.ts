@@ -24,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/conditions`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.3 },
     { url: `${BASE_URL}/signe`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.8, alternates: { languages: langs } },
     { url: `${BASE_URL}/synastrie`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7, alternates: { languages: langs } },
-    { url: `${BASE_URL}/revolution-solaire`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6, alternates: { languages: langs } },
+    // /revolution-solaire désactivée — refonte planifiée (voir BACKLOG.md).
     { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7, alternates: { languages: langs } },
     { url: `${BASE_URL}/premium`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
   ];

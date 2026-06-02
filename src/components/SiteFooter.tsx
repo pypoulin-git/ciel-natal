@@ -40,9 +40,7 @@ export default function SiteFooter() {
             <Link href="/blog" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
               {t("nav.blog")}
             </Link>
-            <Link href="/revolution-solaire" className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1">
-              {locale === "fr" ? "Révolution solaire" : "Solar Return"}
-            </Link>
+            {/* Révolution solaire désactivée — voir BACKLOG.md (refonte). */}
           </nav>
         </div>
         <div className="text-center mt-8">

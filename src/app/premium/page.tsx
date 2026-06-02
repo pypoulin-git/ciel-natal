@@ -10,7 +10,7 @@ const PRODUCT_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Ciel Natal Premium",
-  description: "Lifetime access to full astrological interpretations, unlimited AI chat, PDF export, saved charts, audio narration, synastry, solar return and personalized transits.",
+  description: "Lifetime access to full astrological interpretations, unlimited AI chat, PDF export, saved charts, audio narration, synastry and personalized transits.",
   brand: { "@type": "Brand", name: "Ciel Natal" },
   offers: {
     "@type": "Offer",
@@ -28,7 +28,7 @@ const FEATURES_FR = [
   { icon: "💾", title: "Sauvegarde de cartes", desc: "Enregistre jusqu'à 10 cartes (amis, famille, partenaire)." },
   { icon: "🎧", title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
   { icon: "💞", title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
-  { icon: "☀️", title: "Révolution solaire", desc: "Découvre les énergies de ton année personnelle." },
+  // Révolution solaire désactivée — refonte planifiée (voir BACKLOG.md).
   { icon: "🔮", title: "Transits personnalisés", desc: "Les mouvements planétaires actuels croisés avec ta carte." },
 ];
 
@@ -39,7 +39,7 @@ const FEATURES_EN = [
   { icon: "💾", title: "Save charts", desc: "Save up to 10 charts (friends, family, partner)." },
   { icon: "🎧", title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
   { icon: "💞", title: "Synastry", desc: "Explore compatibility between two birth charts." },
-  { icon: "☀️", title: "Solar return", desc: "Discover the energies of your personal year." },
+  // Solar return disabled — redesign planned (see BACKLOG.md).
   { icon: "🔮", title: "Personalized transits", desc: "Current planetary movements crossed with your chart." },
 ];
 

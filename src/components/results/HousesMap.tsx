@@ -3,9 +3,24 @@
 import { useState } from "react";
 import { PlanetPosition } from "@/lib/astro";
 import { PlanetIcon } from "@/components/AstroIcons";
+import Tooltip from "@/components/Tooltip";
 import { houseDescriptions as houseDescFr, planetInHouse as pihFr } from "@/data/interpretations";
 import { houseDescriptions as houseDescEn, planetInHouse as pihEn } from "@/data/interpretations-en";
 import { genderize, Genre } from "@/lib/chartHelpers";
+
+/**
+ * Tronque proprement un texte à ~N caractères pour le tooltip (sans
+ * couper en plein milieu d'un mot, sans laisser un espace orphelin
+ * avant l'ellipse).
+ */
+function truncateForTip(text: string, max = 140): string {
+  if (!text) return "";
+  if (text.length <= max) return text;
+  const slice = text.slice(0, max);
+  const lastSpace = slice.lastIndexOf(" ");
+  const cut = lastSpace > 60 ? slice.slice(0, lastSpace) : slice;
+  return cut.trimEnd() + "…";
+}
 
 interface Props {
   planets: PlanetPosition[];
@@ -58,44 +73,68 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
               }
             >
               {/* Header */}
-              <button
-                onClick={() => toggle(h)}
-                className="w-full flex items-center gap-3 p-3 sm:p-4 text-left cursor-pointer select-none"
-              >
-                <span
-                  className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-mono text-xs font-semibold ${
-                    hasOccupants
-                      ? "bg-[var(--color-accent-lavender)]/15 text-[var(--color-accent-lavender)]"
-                      : "bg-white/5 text-[var(--color-text-secondary)]"
-                  }`}
+              <div className="w-full flex items-center gap-3 p-3 sm:p-4 select-none">
+                {/* Badge M{h} avec tooltip = description longue de la maison */}
+                <Tooltip
+                  content={desc ? truncateForTip(genderize(desc.description, genre), 200) : ""}
+                  maxWidth={280}
                 >
-                  M{h}
-                </span>
+                  <span
+                    className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-mono text-xs font-semibold cursor-help ${
+                      hasOccupants
+                        ? "bg-[var(--color-accent-lavender)]/15 text-[var(--color-accent-lavender)]"
+                        : "bg-white/5 text-[var(--color-text-secondary)]"
+                    }`}
+                  >
+                    M{h}
+                  </span>
+                </Tooltip>
 
-                <div className="flex-1 min-w-0">
+                {/* Le titre + nom de la maison déclenche l'expand (zone large
+                    cliquable comme avant). Le tooltip est sur le badge M{h}
+                    pour ne pas se confondre avec le click. */}
+                <button
+                  onClick={() => toggle(h)}
+                  className="flex-1 min-w-0 text-left cursor-pointer"
+                  aria-expanded={isOpen}
+                >
                   <span className="text-base font-medium text-[var(--color-text-primary)] truncate block">
                     {desc?.domain}
                   </span>
                   {desc?.name && (
                     <span className="text-xs text-[var(--color-text-secondary)] block mt-0.5">{desc.name}</span>
                   )}
-                </div>
+                </button>
 
                 {hasOccupants && (
                   <span className="flex gap-1.5 flex-shrink-0 mr-1">
-                    {occupants.map((p) => (
-                      <PlanetIcon key={p.name} name={p.name} size={16} color="var(--color-accent-gold)" />
-                    ))}
+                    {occupants.map((p) => {
+                      const interp = planetInHouse[p.name]?.[h];
+                      const tipText = interp ? truncateForTip(genderize(interp, genre), 140) : `${p.name} ${locale === "en" ? "in house" : "en maison"} ${h}`;
+                      return (
+                        <Tooltip key={p.name} content={tipText} maxWidth={220}>
+                          <span className="cursor-help">
+                            <PlanetIcon name={p.name} size={16} color="var(--color-accent-gold)" />
+                          </span>
+                        </Tooltip>
+                      );
+                    })}
                   </span>
                 )}
 
-                <svg
-                  className={`w-4 h-4 flex-shrink-0 text-[var(--color-text-secondary)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                <button
+                  onClick={() => toggle(h)}
+                  aria-label={isOpen ? (locale === "en" ? "Collapse" : "Replier") : (locale === "en" ? "Expand" : "Déplier")}
+                  className="flex-shrink-0 p-1"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+                  <svg
+                    className={`w-4 h-4 text-[var(--color-text-secondary)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
 
               {/* Expanded content */}
               <div

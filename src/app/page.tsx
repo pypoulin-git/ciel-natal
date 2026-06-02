@@ -27,6 +27,7 @@ const HousesMap = dynamic(() => import("@/components/results/HousesMap"), { ssr:
 const ChartChat = dynamic(() => import("@/components/results/ChartChat"), { ssr: false });
 const AudioPlayer = dynamic(() => import("@/components/AudioPlayer"), { ssr: false });
 const SavedCharts = dynamic(() => import("@/components/SavedCharts"), { ssr: false });
+const TransitRow = dynamic(() => import("@/components/results/TransitRow"), { ssr: false });
 const DateWheelPicker = dynamic(() => import("@/components/ui/date-wheel-picker").then((m) => m.DateWheelPicker), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -1392,7 +1393,7 @@ export default function Home() {
                   <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
                     <li>✦ {locale === "fr" ? "Interprétations complètes et détaillées" : "Full detailed interpretations"}</li>
                     <li>✦ {locale === "fr" ? "Chat avec un astrologue IA bienveillant" : "Chat with a caring AI astrologer"}</li>
-                    <li>✦ {locale === "fr" ? "Synastrie + révolution solaire" : "Synastry + solar return"}</li>
+                    <li>✦ {locale === "fr" ? "Synastrie" : "Synastry"}</li>
                     <li>✦ {locale === "fr" ? "Export PDF, sauvegarde et email" : "PDF export, save and email"}</li>
                   </ul>
                   <p className="mt-3 text-xs text-[var(--color-text-secondary)]/70 italic">
@@ -2206,31 +2207,35 @@ export default function Home() {
                     {todayTransits.planets.slice(0, 7).map((transit) => {
                       const natal = chart.planets.find((p) => p.name === transit.name);
                       if (!natal) return null;
-                      const sameSgn = transit.sign === natal.sign;
                       return (
-                        <div key={transit.name} className="glass p-4 sm:p-5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <span className="text-lg text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{transit.symbol}</span>
-                              <span className="text-base font-medium text-[var(--color-text-primary)]">{translatePlanet(transit.name, locale)}</span>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm text-[var(--color-text-secondary)]">
-                                <span className="text-[var(--color-accent-lavender)]">{t("transits.current")}</span> {translateSign(transit.sign, locale)} {transit.degree}°
-                              </div>
-                              <div className="text-xs text-[var(--color-text-secondary)] opacity-70">
-                                {t("transits.natal")} {translateSign(natal.sign, locale)} {natal.degree}°
-                              </div>
-                            </div>
-                          </div>
-                          {sameSgn && (
-                            <div className="mt-2 text-xs text-[var(--color-accent-lavender)] opacity-70">
-                              {locale === "fr" ? `${transit.name} transite dans ton signe natal — un retour aux sources.` : `${translatePlanet(transit.name, locale)} transits your natal sign — a return to origins.`}
-                            </div>
-                          )}
-                        </div>
+                        <TransitRow
+                          key={transit.name}
+                          transit={transit}
+                          natal={natal}
+                          locale={locale}
+                          labels={{
+                            current: t("transits.current"),
+                            natal: t("transits.natal"),
+                          }}
+                        />
                       );
                     })}
+                    {/* Légende compacte des deux glyphes du mini-diagramme.
+                        Astuce visuelle suite au feedback PY : "il faut que
+                        l'utilisateur comprenne tout de suite ce qu'il voit". */}
+                    <div className="hidden sm:flex items-center gap-4 px-1 pt-1 text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] opacity-60">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-accent-lavender)]/40" />
+                        {locale === "fr" ? "Natal" : "Natal"}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-accent-rose)]/50" />
+                        {locale === "fr" ? "Transit du jour" : "Today's transit"}
+                      </span>
+                      <span className="opacity-70">
+                        {locale === "fr" ? "Écart angulaire affiché en degrés" : "Angular gap shown in degrees"}
+                      </span>
+                    </div>
                   </div>
                   </PremiumGate>
 
