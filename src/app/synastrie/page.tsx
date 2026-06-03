@@ -481,7 +481,7 @@ export default function SynastryPage() {
                             <stop offset="100%" stopColor="var(--color-accent-rose)" stopOpacity="0.95" />
                           </linearGradient>
                         </defs>
-                        <circle cx="100" cy="100" r={r} stroke="rgba(255,255,255,0.06)" strokeWidth="10" fill="none" />
+                        <circle cx="100" cy="100" r={r} stroke="var(--color-glass-border)" strokeWidth="10" fill="none" />
                         <circle
                           cx="100" cy="100" r={r}
                           stroke="url(#syn-grad)"

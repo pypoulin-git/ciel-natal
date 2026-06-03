@@ -40,6 +40,28 @@
   --nav-bg: rgba(10, 10, 22, 0.58);
   --nav-menu-bg: rgba(20, 19, 31, 0.82);
   --nav-border: rgba(179, 167, 224, 0.14);
+
+  /* Natal ZodiacWheel — themed so the dial stays legible in BOTH modes.
+     Dark theme values (light strokes on the deep sky). */
+  --wheel-ring: rgba(168, 158, 200, 0.32);
+  --wheel-line: rgba(168, 158, 200, 0.16);
+  --wheel-glyph: rgba(205, 195, 235, 0.78);
+  --wheel-glyph-strong: rgba(232, 224, 255, 0.96);
+  --wheel-badge-bg: rgba(168, 158, 200, 0.06);
+  --wheel-badge-bg-hover: rgba(168, 158, 200, 0.16);
+  --wheel-badge-border: rgba(168, 158, 200, 0.14);
+  --wheel-badge-border-hover: rgba(205, 195, 240, 0.5);
+  --wheel-text: rgba(232, 224, 255, 0.92);
+  --wheel-text-dim: rgba(205, 195, 235, 0.75);
+  --wheel-planet-fill: rgba(20, 18, 40, 0.92);
+  --wheel-planet-fill-active: rgba(168, 158, 200, 0.2);
+  --wheel-planet-stroke: rgba(205, 195, 240, 0.42);
+  --wheel-planet-glyph: rgba(236, 229, 250, 0.95);
+  --wheel-aspect-conj: rgba(190, 170, 230, 0.7);
+  --wheel-aspect-sextile: rgba(160, 200, 230, 0.45);
+  --wheel-aspect-square: rgba(200, 160, 170, 0.5);
+  --wheel-aspect-trine: rgba(160, 210, 180, 0.45);
+  --wheel-aspect-opp: rgba(210, 160, 160, 0.5);
 }
 
 /* ============================================
@@ -73,6 +95,28 @@
   --nav-bg: rgba(233, 241, 251, 0.62);
   --nav-menu-bg: rgba(245, 249, 254, 0.85);
   --nav-border: rgba(70, 60, 120, 0.16);
+
+  /* Natal ZodiacWheel — light theme: dark strokes on the pale sky so the
+     sign ring, glyphs, axes and labels stop washing out. */
+  --wheel-ring: rgba(106, 92, 174, 0.4);
+  --wheel-line: rgba(106, 92, 174, 0.24);
+  --wheel-glyph: rgba(86, 74, 140, 0.85);
+  --wheel-glyph-strong: rgba(54, 44, 104, 0.98);
+  --wheel-badge-bg: rgba(106, 92, 174, 0.08);
+  --wheel-badge-bg-hover: rgba(106, 92, 174, 0.18);
+  --wheel-badge-border: rgba(106, 92, 174, 0.3);
+  --wheel-badge-border-hover: rgba(106, 92, 174, 0.62);
+  --wheel-text: rgba(40, 36, 78, 0.95);
+  --wheel-text-dim: rgba(80, 72, 120, 0.85);
+  --wheel-planet-fill: rgba(70, 60, 128, 0.95);
+  --wheel-planet-fill-active: rgba(106, 92, 174, 0.28);
+  --wheel-planet-stroke: rgba(106, 92, 174, 0.55);
+  --wheel-planet-glyph: rgba(245, 242, 255, 0.98);
+  --wheel-aspect-conj: rgba(120, 100, 180, 0.6);
+  --wheel-aspect-sextile: rgba(80, 130, 180, 0.5);
+  --wheel-aspect-square: rgba(180, 90, 110, 0.55);
+  --wheel-aspect-trine: rgba(70, 150, 110, 0.5);
+  --wheel-aspect-opp: rgba(190, 90, 90, 0.55);
 }
 
 html {

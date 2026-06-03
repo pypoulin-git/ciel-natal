@@ -55,14 +55,15 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
 
   const activePlanet = selectedPlanet || hoveredPlanet;
 
+  // Aspect colours come from themed tokens so the lines stay legible in light mode.
   function getAspectStyle(p1: PlanetPosition, p2: PlanetPosition): { color: string; dash?: string } | null {
     let diff = Math.abs(p1.longitude - p2.longitude);
     if (diff > 180) diff = 360 - diff;
-    if (diff < 8) return { color: "rgba(190,170,230,0.7)" };
-    if (Math.abs(diff - 60) < 6) return { color: "rgba(160,200,230,0.45)", dash: "4 2" };
-    if (Math.abs(diff - 90) < 8) return { color: "rgba(200,160,170,0.5)" };
-    if (Math.abs(diff - 120) < 8) return { color: "rgba(160,210,180,0.45)", dash: "6 3" };
-    if (Math.abs(diff - 180) < 8) return { color: "rgba(210,160,160,0.5)" };
+    if (diff < 8) return { color: "var(--wheel-aspect-conj)" };
+    if (Math.abs(diff - 60) < 6) return { color: "var(--wheel-aspect-sextile)", dash: "4 2" };
+    if (Math.abs(diff - 90) < 8) return { color: "var(--wheel-aspect-square)" };
+    if (Math.abs(diff - 120) < 8) return { color: "var(--wheel-aspect-trine)", dash: "6 3" };
+    if (Math.abs(diff - 180) < 8) return { color: "var(--wheel-aspect-opp)" };
     return null;
   }
 
@@ -126,11 +127,11 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
         <circle cx={cx} cy={cy} r={outerR + 25} fill="url(#wg)" />
 
         {/* Outer decorative rings */}
-        <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(168,158,200,0.3)" strokeWidth="1.2" />
-        <circle cx={cx} cy={cy} r={outerR + 10} fill="none" stroke="rgba(168,158,200,0.1)" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="var(--wheel-ring)" strokeWidth="1.2" />
+        <circle cx={cx} cy={cy} r={outerR + 10} fill="none" stroke="var(--wheel-line)" strokeWidth="0.5" />
 
         {/* Sign band inner ring */}
-        <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="rgba(168,158,200,0.35)" strokeWidth="1.2" />
+        <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="var(--wheel-ring)" strokeWidth="1.2" />
 
         {/* Sign segments */}
         {SIGN_KEYS.map((_, i) => {
@@ -160,20 +161,20 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               {/* Invisible hover area */}
               <path
                 d={`M ${arcStart.x} ${arcStart.y} A ${innerR} ${innerR} 0 0 1 ${arcEnd.x} ${arcEnd.y} L ${arcOutEnd.x} ${arcOutEnd.y} A ${outerR} ${outerR} 0 0 0 ${arcOutStart.x} ${arcOutStart.y} Z`}
-                fill={isHovered ? "rgba(168,158,200,0.06)" : "transparent"}
+                fill={isHovered ? "var(--wheel-badge-bg)" : "transparent"}
                 className="transition-all duration-200"
               />
 
               {/* Division line */}
               <line x1={d1.x} y1={d1.y} x2={d2.x} y2={d2.y}
-                stroke="rgba(168,158,200,0.18)" strokeWidth="0.8" />
+                stroke="var(--wheel-line)" strokeWidth="0.8" />
 
               {/* Glass badge background */}
               <rect
                 x={glyphPos.x - 15} y={glyphPos.y - 15}
                 width="30" height="30" rx="8"
-                fill={isHovered ? "rgba(168,158,200,0.15)" : "rgba(168,158,200,0.05)"}
-                stroke={isHovered ? "rgba(200,190,240,0.45)" : "rgba(168,158,200,0.12)"}
+                fill={isHovered ? "var(--wheel-badge-bg-hover)" : "var(--wheel-badge-bg)"}
+                stroke={isHovered ? "var(--wheel-badge-border-hover)" : "var(--wheel-badge-border)"}
                 strokeWidth="0.8"
                 className="transition-all duration-200 pointer-events-none"
               />
@@ -182,7 +183,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               <g
                 transform={`translate(${glyphPos.x - iconSz / 2}, ${glyphPos.y - iconSz / 2}) scale(${iconSz / 24})`}
                 fill="none"
-                stroke={isHovered ? "rgba(230,220,255,0.95)" : "rgba(200,190,230,0.75)"}
+                stroke={isHovered ? "var(--wheel-glyph-strong)" : "var(--wheel-glyph)"}
                 strokeWidth={isHovered ? "1.8" : "1.6"}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -196,7 +197,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               {isHovered && (
                 <text x={namePos.x} y={namePos.y}
                   textAnchor="middle" dominantBaseline="central"
-                  fill="rgba(230,220,255,0.9)" fontSize="10" fontWeight="500"
+                  fill="var(--wheel-text)" fontSize="10" fontWeight="500"
                   letterSpacing="0.04em"
                   className="pointer-events-none"
                   style={{ fontFamily: "'Inter', sans-serif" }}
@@ -209,7 +210,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
         })}
 
         {/* Inner planet track */}
-        <circle cx={cx} cy={cy} r={planetR} fill="none" stroke="rgba(168,158,200,0.15)" strokeWidth="0.8" strokeDasharray="3 5" />
+        <circle cx={cx} cy={cy} r={planetR} fill="none" stroke="var(--wheel-line)" strokeWidth="0.8" strokeDasharray="3 5" />
 
         {/* Aspect lines */}
         {showAspects && (() => {
@@ -261,15 +262,15 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               {/* Glow ring on active */}
               {isActive && (
                 <circle cx={pos.x} cy={pos.y} r="24"
-                  fill="none" stroke="rgba(168,158,200,0.25)" strokeWidth="1.5"
+                  fill="none" stroke="var(--wheel-badge-border-hover)" strokeWidth="1.5"
                   filter="url(#gS)" className="pointer-events-none" />
               )}
 
               {/* Planet circle — glass */}
               <circle cx={pos.x} cy={pos.y}
                 r={isActive ? "18" : "15"}
-                fill={isActive ? "rgba(168,158,200,0.18)" : "rgba(20,18,40,0.9)"}
-                stroke={isActive ? "rgba(210,200,240,0.75)" : "rgba(168,158,200,0.4)"}
+                fill={isActive ? "var(--wheel-planet-fill-active)" : "var(--wheel-planet-fill)"}
+                stroke={isActive ? "var(--wheel-glyph-strong)" : "var(--wheel-planet-stroke)"}
                 strokeWidth={isActive ? "1.5" : "1"}
                 opacity={isDimmed ? 0.2 : 1}
                 filter={isActive ? "url(#gS)" : "url(#gP)"}
@@ -280,7 +281,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
               <g
                 transform={`translate(${pos.x - iconSz / 2}, ${pos.y - iconSz / 2}) scale(${iconSz / 24})`}
                 fill="none"
-                stroke={isActive ? "#d8d0f0" : "rgba(235,228,248,0.92)"}
+                stroke="var(--wheel-planet-glyph)"
                 strokeWidth={isActive ? "1.8" : "1.6"}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -296,7 +297,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
                 <>
                   <text x={pos.x} y={pos.y - 27}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="rgba(230,220,255,0.95)" fontSize="11" fontWeight="600"
+                    fill="var(--wheel-text)" fontSize="11" fontWeight="600"
                     className="pointer-events-none"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
@@ -304,7 +305,7 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
                   </text>
                   <text x={pos.x} y={pos.y + 27}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="rgba(200,190,230,0.75)" fontSize="9" fontWeight="500"
+                    fill="var(--wheel-text-dim)" fontSize="9" fontWeight="500"
                     className="pointer-events-none"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
@@ -325,20 +326,19 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
             <g>
               {/* Tick line */}
               <line x1={acTick1.x} y1={acTick1.y} x2={acTick2.x} y2={acTick2.y}
-                stroke="rgba(220,200,255,0.8)" strokeWidth="2" />
+                stroke="var(--wheel-glyph-strong)" strokeWidth="2" />
               {/* Glass badge behind AC */}
               <rect
                 x={acLabel.x - 16} y={acLabel.y - 10}
                 width="32" height="20" rx="6"
-                fill="rgba(168,158,200,0.15)"
-                stroke="rgba(200,190,240,0.4)"
+                fill="var(--wheel-badge-bg-hover)"
+                stroke="var(--wheel-badge-border-hover)"
                 strokeWidth="0.8"
               />
               <text x={acLabel.x} y={acLabel.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill="rgba(240,230,255,0.95)" fontSize="12" fontWeight="700"
+                fill="var(--wheel-text)" fontSize="12" fontWeight="700"
                 letterSpacing="0.08em"
-                filter="url(#planetGlow)"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 AC
@@ -348,8 +348,8 @@ export default function ZodiacWheel({ planets, ascendant, selectedPlanet, onTapP
         })()}
 
         {/* Center dot */}
-        <circle cx={cx} cy={cy} r="2" fill="rgba(168,158,200,0.35)" />
-        <circle cx={cx} cy={cy} r="5" fill="none" stroke="rgba(168,158,200,0.1)" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r="2" fill="var(--wheel-ring)" />
+        <circle cx={cx} cy={cy} r="5" fill="none" stroke="var(--wheel-line)" strokeWidth="0.5" />
       </svg>
     </div>
   );
