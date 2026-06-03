@@ -53,9 +53,11 @@ export default function ZodiacPrimer() {
     <div className="my-6">
       {/* ── The wheel ── */}
       <div className="glass p-4 sm:p-6">
+        {/* Horizontal padding so the left/right sign names (Cancer, Capricorne)
+            don't get clipped at the viewBox edges. Wheel stays centred. */}
         <svg
-          viewBox={`0 0 ${SIZE} ${SIZE}`}
-          className="w-full max-w-[520px] mx-auto select-none"
+          viewBox={`-52 0 ${SIZE + 104} ${SIZE}`}
+          className="w-full max-w-[560px] mx-auto select-none"
           role="img"
           aria-label={fr ? "Cadran du zodiaque : 12 signes, 4 saisons, éléments et modalités" : "Zodiac dial: 12 signs, 4 seasons, elements and modalities"}
         >
