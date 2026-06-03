@@ -35,6 +35,10 @@
   --starfield-opacity: 0.85;
   /* Page ambient gradient wash behind the starfield. */
   --ambient-wash: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(179, 167, 224, 0.10), transparent 70%);
+  /* Navigation chrome — themed so the bar stops being a hardcoded dark slab. */
+  --nav-bg: rgba(10, 10, 22, 0.82);
+  --nav-menu-bg: rgba(20, 19, 31, 0.97);
+  --nav-border: rgba(179, 167, 224, 0.14);
 }
 
 /* ============================================
@@ -65,6 +69,9 @@
   --starfield-star: 40, 38, 78;          /* dark stars on pale sky */
   --starfield-opacity: 0.55;
   --ambient-wash: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(120, 150, 200, 0.18), transparent 70%);
+  --nav-bg: rgba(233, 241, 251, 0.85);
+  --nav-menu-bg: rgba(245, 249, 254, 0.98);
+  --nav-border: rgba(70, 60, 120, 0.16);
 }
 
 html {

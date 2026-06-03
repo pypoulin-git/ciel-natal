@@ -50,20 +50,20 @@ export default function TopNav() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full border-b border-[var(--color-glass-border)] backdrop-blur-xl"
-      style={{ background: "rgba(9, 9, 15, 0.72)" }}
+      className="sticky top-0 z-50 w-full border-b backdrop-blur-xl"
+      style={{ background: "var(--nav-bg)", borderColor: "var(--nav-border)" }}
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* ─── Logo ─── */}
-        <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="Ciel Natal">
-          <span className="text-xl text-[var(--color-accent-lavender)] leading-none">✦</span>
-          <span className="font-cinzel text-sm tracking-widest text-[var(--color-text-primary)] hidden sm:inline">
-            CIEL NATAL
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 group" aria-label="Ciel Natal">
+          <span className="text-xl text-[var(--color-accent-gold)] leading-none transition-transform group-hover:rotate-90 duration-500">✦</span>
+          <span className="font-cinzel text-lg tracking-wide text-[var(--color-text-primary)]">
+            Ciel Natal
           </span>
         </Link>
 
-        {/* ─── Desktop nav links ─── */}
-        <nav className="hidden md:flex items-center gap-1" aria-label="Main">
+        {/* ─── Desktop nav links (centered) ─── */}
+        <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2" aria-label="Main">
           {NAV_LINKS.map((link) => {
             const active =
               link.href === "/"
@@ -73,26 +73,30 @@ export default function TopNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 rounded-full text-sm transition-all ${
+                aria-current={active ? "page" : undefined}
+                className={`relative px-3.5 py-2 text-sm font-medium transition-colors ${
                   active
-                    ? "text-[var(--color-accent-lavender)] bg-[var(--color-accent-lavender)]/10"
-                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5"
+                    ? "text-[var(--color-text-primary)]"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 }`}
               >
                 {label(link.labelFr, link.labelEn)}
+                {active && (
+                  <span className="absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-[var(--color-accent-gold)]" />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        {/* ─── Right cluster ─── */}
+        {/* ─── Right cluster — controls + auth ─── */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="hidden sm:block">
+          <div className="hidden sm:flex items-center gap-1.5">
             <ThemeToggle />
-          </div>
-          <div className="hidden sm:block">
             <LanguageSwitcher />
           </div>
+          {/* Divider between controls and auth */}
+          <span className="hidden sm:block w-px h-6 bg-[var(--nav-border)] mx-0.5" />
 
           {/* Anonymous state = loading fallback OR logged-out. Always render something. */}
           {!user && (
@@ -151,8 +155,8 @@ export default function TopNav() {
 
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-64 rounded-xl border border-[var(--color-glass-border)] shadow-2xl p-2 animate-scale-in"
-                  style={{ background: "rgba(15, 15, 22, 0.96)", backdropFilter: "blur(20px)" }}
+                  className="absolute right-0 mt-2 w-64 rounded-xl border shadow-2xl p-2 animate-scale-in"
+                  style={{ background: "var(--nav-menu-bg)", borderColor: "var(--nav-border)", backdropFilter: "blur(20px)" }}
                   role="menu"
                 >
                   {/* Header */}
@@ -242,7 +246,7 @@ export default function TopNav() {
 
       {/* ─── Mobile nav drawer ─── */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[var(--color-glass-border)] px-4 py-3 space-y-1" style={{ background: "rgba(9, 9, 15, 0.92)" }}>
+        <div className="md:hidden border-t px-4 py-3 space-y-1" style={{ background: "var(--nav-menu-bg)", borderColor: "var(--nav-border)" }}>
           {NAV_LINKS.map((link) => {
             const active =
               link.href === "/"

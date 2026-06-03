@@ -79,7 +79,8 @@ export default function ThemeToggle({ variant = "icon" }: { variant?: "icon" | "
   return (
     <button
       onClick={toggleTheme}
-      className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent-lavender)] hover:bg-white/5 transition"
+      className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-primary)] hover:text-[var(--color-accent-gold)] transition"
+      style={{ background: "var(--color-space-deep)", border: "1px solid var(--color-glass-border)" }}
       aria-label={nextLabel}
       title={nextLabel}
     >
