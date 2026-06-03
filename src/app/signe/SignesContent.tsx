@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SignIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
+import ZodiacPrimer from "@/components/ZodiacPrimer";
 
 interface SignData {
   slug: string;
@@ -51,6 +52,13 @@ export default function SignesContent() {
           ? "Chaque signe du zodiaque porte en lui un archétype psychologique unique. Explorez les douze visages de la roue zodiacale pour mieux comprendre les dynamiques profondes qui animent votre personnalité, vos relations et votre chemin de vie."
           : "Each zodiac sign carries a unique psychological archetype. Explore the twelve faces of the zodiac wheel to better understand the deep dynamics shaping your personality, relationships and life path."}
       </p>
+
+      {/* Educational dial — the structure of the wheel before the per-sign grid. */}
+      <ZodiacPrimer />
+
+      <h2 className="font-cinzel text-xl sm:text-2xl text-[var(--color-text-primary)] mt-10 mb-4">
+        {fr ? "Les 12 signes en détail" : "The 12 signs in detail"}
+      </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {signs.map((s) => {
