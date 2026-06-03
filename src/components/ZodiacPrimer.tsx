@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getSignPaths } from "@/components/AstroIcons";
 import { signMeta } from "@/lib/signMeta";
 import { useLocale } from "@/lib/i18n";
@@ -13,6 +14,7 @@ const SIGN_KEYS = [
 
 const NAMES_FR = ["Bélier", "Taureau", "Gémeaux", "Cancer", "Lion", "Vierge", "Balance", "Scorpion", "Sagittaire", "Capricorne", "Verseau", "Poissons"];
 const NAMES_EN = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+const SLUGS = ["belier", "taureau", "gemeaux", "cancer", "lion", "vierge", "balance", "scorpion", "sagittaire", "capricorne", "verseau", "poissons"];
 
 // Element colours (kept distinct for legibility — matches the sign grid below).
 const EL_COLOR: Record<string, string> = {
@@ -46,6 +48,7 @@ function toXY(deg: number, r: number): { x: number; y: number } {
 
 export default function ZodiacPrimer() {
   const { locale } = useLocale();
+  const router = useRouter();
   const fr = locale !== "en";
   const [hover, setHover] = useState<number | null>(null);
 
@@ -119,8 +122,16 @@ export default function ZodiacPrimer() {
                 key={key}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
-                style={{ cursor: "default" }}
+                onClick={() => router.push(`/signe/${SLUGS[i]}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/signe/${SLUGS[i]}`); } }}
+                role="link"
+                tabIndex={0}
+                aria-label={fr ? `Découvrir le signe ${NAMES_FR[i]}` : `Explore ${NAMES_EN[i]}`}
+                style={{ cursor: "pointer" }}
               >
+                {/* Invisible enlarged hit area for comfortable click/hover. */}
+                <circle cx={glyph.x} cy={glyph.y} r={28} fill="transparent" />
+
                 {/* Division line */}
                 <line x1={bLine1.x} y1={bLine1.y} x2={bLine2.x} y2={bLine2.y} stroke="var(--color-glass-border)" strokeWidth="0.75" />
 
