@@ -1,6 +1,7 @@
 "use client";
 
 import { PlanetPosition, translatePlanet } from "@/lib/astro";
+import { ElementGlyph, ModalityGlyph } from "@/components/AstroIcons";
 
 const ELEMENT_MAP: Record<string, string> = {
   Belier: "Feu", Taureau: "Terre", Gemeaux: "Air", Cancer: "Eau",
@@ -102,11 +103,24 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
             const displayName = isFr ? el : ELEMENT_NAMES_EN[el];
 
             return (
-              <div key={el} className="glass p-4 sm:p-5" style={{ borderColor: isDominant ? `${config.color}40` : undefined }}>
+              <div
+                key={el}
+                className="glass p-4 sm:p-5"
+                style={{
+                  borderColor: isDominant ? `${config.color}40` : undefined,
+                  // Glow only on the dominant element (PY: actif/dominant seulement).
+                  boxShadow: isDominant ? `0 0 24px ${config.color}33, 0 0 52px ${config.color}1a` : undefined,
+                }}
+              >
                 {/* Header row */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl" role="img" aria-hidden="true">{config.icon}</span>
+                    <span
+                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${config.color}1a` }}
+                    >
+                      <ElementGlyph element={el} size={22} color={config.color} />
+                    </span>
                     <div>
                       <span className={`text-lg font-semibold ${isDominant ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>{displayName}</span>
                       <span className="block text-sm text-[var(--color-text-secondary)] opacity-80">{config.desc}</span>
@@ -180,10 +194,19 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
             const displayName = isFr ? mod : MODALITY_NAMES_EN[mod];
 
             return (
-              <div key={mod} className="glass p-4 sm:p-5">
+              <div
+                key={mod}
+                className="glass p-4 sm:p-5"
+                style={{
+                  borderColor: isDominant ? "rgba(179,167,224,0.4)" : undefined,
+                  boxShadow: isDominant ? "0 0 24px rgba(179,167,224,0.2), 0 0 52px rgba(179,167,224,0.1)" : undefined,
+                }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl" role="img" aria-hidden="true">{config.icon}</span>
+                    <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--color-accent-lavender)]/12">
+                      <ModalityGlyph modality={mod} size={22} color="var(--color-accent-lavender)" />
+                    </span>
                     <div>
                       <span className={`text-lg font-semibold ${isDominant ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>{displayName}</span>
                       <span className="block text-sm text-[var(--color-text-secondary)] opacity-80">{config.desc}</span>

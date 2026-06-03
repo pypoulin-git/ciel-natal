@@ -325,6 +325,96 @@ export function AscendantIcon(props: IconProps) {
   );
 }
 
+// ━━━ ELEMENTS (alchemical triangles) ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/** Fire 🜂 — upward triangle */
+export function FireGlyph(props: IconProps) {
+  return wrap(<path d="M12 4 L20 19 L4 19 Z" />, props);
+}
+
+/** Earth 🜃 — downward triangle with a horizontal bar */
+export function EarthGlyph(props: IconProps) {
+  return wrap(
+    <>
+      <path d="M12 20 L4 5 L20 5 Z" />
+      <line x1="7.2" y1="13" x2="16.8" y2="13" />
+    </>,
+    props
+  );
+}
+
+/** Air 🜁 — upward triangle with a horizontal bar */
+export function AirGlyph(props: IconProps) {
+  return wrap(
+    <>
+      <path d="M12 4 L20 19 L4 19 Z" />
+      <line x1="7.2" y1="13" x2="16.8" y2="13" />
+    </>,
+    props
+  );
+}
+
+/** Water 🜄 — downward triangle */
+export function WaterGlyph(props: IconProps) {
+  return wrap(<path d="M12 20 L4 5 L20 5 Z" />, props);
+}
+
+// ━━━ MODALITIES (simple geometric marks) ━━━━━━━━━━━━━━━━━━━━━
+
+/** Cardinal — outward chevrons (initiating / launching) */
+export function CardinalGlyph(props: IconProps) {
+  return wrap(
+    <>
+      <polyline points="12,3 8,7 16,7" />
+      <polyline points="12,21 8,17 16,17" />
+      <polyline points="3,12 7,8 7,16" />
+      <polyline points="21,12 17,8 17,16" />
+    </>,
+    props
+  );
+}
+
+/** Fixed — square (stable / anchored) */
+export function FixedGlyph(props: IconProps) {
+  return wrap(<rect x="5" y="5" width="14" height="14" rx="1.5" />, props);
+}
+
+/** Mutable — double arc (adapting / flowing) */
+export function MutableGlyph(props: IconProps) {
+  return wrap(
+    <>
+      <path d="M4 9 C8 5, 16 5, 20 9" />
+      <path d="M4 15 C8 11, 16 11, 20 15" />
+    </>,
+    props
+  );
+}
+
+const ELEMENT_GLYPHS: Record<string, React.FC<IconProps>> = {
+  Feu: FireGlyph, Fire: FireGlyph,
+  Terre: EarthGlyph, Earth: EarthGlyph,
+  Air: AirGlyph,
+  Eau: WaterGlyph, Water: WaterGlyph,
+};
+
+const MODALITY_GLYPHS: Record<string, React.FC<IconProps>> = {
+  Cardinal: CardinalGlyph,
+  Fixe: FixedGlyph, Fixed: FixedGlyph,
+  Mutable: MutableGlyph,
+};
+
+/** Element glyph by name (FR or EN). */
+export function ElementGlyph({ element, ...props }: IconProps & { element: string }) {
+  const Comp = ELEMENT_GLYPHS[element];
+  return Comp ? <Comp {...props} /> : null;
+}
+
+/** Modality glyph by name (FR or EN). */
+export function ModalityGlyph({ modality, ...props }: IconProps & { modality: string }) {
+  const Comp = MODALITY_GLYPHS[modality];
+  return Comp ? <Comp {...props} /> : null;
+}
+
 // ━━━ LOOKUP MAPS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const SIGN_COMPONENTS: Record<string, React.FC<IconProps>> = {

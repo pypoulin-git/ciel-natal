@@ -19,6 +19,7 @@ import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
 import { stashPendingPdf } from "@/lib/pending-pdf";
 import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
+import { signMetaLine } from "@/lib/signMeta";
 
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
@@ -67,6 +68,18 @@ const ASPECT_SYMBOLS: Record<string, string> = {
 
 const ASPECT_COLORS: Record<string, string> = {
   Conjonction: "#a89ec8", Trigone: "#9a96aa", Sextile: "#8a87a0", Carre: "#b0a8be", Opposition: "#9590a8",
+};
+
+// Plain-language nature of each aspect, surfaced inline so a beginner understands
+// "△ = Trigone = Harmonie" without having to expand the row. Colour is the family
+// cue (green = flowing, rose = tension, gold = fusion, lavender = adjustment).
+const ASPECT_NATURE: Record<string, { fr: string; en: string; color: string }> = {
+  Conjonction: { fr: "Fusion", en: "Fusion", color: "var(--color-accent-gold)" },
+  Trigone: { fr: "Harmonie", en: "Harmony", color: "#79c2a0" },
+  Sextile: { fr: "Harmonie", en: "Harmony", color: "#79c2a0" },
+  Carre: { fr: "Tension créatrice", en: "Creative tension", color: "var(--color-accent-rose)" },
+  Opposition: { fr: "Tension créatrice", en: "Creative tension", color: "var(--color-accent-rose)" },
+  Quinconce: { fr: "Ajustement", en: "Adjustment", color: "var(--color-accent-lavender)" },
 };
 
 // ─── Voice options (sensible / mystique / pragmatique) ─────────
@@ -1842,9 +1855,9 @@ export default function Home() {
                   {/* Big Three badges — toggle (single active, replaces content) */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     {[
-                      { id: "sun", label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], icon: <SunIcon size={28} color="#fbbf24" glow />, color: "from-amber-500/25 to-orange-500/10", activeColor: "from-amber-500/35 to-orange-500/20", border: "border-amber-400/20", activeBorder: "border-amber-400/50", ring: "ring-amber-400/30" },
-                      { id: "moon", label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], icon: <MoonIcon size={28} color="#93c5fd" glow />, color: "from-blue-400/20 to-indigo-500/10", activeColor: "from-blue-400/30 to-indigo-500/20", border: "border-blue-300/20", activeBorder: "border-blue-300/50", ring: "ring-blue-400/30" },
-                      ...(chart.ascendant ? [{ id: "asc", label: "Ascendant", sub: t("results.ascLabel"), data: chart.ascendant, icon: <AscendantIcon size={28} color="#c084fc" glow />, color: "from-purple-500/20 to-fuchsia-500/10", activeColor: "from-purple-500/30 to-fuchsia-500/20", border: "border-purple-400/20", activeBorder: "border-purple-400/50", ring: "ring-purple-400/30" }] : []),
+                      { id: "sun", label: locale === "fr" ? "Soleil" : "Sun", sub: t("results.sunLabel"), data: chart.planets[0], icon: <SunIcon size={28} color="var(--color-sun)" glow />, color: "from-amber-500/25 to-orange-500/10", activeColor: "from-amber-500/35 to-orange-500/20", border: "border-amber-400/20", activeBorder: "border-amber-400/50", ring: "ring-amber-400/30", glowClass: "glow-sun" },
+                      { id: "moon", label: locale === "fr" ? "Lune" : "Moon", sub: t("results.moonLabel"), data: chart.planets[1], icon: <MoonIcon size={28} color="var(--color-moon)" glow />, color: "from-blue-400/20 to-indigo-500/10", activeColor: "from-blue-400/30 to-indigo-500/20", border: "border-blue-300/20", activeBorder: "border-blue-300/50", ring: "ring-blue-400/30", glowClass: "glow-moon" },
+                      ...(chart.ascendant ? [{ id: "asc", label: "Ascendant", sub: t("results.ascLabel"), data: chart.ascendant, icon: <AscendantIcon size={28} color="var(--color-accent-lavender)" glow />, color: "from-purple-500/20 to-fuchsia-500/10", activeColor: "from-purple-500/30 to-fuchsia-500/20", border: "border-purple-400/20", activeBorder: "border-purple-400/50", ring: "ring-purple-400/30", glowClass: "glow-lavender" }] : []),
                     ].map((item) => {
                       const isActive = activeBigThree === item.data.name;
                       return (
@@ -1854,7 +1867,7 @@ export default function Home() {
                             setActiveBigThree(isActive ? null : item.data.name);
                             if (!isActive) setTimeout(() => bigThreeContentRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 100);
                           }}
-                          className={`relative rounded-2xl bg-gradient-to-br ${isActive ? item.activeColor : item.color} border ${isActive ? item.activeBorder : item.border} backdrop-blur-md p-5 text-left transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isActive ? `ring-2 ${item.ring} shadow-lg shadow-white/5` : "hover:shadow-lg hover:shadow-white/5"}`}
+                          className={`relative rounded-2xl bg-gradient-to-br ${isActive ? item.activeColor : item.color} border ${isActive ? item.activeBorder : item.border} backdrop-blur-md p-5 text-left transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isActive ? `ring-2 ${item.ring} ${item.glowClass}` : "hover:shadow-lg hover:shadow-white/5"}`}
                         >
                           <div className="flex items-center gap-4">
                             <div className={`w-14 h-14 rounded-xl flex items-center justify-center border shadow-inner transition-all duration-300 ${isActive ? "bg-white/10 border-white/20" : "bg-white/5 border-white/10"}`}>
@@ -1976,7 +1989,10 @@ export default function Home() {
                               <span className="inline-flex items-center gap-2">
                                 <span className="text-lg font-medium text-[var(--color-text-primary)]">{translatePlanet(planet.name, locale)}</span>
                               </span>
-                              <span className="text-base text-[var(--color-text-secondary)] ml-2">{translateSign(planet.sign, locale)}</span>
+                              <span
+                                className="text-base text-[var(--color-text-secondary)] ml-2 underline decoration-dotted decoration-[var(--color-text-muted)]/40 underline-offset-4 cursor-help"
+                                title={signMetaLine(planet.sign, locale)}
+                              >{translateSign(planet.sign, locale)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -2088,13 +2104,39 @@ export default function Home() {
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">△</span> {t("results.aspects")}
                 </h2>
-                <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.aspectDesc")}</p>
+                <p className="text-base text-[var(--color-text-secondary)] mb-4">{t("results.aspectDesc")}</p>
+
+                {/* Legend — teach the 3 aspect families at a glance so the
+                    glyphs below aren't cryptic. */}
+                {chart.aspects.length > 0 && (
+                  <div className="glass p-3 sm:p-4 mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+                    <span className="uppercase tracking-widest text-[var(--color-text-secondary)] opacity-70">
+                      {locale === "fr" ? "Comment lire" : "How to read"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--color-accent-gold)" }} />
+                      <span className="text-[var(--color-text-secondary)]">{locale === "fr" ? "Fusion (☌) — énergies confondues" : "Fusion (☌) — merged energies"}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#79c2a0" }} />
+                      <span className="text-[var(--color-text-secondary)]">{locale === "fr" ? "Harmonie (△ ⚹) — fluide" : "Harmony (△ ⚹) — flowing"}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--color-accent-rose)" }} />
+                      <span className="text-[var(--color-text-secondary)]">{locale === "fr" ? "Tension (□ ☍) — à travailler" : "Tension (□ ☍) — to work through"}</span>
+                    </span>
+                  </div>
+                )}
+
                 {chart.aspects.length > 0 ? (
                   <div className="space-y-2">
                     {chart.aspects.slice(0, 12).map((aspect, i) => {
                       const interp = getAspectInterp(aspect.type, aspect.planet1, aspect.planet2);
                       const color = ASPECT_COLORS[aspect.type] || "#c9a0ff";
                       const symbol = ASPECT_SYMBOLS[aspect.type] || "·";
+                      const nature = ASPECT_NATURE[aspect.type];
+                      const natureLabel = nature ? (locale === "fr" ? nature.fr : nature.en) : "";
+                      const typeDescShort = (interpretations as { aspectTypeDescriptions?: Record<string, string> })?.aspectTypeDescriptions?.[aspect.type];
                       const isOpen = expandedAspects.has(i);
                       return (
                         <div key={i} className="glass overflow-hidden">
@@ -2103,11 +2145,22 @@ export default function Home() {
                               <div className="flex items-center gap-2 text-base">
                                 <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{aspect.symbol1}</span>
                                 <span className="text-[var(--color-text-primary)]">{aspect.planet1}</span>
-                                <span style={{ color }} className="text-xl mx-0.5">{symbol}</span>
+                                <span
+                                  style={{ color }}
+                                  className="text-xl mx-0.5 cursor-help"
+                                  title={typeDescShort ? `${aspect.type} — ${genderize(typeDescShort, form.genre)}` : aspect.type}
+                                >{symbol}</span>
                                 <span className="text-[var(--color-text-primary)]">{aspect.planet2}</span>
                                 <span className="text-[var(--color-accent-lavender)]" style={{ fontFamily: "serif" }}>{aspect.symbol2}</span>
                               </div>
                               <div className="flex items-center gap-2">
+                                {/* Nature chip — visible WITHOUT expanding (PY: aider à comprendre). */}
+                                {natureLabel && (
+                                  <span className="hidden sm:inline-flex items-center gap-1.5 text-xs">
+                                    <span className="w-2 h-2 rounded-full" style={{ background: nature!.color }} />
+                                    <span style={{ color: nature!.color }}>{natureLabel}</span>
+                                  </span>
+                                )}
                                 <span className="text-xs px-2 py-0.5 rounded-full border font-mono" style={{ borderColor: `${color}30`, color }}>{aspect.type}</span>
                                 <span className="text-xs text-[var(--color-text-secondary)] font-mono">{aspect.orb}°</span>
                                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"
