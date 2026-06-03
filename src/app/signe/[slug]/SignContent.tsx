@@ -1,10 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { SignIcon } from "@/components/AstroIcons";
+import { SignIcon, ElementGlyph, ModalityGlyph } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
+import { signMeta } from "@/lib/signMeta";
 import type { SignDataBilingual } from "@/data/signs-data";
 import { elementColor } from "@/data/signs-data";
+
+// Zodiac order for prev/next navigation + canonical (accent-free) keys for signMeta.
+const ORDER = ["belier", "taureau", "gemeaux", "cancer", "lion", "vierge", "balance", "scorpion", "sagittaire", "capricorne", "verseau", "poissons"];
+const SLUG_TO_KEY: Record<string, string> = {
+  belier: "Belier", taureau: "Taureau", gemeaux: "Gemeaux", cancer: "Cancer",
+  lion: "Lion", vierge: "Vierge", balance: "Balance", scorpion: "Scorpion",
+  sagittaire: "Sagittaire", capricorne: "Capricorne", verseau: "Verseau", poissons: "Poissons",
+};
+const SLUG_NAME_FR: Record<string, string> = {
+  belier: "Bélier", taureau: "Taureau", gemeaux: "Gémeaux", cancer: "Cancer",
+  lion: "Lion", vierge: "Vierge", balance: "Balance", scorpion: "Scorpion",
+  sagittaire: "Sagittaire", capricorne: "Capricorne", verseau: "Verseau", poissons: "Poissons",
+};
+const SLUG_NAME_EN: Record<string, string> = {
+  belier: "Aries", taureau: "Taurus", gemeaux: "Gemini", cancer: "Cancer",
+  lion: "Leo", vierge: "Virgo", balance: "Libra", scorpion: "Scorpio",
+  sagittaire: "Sagittarius", capricorne: "Capricorn", verseau: "Aquarius", poissons: "Pisces",
+};
 
 // Best / challenging pairings per element (traditional compatibility)
 const COMPAT: Record<string, { best: string[]; challenge: string[] }> = {
@@ -44,33 +63,43 @@ export default function SignContent({ sign }: { sign: SignDataBilingual }) {
   const work = fr ? sign.work.fr : sign.work.en;
 
   const elColor = elementColor[element] ?? "#888";
+  const keyword = signMeta(SLUG_TO_KEY[sign.slug] ?? "", locale)?.keyword ?? "";
 
   return (
     <>
-      {/* Sign icon */}
-      <div className="flex justify-center mb-4">
-        <div className="w-16 h-16 rounded-2xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 shadow-inner">
-          <SignIcon name={sign.nameFr} size={36} color="var(--color-accent-lavender)" glow />
-        </div>
-      </div>
-
-      {/* Header badges */}
-      <div className="flex flex-wrap gap-3 mb-6 justify-center">
-        <span className="text-xs font-mono px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)]">
-          {dates}
-        </span>
-        <span
-          className="text-xs font-mono px-3 py-1 rounded-full"
-          style={{ color: elColor, border: `1px solid ${elColor}40` }}
+      {/* Hero — element-themed */}
+      <div
+        className="glass p-6 sm:p-8 mb-8 flex flex-col items-center text-center"
+        style={{ boxShadow: `0 0 36px ${elColor}1f, 0 0 72px ${elColor}12` }}
+      >
+        <div
+          className="w-20 h-20 rounded-2xl flex items-center justify-center mb-3"
+          style={{ background: `${elColor}1a`, boxShadow: `0 0 28px ${elColor}30` }}
         >
-          {element}
-        </span>
-        <span className="text-xs font-mono px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)]">
-          {modality}
-        </span>
-        <span className="text-xs font-mono px-3 py-1 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)]">
-          {planet}
-        </span>
+          <SignIcon name={sign.nameFr} size={46} color={elColor} glow />
+        </div>
+        {keyword && (
+          <p className="text-base text-[var(--color-text-secondary)] italic mb-5">{keyword}</p>
+        )}
+        <div className="flex flex-wrap gap-2.5 justify-center">
+          <span className="inline-flex items-center text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)]">
+            {dates}
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+            style={{ color: elColor, border: `1px solid ${elColor}55`, background: `${elColor}12` }}
+          >
+            <ElementGlyph element={sign.elementFr} size={14} color={elColor} />
+            {element}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-[var(--color-accent-lavender)]/30 text-[var(--color-accent-lavender)] bg-[var(--color-accent-lavender)]/8">
+            <ModalityGlyph modality={sign.modalityFr} size={14} color="var(--color-accent-lavender)" />
+            {modality}
+          </span>
+          <span className="inline-flex items-center text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--color-glass-border)] text-[var(--color-text-secondary)]">
+            {fr ? "Régi par " : "Ruled by "}{planet}
+          </span>
+        </div>
       </div>
 
       {/* Personality */}
@@ -231,6 +260,41 @@ export default function SignContent({ sign }: { sign: SignDataBilingual }) {
           {fr ? `Calcule ton thème natal complet` : `Calculate your full birth chart`}
         </Link>
       </div>
+
+      {/* Prev / next sign navigation (circular) */}
+      {(() => {
+        const idx = ORDER.indexOf(sign.slug);
+        if (idx === -1) return null;
+        const prev = ORDER[(idx - 1 + ORDER.length) % ORDER.length];
+        const next = ORDER[(idx + 1) % ORDER.length];
+        const name = (s: string) => (fr ? SLUG_NAME_FR[s] : SLUG_NAME_EN[s]);
+        return (
+          <div className="grid grid-cols-2 gap-3 mt-8">
+            <Link
+              href={`/signe/${prev}`}
+              className="group flex items-center gap-3 rounded-xl border border-[var(--color-glass-border)] bg-white/[0.02] p-4 hover:border-[var(--color-accent-lavender)]/40 hover:bg-white/[0.04] transition"
+            >
+              <span className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent-lavender)] transition">←</span>
+              <SignIcon name={SLUG_NAME_FR[prev]} size={22} color="var(--color-accent-lavender)" />
+              <span>
+                <span className="block text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] opacity-60">{fr ? "Précédent" : "Previous"}</span>
+                <span className="block text-sm text-[var(--color-text-primary)]">{name(prev)}</span>
+              </span>
+            </Link>
+            <Link
+              href={`/signe/${next}`}
+              className="group flex items-center justify-end gap-3 text-right rounded-xl border border-[var(--color-glass-border)] bg-white/[0.02] p-4 hover:border-[var(--color-accent-lavender)]/40 hover:bg-white/[0.04] transition"
+            >
+              <span>
+                <span className="block text-[10px] uppercase tracking-widest text-[var(--color-text-secondary)] opacity-60">{fr ? "Suivant" : "Next"}</span>
+                <span className="block text-sm text-[var(--color-text-primary)]">{name(next)}</span>
+              </span>
+              <SignIcon name={SLUG_NAME_FR[next]} size={22} color="var(--color-accent-lavender)" />
+              <span className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent-lavender)] transition">→</span>
+            </Link>
+          </div>
+        );
+      })()}
 
       {/* Navigation */}
       <div className="mt-6 text-center">
