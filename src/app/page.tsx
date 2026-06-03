@@ -1310,25 +1310,49 @@ export default function Home() {
         {/* ═══ HERO ═══ */}
         {step === 0 && (
           <>
-            <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-              <div className="animate-fade-in-up">
-                <div className="text-5xl md:text-6xl mb-6 opacity-40 text-[var(--color-accent-lavender)]">&#10022;</div>
+            <section className="relative overflow-hidden min-h-screen flex flex-col items-center justify-center px-4 text-center">
+              {/* Soft radial halo behind the title — adds cosmic depth. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] max-w-[90vw] rounded-full blur-3xl opacity-50"
+                style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--color-accent-lavender) 55%, transparent), transparent 70%)" }}
+              />
+              <div className="relative animate-fade-in-up">
+                {/* Pulsing star — gold-tinted glow for warmth. */}
+                <div
+                  className="text-5xl md:text-6xl mb-6 text-[var(--color-accent-gold)] animate-pulse-glow"
+                  style={{ filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--color-accent-gold) 55%, transparent))" }}
+                >
+                  &#10022;
+                </div>
                 <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
                   {t("hero.title")}
                 </h1>
                 <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
                   {t("hero.subtitle1")}
                 </p>
-                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-10 font-light">
+                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-8 font-light">
                   {t("hero.subtitle2")}
                 </p>
                 <button onClick={() => setStep(1)}
-                  className="btn-primary px-8 py-4 rounded-full text-white font-medium text-lg">
+                  className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender">
+                  <span aria-hidden="true">&#10022;</span>
                   {t("hero.cta")}
                 </button>
+                {/* Reassurance microline — lowers friction before the CTA commitment. */}
+                <p className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] opacity-70 tracking-wide">
+                  {locale === "fr" ? "Gratuit · Aucun compte requis · 3 minutes" : "Free · No account needed · 3 minutes"}
+                </p>
                 <div className="mt-12">
                   <DailySign />
                 </div>
+              </div>
+
+              {/* Scroll cue — invites exploring the sections below. */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce opacity-40" aria-hidden="true">
+                <svg width="22" height="22" fill="none" stroke="var(--color-accent-lavender)" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
               </div>
             </section>
 
