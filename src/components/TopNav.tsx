@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 import LanguageSwitcher from "./LanguageSwitcher";
+import ThemeToggle from "./ThemeToggle";
 
 type NavLink = { href: string; labelFr: string; labelEn: string };
 
@@ -86,6 +87,9 @@ export default function TopNav() {
 
         {/* ─── Right cluster ─── */}
         <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
           <div className="hidden sm:block">
             <LanguageSwitcher />
           </div>
@@ -259,7 +263,10 @@ export default function TopNav() {
             );
           })}
           <div className="pt-2 mt-2 border-t border-white/5 flex items-center justify-between">
-            <LanguageSwitcher />
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
             {!user && (
               <Link
                 href="/connexion"

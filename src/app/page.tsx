@@ -1722,7 +1722,7 @@ export default function Home() {
 
             {/* ── Intro Narrative ── */}
             {chart && (
-              <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 animate-on-scroll">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-8 animate-on-scroll">
                 <div className="glass p-6 sm:p-8 text-center">
                   <p className="text-xl sm:text-2xl font-cinzel text-[var(--color-text-primary)] mb-4 leading-relaxed">
                     {getGreeting(form.prenom, form.genre, locale)},{" "}
@@ -1776,7 +1776,7 @@ export default function Home() {
             )}
 
             <nav className="sticky top-0 z-30 backdrop-blur-2xl bg-[var(--color-space-deep)]/80" style={{ borderBottom: "1px solid rgba(201,160,255,0.06)" }}>
-              <div className="tab-nav flex overflow-x-auto max-w-3xl mx-auto">
+              <div className="tab-nav flex overflow-x-auto max-w-3xl lg:max-w-4xl mx-auto">
                 {RESULT_TABS.map((tab) => (
                   <button key={tab.id} onClick={() => {
                     scrollToTab(tab.id);
@@ -1800,7 +1800,7 @@ export default function Home() {
             </nav>
 
             {showTabsHint && (
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-3">
+              <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-3">
                 <p className="text-xs text-center text-[var(--color-accent-lavender)]/60 animate-fade-in">
                   {locale === "en" ? "↑ Start here — explore each section at your own pace" : "↑ Commence par ici — explore chaque section à ton rythme"}
                 </p>

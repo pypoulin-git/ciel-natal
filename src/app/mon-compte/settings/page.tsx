@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 import AccountTabs from "@/components/AccountTabs";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function SettingsPage() {
   const { user, isPremium, loading, signOut, getAccessToken } = useAuth();
@@ -142,6 +143,20 @@ export default function SettingsPage() {
               <span>✦</span> {label("Activer Premium — 9,99 $", "Activate Premium — $9.99")}
             </a>
           )}
+        </div>
+
+        {/* ─── Appearance / theme ─── */}
+        <div className="glass p-6 mb-5">
+          <h2 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-4">
+            {label("Apparence", "Appearance")}
+          </h2>
+          <ThemeToggle variant="row" />
+          <p className="text-xs text-[var(--color-text-secondary)] mt-3">
+            {label(
+              "Bascule entre le ciel sombre et un ciel clair. Ton choix est mémorisé sur cet appareil.",
+              "Switch between a dark sky and a light sky. Your choice is remembered on this device."
+            )}
+          </p>
         </div>
 
         {/* ─── Change password ─── */}

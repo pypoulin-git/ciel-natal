@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ViewTransition } from "react";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n";
+import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth-context";
 import TopNav from "@/components/TopNav";
 import CookieBanner from "@/components/CookieBanner";
@@ -42,6 +43,8 @@ export default function RootLayout({
       <head>
         {/* Sync lang attribute with user locale preference */}
         <script dangerouslySetInnerHTML={{ __html: `try{var l=localStorage.getItem("ciel-natal-locale");if(l)document.documentElement.lang=l}catch(e){}` }} />
+        {/* Apply saved theme BEFORE paint to avoid a flash of the wrong palette. */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("ciel-natal-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}` }} />
         <link rel="alternate" hrefLang="fr" href="https://ciel-natal.vercel.app" />
         <link rel="alternate" hrefLang="en" href="https://ciel-natal.vercel.app" />
         <link rel="alternate" hrefLang="x-default" href="https://ciel-natal.vercel.app" />
@@ -70,26 +73,28 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
       <body className="antialiased min-h-screen">
-        <LocaleProvider>
-          <AuthProvider>
-            <a href="#main-content" className="skip-link">
-              Skip to content
-            </a>
-            <TopNav />
-            <ViewTransition>
-              <main id="main-content" role="main">
-                {children}
-              </main>
-            </ViewTransition>
-            <CookieBanner />
-            <ConsentedAnalytics />
-          </AuthProvider>
-        </LocaleProvider>
+        <ThemeProvider>
+          <LocaleProvider>
+            <AuthProvider>
+              <a href="#main-content" className="skip-link">
+                Skip to content
+              </a>
+              <TopNav />
+              <ViewTransition>
+                <main id="main-content" role="main">
+                  {children}
+                </main>
+              </ViewTransition>
+              <CookieBanner />
+              <ConsentedAnalytics />
+            </AuthProvider>
+          </LocaleProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,38 +1,109 @@
 @import "tailwindcss";
 
+/* ============================================
+   Design tokens — DARK theme (default)
+   "Réveil maîtrisé" — warm gold restored, deeper
+   blue-violet cosmos, brighter lavender/rose.
+   ============================================ */
 @theme {
-  --color-space-deep: #09090f;
-  --color-space-card: #111118;
-  --color-accent-lavender: #a89ec8;
-  --color-accent-gold: #b8b0c8;
-  --color-text-primary: #f5f2ff;
-  --color-text-secondary: #d8d3ea;
-  --color-text-muted: #a9a3c4;
-  --color-glass-border: rgba(168, 158, 200, 0.14);
-  --color-glass-bg: rgba(16, 16, 24, 0.55);
-  --color-accent-rose: #d4a0b0;
-  --color-accent-rose-gold: #c9a07a;
+  --color-space-deep: #0a0a16;
+  --color-space-card: #14131f;
+  --color-accent-lavender: #b3a7e0;
+  --color-accent-gold: #e0a94e;          /* REAL warm gold — was #b8b0c8 (grey). Restores warm/cold contrast. */
+  --color-text-primary: #f6f3ff;
+  --color-text-secondary: #cdc7e6;
+  --color-text-muted: #9089b4;
+  --color-glass-border: rgba(179, 167, 224, 0.16);
+  --color-glass-bg: rgba(20, 19, 31, 0.55);
+  --color-accent-rose: #dba3b8;
+  --color-accent-rose-gold: #cda06a;
+
+  /* Celestial-body accents — used by Sun/Moon/element glows (PR2) */
+  --color-sun: #f0b94e;
+  --color-moon: #9ec3f0;
+  --color-element-fire: #e8804f;
+  --color-element-earth: #c2a25e;
+  --color-element-air: #9ec3f0;
+  --color-element-water: #6fa8d4;
+}
+
+/* Non-color tokens + theme-switchable runtime vars.
+   Kept outside @theme so light overrides are trivial. */
+:root {
+  /* Starfield star colour as an rgb triplet (consumed by Starfield.tsx). */
+  --starfield-star: 232, 224, 240;       /* light stars on dark sky */
+  --starfield-opacity: 0.85;
+  /* Page ambient gradient wash behind the starfield. */
+  --ambient-wash: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(179, 167, 224, 0.10), transparent 70%);
+}
+
+/* ============================================
+   Design tokens — LIGHT theme
+   "Bleu ciel très pâle" — pale sky background,
+   dark stars, near-black violet-tinted text.
+   ============================================ */
+:root[data-theme="light"] {
+  --color-space-deep: #e9f1fb;           /* very pale sky blue */
+  --color-space-card: #f5f9fe;
+  --color-accent-lavender: #6a5cae;      /* darkened for contrast on light bg */
+  --color-accent-gold: #b07d28;          /* deeper gold stays legible on pale bg */
+  --color-text-primary: #1a1828;         /* near-black, violet-tinted */
+  --color-text-secondary: #45415e;
+  --color-text-muted: #6f6a8c;
+  --color-glass-border: rgba(70, 60, 120, 0.16);
+  --color-glass-bg: rgba(255, 255, 255, 0.6);
+  --color-accent-rose: #b05f7c;
+  --color-accent-rose-gold: #a67b3e;
+
+  --color-sun: #c98a1e;
+  --color-moon: #5b86b8;
+  --color-element-fire: #c85a2e;
+  --color-element-earth: #8a6f32;
+  --color-element-air: #4f7fb0;
+  --color-element-water: #3c7ba8;
+
+  --starfield-star: 40, 38, 78;          /* dark stars on pale sky */
+  --starfield-opacity: 0.55;
+  --ambient-wash: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(120, 150, 200, 0.18), transparent 70%);
 }
 
 html {
   scroll-behavior: smooth;
+  /* Fluid base size — slightly larger text that scales up on wider screens.
+     Drives every rem unit (type + spacing) so the whole UI breathes more,
+     while staying fully responsive. */
+  font-size: clamp(16px, 0.92rem + 0.28vw, 18px);
 }
 
 body {
   background: var(--color-space-deep);
   color: var(--color-text-primary);
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 400;
-  letter-spacing: 0.01em;
-  line-height: 1.65;
+  letter-spacing: 0;
+  line-height: 1.7;
   overflow-x: hidden;
+  /* Smooth theme transitions when toggling dark/light. */
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Heading font — elegant serif */
+/* Ambient colour wash behind the starfield — adds cosmic depth. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--ambient-wash);
+}
+
+/* Display / heading font — Fraunces (modern serif with soul).
+   Class name kept as .font-cinzel for backward compat across the codebase. */
 .font-cinzel {
-  font-family: "Cormorant Garamond", "Georgia", serif;
+  font-family: "Fraunces", "Cormorant Garamond", "Georgia", serif;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
+  font-optical-sizing: auto;
 }
 
 /* Starfield canvas */
@@ -122,14 +193,80 @@ body {
 }
 
 /* ============================================
+   LIGHT THEME — component overrides
+   Surfaces built on white-alpha overlays go invisible on a pale
+   background; remap the most common ones to a dark-violet alpha so
+   cards, hovers and inputs keep their depth in light mode.
+   ============================================ */
+:root[data-theme="light"] .glass-input {
+  background: rgba(70, 60, 120, 0.05);
+}
+:root[data-theme="light"] .glass-input:focus {
+  background: rgba(70, 60, 120, 0.08);
+  border-color: rgba(106, 92, 174, 0.45);
+  box-shadow: 0 0 0 3px rgba(106, 92, 174, 0.12);
+}
+/* Primary button: lavender is darkened in light mode → white label reads better. */
+:root[data-theme="light"] .btn-primary {
+  color: #fff;
+}
+/* Remap frequent white-alpha micro-surfaces so they stay visible on pale bg. */
+:root[data-theme="light"] .bg-white\/5,
+:root[data-theme="light"] .hover\:bg-white\/5:hover {
+  background-color: rgba(60, 50, 110, 0.06) !important;
+}
+:root[data-theme="light"] .bg-white\/\[0\.02\] {
+  background-color: rgba(60, 50, 110, 0.035) !important;
+}
+:root[data-theme="light"] .bg-white\/\[0\.04\] {
+  background-color: rgba(60, 50, 110, 0.05) !important;
+}
+:root[data-theme="light"] .bg-white\/10 {
+  background-color: rgba(60, 50, 110, 0.1) !important;
+}
+/* The glass acrylic noise reads as harsh grain on a light surface — soften it. */
+:root[data-theme="light"] .glass::before,
+:root[data-theme="light"] .glass-modal::before {
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+}
+
+/* ============================================
    Accent glows
    ============================================ */
 .glow-lavender {
-  box-shadow: 0 0 30px rgba(168, 158, 200, 0.2), 0 0 60px rgba(168, 158, 200, 0.1);
+  box-shadow: 0 0 30px rgba(179, 167, 224, 0.22), 0 0 60px rgba(179, 167, 224, 0.1);
 }
 
 .glow-gold {
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 22px rgba(224, 169, 78, 0.22), 0 0 48px rgba(224, 169, 78, 0.1);
+}
+
+/* ============================================
+   Celestial glows — Sun / Moon / Elements (used in PR2)
+   color-mix keeps them theme-aware off the design tokens.
+   ============================================ */
+.glow-sun {
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--color-sun) 38%, transparent),
+    0 0 60px color-mix(in srgb, var(--color-sun) 16%, transparent);
+}
+.glow-moon {
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--color-moon) 40%, transparent),
+    0 0 60px color-mix(in srgb, var(--color-moon) 16%, transparent);
+}
+.glow-fire {
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color-element-fire) 34%, transparent);
+}
+.glow-earth {
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color-element-earth) 34%, transparent);
+}
+.glow-air {
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color-element-air) 34%, transparent);
+}
+.glow-water {
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color-element-water) 34%, transparent);
 }
 
 /* ============================================

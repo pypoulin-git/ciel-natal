@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "@/lib/theme";
 
 export default function Starfield() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Respect reduced motion preference — show static stars only
@@ -13,6 +15,12 @@ export default function Starfield() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Read the star colour from the active theme's CSS token so the field
+    // inverts (light stars on dark sky / dark stars on pale sky).
+    const styles = getComputedStyle(document.documentElement);
+    const starRgb = styles.getPropertyValue("--starfield-star").trim() || "232, 224, 240";
+    const starMaxOpacity = parseFloat(styles.getPropertyValue("--starfield-opacity")) || 0.85;
 
     let animationId: number;
     let lastFrameTime = 0;
@@ -46,7 +54,7 @@ export default function Starfield() {
       for (const star of stars) {
         ctx!.beginPath();
         ctx!.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(232, 224, 240, ${star.opacity * 0.8})`;
+        ctx!.fillStyle = `rgba(${starRgb}, ${star.opacity * starMaxOpacity})`;
         ctx!.fill();
       }
     }
@@ -74,7 +82,7 @@ export default function Starfield() {
 
         ctx!.beginPath();
         ctx!.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(232, 224, 240, ${star.opacity * 0.8})`;
+        ctx!.fillStyle = `rgba(${starRgb}, ${star.opacity * starMaxOpacity})`;
         ctx!.fill();
       }
 
@@ -101,7 +109,8 @@ export default function Starfield() {
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+    // Re-run when the theme flips so star colour/opacity are re-read.
+  }, [theme]);
 
   return <canvas ref={canvasRef} id="starfield" aria-hidden="true" />;
 }
