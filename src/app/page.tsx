@@ -62,6 +62,15 @@ const MONTHS_EN = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+// Canonical saved-chart label — shared by auto-save, the PDF save, and the
+// manual "Mes cartes" save so all three target the SAME saved_charts row
+// (de-duped server-side by label). Keeps one chart = one saved row.
+function makeChartLabel(prenom: string, jour: number, mois: number, annee: number, locale: string): string {
+  return locale === "fr"
+    ? `Carte de ${prenom || "lecture"} — ${jour}/${mois}/${annee}`
+    : `${prenom || "Chart"}'s chart — ${mois}/${jour}/${annee}`;
+}
+
 const ASPECT_SYMBOLS: Record<string, string> = {
   Conjonction: "☌", Trigone: "△", Sextile: "⚹", Carre: "□", Opposition: "☍",
 };
@@ -373,10 +382,7 @@ export default function Home() {
   // The PDF route remains the manual path and adds the actual PDF file.
   useEffect(() => {
     if (!user?.id || !chart || step < 7) return;
-    const label =
-      locale === "fr"
-        ? `Carte de ${form.prenom || "lecture"} — ${form.jour}/${form.mois}/${form.annee}`
-        : `${form.prenom || "Chart"}'s chart — ${form.mois}/${form.jour}/${form.annee}`;
+    const label = makeChartLabel(form.prenom, form.jour, form.mois, form.annee, locale);
     // Skip if we already saved this exact label in this session — avoids
     // hitting the API every time React re-runs the effect on tab change.
     if (autoSavedLabelRef.current === label) return;
@@ -550,10 +556,7 @@ export default function Home() {
         setPdfMessage(locale === "fr" ? "Erreur de génération." : "Generation error.");
         return;
       }
-      const label =
-        locale === "fr"
-          ? `Carte de ${form.prenom || "lecture"} — ${form.jour}/${form.mois}/${form.annee}`
-          : `${form.prenom || "Chart"}'s chart — ${form.mois}/${form.jour}/${form.annee}`;
+      const label = makeChartLabel(form.prenom, form.jour, form.mois, form.annee, locale);
 
       if (!user) {
         // ── Anonymous: stash Blob in IndexedDB, trigger immediate download, redirect to signup ──
@@ -1889,7 +1892,7 @@ export default function Home() {
                       setChart(null);
                     }}
                     currentFormData={form as unknown as Record<string, unknown>}
-                    currentLabel={form.prenom}
+                    currentLabel={makeChartLabel(form.prenom, form.jour, form.mois, form.annee, locale)}
                   />
                 </div>
 
