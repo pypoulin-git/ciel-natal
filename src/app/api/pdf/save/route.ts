@@ -64,11 +64,24 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // ── Check free-tier limit ──
     const profile = await getProfile(userId);
     const isPremium = profile?.is_premium === true;
 
-    if (!isPremium) {
+    // Does a saved reading for this exact chart already exist? We key by
+    // (user_id, label) — the SAME label the auto-save (/api/charts) uses — so
+    // the PDF attaches to that one row instead of creating a duplicate. This
+    // is the fix for the double-counting bug: one chart = one saved_charts row,
+    // whether it was auto-saved, PDF'd, or both.
+    const { data: existingRow } = await supabase
+      .from("saved_charts")
+      .select("id, pdf_url")
+      .eq("user_id", userId)
+      .eq("label", label)
+      .maybeSingle();
+
+    // The free cap only applies when CREATING a brand-new reading. Attaching /
+    // replacing a PDF on an already-saved reading never counts against it.
+    if (!existingRow && !isPremium) {
       const { count } = await supabase
         .from("saved_charts")
         .select("id", { count: "exact", head: true })
@@ -100,23 +113,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Insert saved_charts row ──
-    const { data: row, error: insertErr } = await supabase
-      .from("saved_charts")
-      .insert({
-        user_id: userId,
-        label,
-        form_data: formData,
-        chart_data: chartData,
-        pdf_url: path, // storage path, not public URL
-      })
-      .select("id, label, created_at, pdf_url")
-      .single();
+    // ── Upsert the saved_charts row (update existing, else insert) ──
+    let row: { id: string; label: string; created_at: string; pdf_url: string | null } | null;
+    if (existingRow) {
+      const { data: updated, error: updErr } = await supabase
+        .from("saved_charts")
+        .update({ form_data: formData, chart_data: chartData, pdf_url: path })
+        .eq("id", existingRow.id)
+        .select("id, label, created_at, pdf_url")
+        .single();
+      if (updErr) {
+        await supabase.storage.from("pdfs").remove([path]);
+        return NextResponse.json({ error: updErr.message }, { status: 500 });
+      }
+      row = updated;
+      // Clean up the previously attached PDF file (avoid orphans in Storage).
+      if (existingRow.pdf_url && existingRow.pdf_url !== path) {
+        await supabase.storage.from("pdfs").remove([existingRow.pdf_url]);
+      }
+    } else {
+      const { data: inserted, error: insertErr } = await supabase
+        .from("saved_charts")
+        .insert({
+          user_id: userId,
+          label,
+          form_data: formData,
+          chart_data: chartData,
+          pdf_url: path, // storage path, not public URL
+        })
+        .select("id, label, created_at, pdf_url")
+        .single();
+      if (insertErr) {
+        await supabase.storage.from("pdfs").remove([path]);
+        return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      }
+      row = inserted;
+    }
 
-    if (insertErr) {
-      // Attempt cleanup
+    if (!row) {
       await supabase.storage.from("pdfs").remove([path]);
-      return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      return NextResponse.json({ error: "Save failed" }, { status: 500 });
     }
 
     // ── Optional: send PDF link by email via Resend ──

@@ -113,7 +113,7 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
           <polyline points="17 21 17 13 7 13 7 21" />
           <polyline points="7 3 7 8 15 8" />
         </svg>
-        {locale === "fr" ? "Mes cartes" : "My charts"} ({charts.length}/10)
+        {locale === "fr" ? "Mes cartes" : "My charts"} ({charts.length})
       </button>
 
       {/* Dropdown — anchored to BOTTOM of the toggle button (i.e. opens
@@ -133,7 +133,7 @@ export default function SavedCharts({ onLoadChart, currentFormData, currentLabel
           {/* Save current */}
           <button
             onClick={saveChart}
-            disabled={saving || charts.length >= 10}
+            disabled={saving}
             className="w-full px-4 py-3 text-left text-sm flex items-center gap-2 hover:bg-white/5 transition border-b border-[var(--color-glass-border)] disabled:opacity-30"
           >
             <svg width="14" height="14" fill="none" stroke="var(--color-accent-lavender)" strokeWidth="1.5" viewBox="0 0 24 24">
