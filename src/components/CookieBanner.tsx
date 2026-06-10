@@ -63,7 +63,7 @@ export default function CookieBanner() {
     analytics: locale === "fr" ? "Analyse anonyme" : "Anonymous analytics",
     analyticsDesc: locale === "fr" ? "Vercel Analytics, sans identifiant personnel" : "Vercel Analytics, no personal identifier",
     customize: locale === "fr" ? "Personnaliser" : "Customize",
-    decline: locale === "fr" ? "Refuser" : "Decline",
+    decline: locale === "fr" ? "Tout refuser" : "Decline all",
     accept: locale === "fr" ? "Tout accepter" : "Accept all",
     save: locale === "fr" ? "Enregistrer mes choix" : "Save my choices",
   };
