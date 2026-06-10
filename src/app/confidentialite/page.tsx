@@ -10,7 +10,7 @@ export default function Confidentialite() {
   return (
     <PageShell title={fr ? "Politique de confidentialité" : "Privacy Policy"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 2 juin 2026" : "Last updated: June 2, 2026"}
+        {fr ? "Dernière mise à jour : 10 juin 2026" : "Last updated: June 10, 2026"}
       </p>
 
       <section>

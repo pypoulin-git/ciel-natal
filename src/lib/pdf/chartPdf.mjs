@@ -243,7 +243,7 @@ export function generateChartPdf(data) {
   // top wordmark
   drawStar(PW / 2, 26, 3.4, PALETTE.gold, 0.5);
   display(12); setText(PALETTE.gold);
-  pdf.text(fr ? "CIEL NATAL" : "CIEL NATAL", PW / 2, 35, { align: "center" });
+  pdf.text("NATALUNE", PW / 2, 35, { align: "center" });
 
   // prénom
   display(40); setText(PALETTE.ink);

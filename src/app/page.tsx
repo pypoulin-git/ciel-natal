@@ -14,6 +14,7 @@ import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getL
 import { useAuth } from "@/lib/auth-context";
 import { getPlanetInterp, getAspectInterp as getAspectInterpHelper, type InterpModule, type VoiceKey } from "@/lib/getInterp";
 import LoadingMessages from "@/components/LoadingMessages";
+import Skeleton from "@/components/ui/Skeleton";
 import SectionTransition from "@/components/results/SectionTransition";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
@@ -1180,10 +1181,12 @@ export default function Home() {
                 </button>
                 {step < 3 ? (
                   <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setShowValidation(false); setStep(step + 1); } else { setShowValidation(true); } }}
-                    className={`btn-primary px-6 py-2.5 rounded-xl text-sm ${!canAdvance() ? "opacity-50" : ""}`}>{t("form.next")}</button>
+                    aria-disabled={!canAdvance()}
+                    className={`btn-primary px-6 py-2.5 rounded-xl text-sm ${!canAdvance() ? "opacity-50 cursor-not-allowed" : ""}`}>{t("form.next")}</button>
                 ) : (
                   <button onClick={() => { if (canAdvance()) { doCalculation(); } else { setShowValidation(true); } }}
-                    className={`btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender ${!canAdvance() ? "opacity-50" : ""}`}>{t("form.calculate")}</button>
+                    aria-disabled={!canAdvance()}
+                    className={`btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender ${!canAdvance() ? "opacity-50 cursor-not-allowed" : ""}`}>{t("form.calculate")}</button>
                 )}
               </div>
             </div>
@@ -1752,9 +1755,12 @@ export default function Home() {
                         </h3>
                       </div>
                       {transitInterp.loading && (
-                        <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                          <span className="w-3 h-3 border border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
-                          {locale === "fr" ? "Lecture du ciel du jour…" : "Reading today's sky…"}
+                        <div>
+                          <p className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] mb-3">
+                            <span className="w-3 h-3 border border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
+                            {locale === "fr" ? "Lecture du ciel du jour…" : "Reading today's sky…"}
+                          </p>
+                          <Skeleton lines={4} />
                         </div>
                       )}
                       {transitInterp.error && (

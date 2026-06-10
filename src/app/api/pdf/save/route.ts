@@ -225,7 +225,7 @@ function emailTemplate({
   <div style="max-width:560px;margin:0 auto;padding:48px 32px">
     <div style="text-align:center;margin-bottom:32px">
       <span style="font-size:32px;color:#b8a6ff">✦</span>
-      <h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;letter-spacing:3px;color:#e5e5ec;margin:12px 0 0;font-size:24px">CIEL NATAL</h1>
+      <h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;letter-spacing:3px;color:#e5e5ec;margin:12px 0 0;font-size:24px">NATALUNE</h1>
     </div>
     <h2 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;color:#e5e5ec;font-size:22px;margin:0 0 8px">Bonjour ${safeFirstName},</h2>
     <p style="color:#a8a8b3;font-size:15px;line-height:1.6;margin:0 0 24px">

@@ -10,7 +10,7 @@ export default function Conditions() {
   return (
     <PageShell title={fr ? "Conditions d'utilisation" : "Terms of Use"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 31 mars 2026" : "Last updated: March 31, 2026"}
+        {fr ? "Dernière mise à jour : 10 juin 2026" : "Last updated: June 10, 2026"}
       </p>
 
       <section>
@@ -50,6 +50,11 @@ export default function Conditions() {
           <li>{fr ? "Une prédiction de l'avenir" : "A prediction of the future"}</li>
           <li>{fr ? "Un diagnostic de quelque nature que ce soit" : "A diagnosis of any kind"}</li>
         </ul>
+        <p className="mt-3">
+          {fr
+            ? "Les interprétations fournies ne constituent pas un diagnostic, un traitement ni un conseil psychologique, et ne remplacent pas l'accompagnement d'un professionnel de santé. Si vous traversez une période de détresse, consultez un professionnel qualifié ou une ligne d'écoute."
+            : "The interpretations provided are not a diagnosis, treatment or psychological advice, and are no substitute for the support of a health professional. If you are going through a period of distress, please consult a qualified professional or a helpline."}
+        </p>
         <p className="mt-3">
           {fr
             ? "Nous déclinons toute responsabilité quant aux décisions prises sur la base des interprétations fournies."

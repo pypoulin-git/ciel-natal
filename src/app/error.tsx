@@ -29,7 +29,7 @@ export default function ErrorPage({
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mb-6 leading-relaxed">
             {locale === "fr"
-              ? "Quelque chose ne s'est pas passe comme prevu. Les etoiles se realigneront bientot."
+              ? "Quelque chose ne s'est pas passé comme prévu. Les étoiles se réaligneront bientôt."
               : "Something didn't go as planned. The stars will realign soon."}
           </p>
           {error.digest && (
@@ -42,10 +42,10 @@ export default function ErrorPage({
               onClick={reset}
               className="btn-primary px-6 py-3 rounded-xl text-sm"
             >
-              {locale === "fr" ? "Reessayer" : "Try again"}
+              {locale === "fr" ? "Réessayer" : "Try again"}
             </button>
             <a href="/" className="btn-ghost px-6 py-3 rounded-xl text-sm">
-              {locale === "fr" ? "Retour a l'accueil" : "Back to home"}
+              {locale === "fr" ? "Retour à l'accueil" : "Back to home"}
             </a>
           </div>
         </div>
