@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import Starfield from "@/components/Starfield";
+import TitleSparkles from "@/components/TitleSparkles";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
@@ -818,10 +819,14 @@ export default function Home() {
                 >
                   &#10022;
                 </div>
-                <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
+                <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
                   {t("hero.title")}
                 </h1>
-                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light">
+                <TitleSparkles
+                  id="hero-sparkles"
+                  className="h-24 max-w-xl mx-auto mt-1 mb-2 -z-0"
+                />
+                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light -mt-16 relative z-10">
                   {t("hero.subtitle1")}
                 </p>
                 <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-8 font-light">
@@ -1242,10 +1247,15 @@ export default function Home() {
 
             <div className="text-center pt-8 pb-4 px-4">
               <div className="text-2xl mb-2 opacity-30 text-[var(--color-accent-lavender)]">✦</div>
-              <h1 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)] mb-2">
+              <h1 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)]">
                 {t("results.skyOf")} <span className="text-[var(--color-accent-lavender)]">{form.prenom}</span>
               </h1>
-              <p className="text-sm text-[var(--color-text-secondary)] font-mono">
+              <TitleSparkles
+                id="results-sparkles"
+                className="h-16 max-w-md mx-auto mt-1"
+                density={500}
+              />
+              <p className="text-sm text-[var(--color-text-secondary)] font-mono -mt-10 relative z-10">
                 {form.jour} {MONTHS[form.mois - 1]} {form.annee}
                 {form.hasTime && ` — ${String(form.heure).padStart(2, "0")}h${String(form.minute).padStart(2, "0")}`}
                 {" — "}{form.lieu}
