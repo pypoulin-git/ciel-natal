@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
 
           if (email) {
             const resend = new Resend(process.env.RESEND_API_KEY);
-            const from = process.env.RESEND_FROM || "Ciel Natal <onboarding@resend.dev>";
+            const from = process.env.RESEND_FROM || "Natalune <onboarding@resend.dev>";
             await resend.emails.send({
               from,
               to: email,
@@ -239,13 +239,13 @@ function emailTemplate({
     </div>
     <p style="color:#6b6b78;font-size:12px;line-height:1.6;margin:32px 0 0;text-align:center">
       Ce lien est valide 7 jours. Tu retrouveras toujours cette lecture dans
-      <a href="https://ciel-natal.vercel.app/mon-compte/lectures" style="color:#b8a6ff">Mes lectures</a>
+      <a href="https://natalune.com/mon-compte/lectures" style="color:#b8a6ff">Mes lectures</a>
       sur ton compte.
     </p>
     <hr style="border:none;border-top:1px solid #2a2a35;margin:32px 0 16px" />
     <p style="color:#6b6b78;font-size:11px;line-height:1.5;text-align:center;margin:0">
-      Ciel Natal — Astrologie psychologique inspirée de Jung<br />
-      <a href="https://ciel-natal.vercel.app" style="color:#6b6b78">ciel-natal.vercel.app</a>
+      Natalune — Astrologie psychologique inspirée de Jung<br />
+      <a href="https://natalune.com" style="color:#6b6b78">natalune.com</a>
     </p>
   </div>
 </body>

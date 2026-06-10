@@ -1,7 +1,7 @@
 import Starfield from "@/components/Starfield";
 
 export const metadata = {
-  title: "404 — Ciel Natal",
+  title: "404 — Natalune",
 };
 
 export default function NotFound() {

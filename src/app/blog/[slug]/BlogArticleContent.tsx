@@ -11,7 +11,7 @@ export default function BlogArticleContent({ article }: { article: BlogArticle }
 
   const title = fr ? article.titleFr : article.titleEn;
   const content = fr ? article.contentFr : article.contentEn;
-  const shareUrl = `https://ciel-natal.vercel.app/blog/${article.slug}`;
+  const shareUrl = `https://natalune.com/blog/${article.slug}`;
 
   return (
     <>

@@ -9,15 +9,15 @@ import SiteFooter from "@/components/SiteFooter";
 const PRODUCT_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: "Ciel Natal Premium",
+  name: "Natalune Premium",
   description: "Lifetime access to full astrological interpretations, unlimited AI chat, PDF export, saved charts, audio narration, synastry and personalized transits.",
-  brand: { "@type": "Brand", name: "Ciel Natal" },
+  brand: { "@type": "Brand", name: "Natalune" },
   offers: {
     "@type": "Offer",
     price: "9.99",
     priceCurrency: "CAD",
     availability: "https://schema.org/InStock",
-    url: "https://ciel-natal.vercel.app/premium",
+    url: "https://natalune.com/premium",
   },
 };
 
@@ -120,7 +120,7 @@ export default function PremiumPage() {
           <div className="text-center mb-12">
             <div className="text-4xl mb-4 opacity-40 text-[var(--color-accent-rose)]">✦</div>
             <h1 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)] mb-3">
-              {locale === "fr" ? "Ciel Natal Premium" : "Ciel Natal Premium"}
+              {locale === "fr" ? "Natalune Premium" : "Natalune Premium"}
             </h1>
             <p className="text-lg text-[var(--color-text-secondary)] max-w-md mx-auto">
               {locale === "fr"

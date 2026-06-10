@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  Ciel Natal — native PDF generator (jsPDF, framework-agnostic)
+//  Natalune — native PDF generator (jsPDF, framework-agnostic)
 //
 //  Pure: takes a fully-resolved data object and returns { blob, dataUrl,
 //  filename }. No DOM, no html2canvas — everything is drawn natively so the
@@ -132,7 +132,7 @@ export function generateChartPdf(data) {
     setFill(PALETTE.band); pdf.rect(0, 0, PW, 15, "F");
     drawStar(MX + 2, 8, 2.3, PALETTE.gold, 0.45);
     display(11); setText(PALETTE.gold);
-    pdf.text("Ciel Natal", MX + 7, 9.6);
+    pdf.text("Natalune", MX + 7, 9.6);
     body(8); setText(PALETTE.mutedInk);
     pdf.text(`${meta.prenom} · ${meta.dateLabel}`, PW - MX, 9.6, { align: "right" });
   };
@@ -141,7 +141,7 @@ export function generateChartPdf(data) {
     setDraw(PALETTE.hairline); pdf.setLineWidth(0.2);
     pdf.line(MX, PH - 13, PW - MX, PH - 13);
     body(7.5); setText(PALETTE.mutedInk);
-    pdf.text("ciel-natal.vercel.app", MX, PH - 8);
+    pdf.text("natalune.com", MX, PH - 8);
     pdf.text(String(page), PW - MX, PH - 8, { align: "right" });
   };
 
@@ -438,7 +438,7 @@ export function generateChartPdf(data) {
     : "“You are the author of your story — the sky is only its starry canvas.”";
   pdf.text(pdf.splitTextToSize(q2, CW * 0.82), PW / 2, y, { align: "center" });
 
-  const filename = `ciel-natal-${(meta.prenom || "lecture").toLowerCase().replace(/\s+/g, "-")}.pdf`;
+  const filename = `natalune-${(meta.prenom || "lecture").toLowerCase().replace(/\s+/g, "-")}.pdf`;
   const blob = pdf.output("blob");
   const dataUrl = pdf.output("datauristring");
   return { blob, dataUrl, filename, doc: pdf };

@@ -7,4 +7,4 @@ Disallow: /mon-compte
 Disallow: /premium/succes
 Disallow: /auth/
 
-Sitemap: https://ciel-natal.vercel.app/sitemap.xml
+Sitemap: https://natalune.com/sitemap.xml

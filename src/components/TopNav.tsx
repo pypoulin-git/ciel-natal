@@ -55,10 +55,10 @@ export default function TopNav() {
     >
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* ─── Logo ─── */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0 group" aria-label="Ciel Natal">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 group" aria-label="Natalune">
           <span className="text-xl text-[var(--color-accent-gold)] leading-none transition-transform group-hover:rotate-90 duration-500">✦</span>
           <span className="font-cinzel text-lg tracking-wide text-[var(--color-text-primary)]">
-            Ciel Natal
+            Natalune
           </span>
         </Link>
 

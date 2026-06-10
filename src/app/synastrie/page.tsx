@@ -80,7 +80,7 @@ async function searchCities(query: string, locale: string): Promise<CityResult[]
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=${locale}&addressdetails=1&featuretype=city`,
-      { headers: { "User-Agent": "CielNatal/1.0" } }
+      { headers: { "User-Agent": "Natalune/1.0" } }
     );
     if (!res.ok) return [];
     const data = await res.json();

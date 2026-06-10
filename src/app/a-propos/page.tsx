@@ -10,11 +10,11 @@ export default function APropos() {
   return (
     <PageShell title={fr ? "À propos" : "About"}>
       <section>
-        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">Ciel Natal</h2>
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">Natalune</h2>
         <p>
           {fr
-            ? "Ciel Natal est un outil gratuit de calcul et d'interprétation de thèmes astraux. Notre approche s'inspire de l'astrologie psychologique — celle de Carl Jung, Liz Greene et Howard Sasportas — pour proposer des lectures profondes, nuancées et respectueuses de chaque individualité."
-            : "Ciel Natal is a free natal chart calculator and interpretation tool. Our approach draws from psychological astrology — the tradition of Carl Jung, Liz Greene and Howard Sasportas — to offer deep, nuanced readings that honour each person's individuality."}
+            ? "Natalune est un outil gratuit de calcul et d'interprétation de thèmes astraux. Notre approche s'inspire de l'astrologie psychologique — celle de Carl Jung, Liz Greene et Howard Sasportas — pour proposer des lectures profondes, nuancées et respectueuses de chaque individualité."
+            : "Natalune is a free natal chart calculator and interpretation tool. Our approach draws from psychological astrology — the tradition of Carl Jung, Liz Greene and Howard Sasportas — to offer deep, nuanced readings that honour each person's individuality."}
         </p>
       </section>
 

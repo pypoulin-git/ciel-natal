@@ -308,7 +308,7 @@ export default function Home() {
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=${locale}`,
-            { headers: { "User-Agent": "CielNatal/1.0" } }
+            { headers: { "User-Agent": "Natalune/1.0" } }
           );
           if (res.ok) {
             const data = await res.json();
@@ -788,7 +788,7 @@ export default function Home() {
       ...chart.aspects.slice(0, 10).map((a) => `  ${a.planet1} ${ASPECT_SYMBOLS[a.type] || "·"} ${a.planet2} (${a.type}, ${a.orb}°)`),
       ``,
       `─────────────────────────────────────`,
-      `Généré sur Ciel Natal`,
+      `Généré sur Natalune`,
       getShareUrl(),
     ];
     return lines.join("\n");

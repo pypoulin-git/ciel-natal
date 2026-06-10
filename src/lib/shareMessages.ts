@@ -39,7 +39,7 @@ export function chartShareMessage(opts: {
       body: [
         "Hi,",
         "",
-        "I just used Ciel Natal — a free birth chart calculator with",
+        "I just used Natalune — a free birth chart calculator with",
         "gentle psychological interpretations (inspired by Jung and Liz",
         "Greene). Not the magazine-horoscope kind. A real self-reflection",
         "tool, no ads, no account needed to try.",
@@ -60,7 +60,7 @@ export function chartShareMessage(opts: {
     body: [
       "Salut,",
       "",
-      "Je viens d'utiliser Ciel Natal — un calculateur de carte du ciel",
+      "Je viens d'utiliser Natalune — un calculateur de carte du ciel",
       "gratuit avec des interprétations psychologiques douces (inspirées",
       "de Jung et Liz Greene). Pas un horoscope de magazine. Un vrai",
       "outil de réflexion, sans pub, sans compte requis pour essayer.",
@@ -101,7 +101,7 @@ export function synastryShareMessage(opts: {
       body: [
         `Hi ${prenomB},`,
         "",
-        `I ran our synastry on Ciel Natal — ${flavor}.`,
+        `I ran our synastry on Natalune — ${flavor}.`,
         "It's interesting, somewhere between a horoscope and a long",
         "conversation about who we are.",
         "",
@@ -123,7 +123,7 @@ export function synastryShareMessage(opts: {
     body: [
       `Salut ${prenomB},`,
       "",
-      `J'ai fait notre synastrie sur Ciel Natal — ${flavor}.`,
+      `J'ai fait notre synastrie sur Natalune — ${flavor}.`,
       "C'est intéressant, à mi-chemin entre un horoscope et une longue",
       "conversation sur qui on est.",
       "",
@@ -144,11 +144,11 @@ export function blogShareMessage(opts: {
 }): ShareMessage {
   if (opts.locale === "en") {
     return {
-      subject: `${opts.title} — Ciel Natal`,
+      subject: `${opts.title} — Natalune`,
       body: [
         "Hi,",
         "",
-        "Found this on Ciel Natal — felt worth sharing:",
+        "Found this on Natalune — felt worth sharing:",
         "",
         `« ${opts.title} »`,
         "",
@@ -159,11 +159,11 @@ export function blogShareMessage(opts: {
     };
   }
   return {
-    subject: `${opts.title} — Ciel Natal`,
+    subject: `${opts.title} — Natalune`,
     body: [
       "Salut,",
       "",
-      "Trouvé ça sur Ciel Natal — vaut le détour :",
+      "Trouvé ça sur Natalune — vaut le détour :",
       "",
       `« ${opts.title} »`,
       "",

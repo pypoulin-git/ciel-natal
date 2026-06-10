@@ -36,7 +36,7 @@ const FOOTER = { position: "absolute" as const, bottom: 32, display: "flex" as c
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const name = sanitize(searchParams.get("name") || "Ciel Natal", 40);
+  const name = sanitize(searchParams.get("name") || "Natalune", 40);
   const sun = sanitizeSign(searchParams.get("sun") || "");
   const moon = sanitizeSign(searchParams.get("moon") || "");
   const asc = sanitizeSign(searchParams.get("asc") || "");

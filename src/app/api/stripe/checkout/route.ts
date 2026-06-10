@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const origin = req.headers.get("origin") || "https://ciel-natal.vercel.app";
+    const origin = req.headers.get("origin") || "https://natalune.com";
 
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: "cad",
             product_data: {
-              name: "Ciel Natal Premium",
+              name: "Natalune Premium",
               description: "Accès à vie — Interprétations complètes, Chat IA, PDF, Audio, Synastrie et plus",
             },
             unit_amount: 999, // 9.99 CAD in cents

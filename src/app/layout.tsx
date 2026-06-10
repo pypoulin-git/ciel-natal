@@ -9,27 +9,27 @@ import CookieBanner from "@/components/CookieBanner";
 import ConsentedAnalytics from "@/components/ConsentedAnalytics";
 
 export const metadata: Metadata = {
-  title: "Ciel Natal — Découvre ta carte du ciel",
+  title: "Natalune — Découvre ta carte du ciel",
   description:
     "Calcule ton thème natal gratuitement et découvre ce que le ciel racontait au moment de ta naissance. Interprétations psychologiques profondes, pas un horoscope de magazine.",
   keywords:
     "carte du ciel, thème natal, astrologie, horoscope, signe ascendant, thème astral gratuit",
-  metadataBase: new URL("https://ciel-natal.vercel.app"),
+  metadataBase: new URL("https://natalune.com"),
   openGraph: {
-    title: "Ciel Natal — Découvre ta carte du ciel",
+    title: "Natalune — Découvre ta carte du ciel",
     description: "Calcule ton thème natal gratuitement. Interprétations psychologiques profondes inspirées de Jung.",
-    url: "https://ciel-natal.vercel.app",
-    siteName: "Ciel Natal",
+    url: "https://natalune.com",
+    siteName: "Natalune",
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ciel Natal — Découvre ta carte du ciel",
+    title: "Natalune — Découvre ta carte du ciel",
     description: "Calcule ton thème natal gratuitement. Interprétations psychologiques profondes.",
   },
   alternates: {
-    canonical: "https://ciel-natal.vercel.app",
+    canonical: "https://natalune.com",
   },
 };
 
@@ -45,22 +45,22 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `try{var l=localStorage.getItem("ciel-natal-locale");if(l)document.documentElement.lang=l}catch(e){}` }} />
         {/* Apply saved theme BEFORE paint to avoid a flash of the wrong palette. */}
         <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("ciel-natal-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}` }} />
-        <link rel="alternate" hrefLang="fr" href="https://ciel-natal.vercel.app" />
-        <link rel="alternate" hrefLang="en" href="https://ciel-natal.vercel.app" />
-        <link rel="alternate" hrefLang="x-default" href="https://ciel-natal.vercel.app" />
+        <link rel="alternate" hrefLang="fr" href="https://natalune.com" />
+        <link rel="alternate" hrefLang="en" href="https://natalune.com" />
+        <link rel="alternate" hrefLang="x-default" href="https://natalune.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "Ciel Natal",
-              url: "https://ciel-natal.vercel.app",
+              name: "Natalune",
+              url: "https://natalune.com",
               description: "Calcule ton thème natal gratuitement. Astrologie psychologique inspirée de Jung.",
               inLanguage: ["fr", "en"],
               potentialAction: {
                 "@type": "SearchAction",
-                target: "https://ciel-natal.vercel.app/signe/{search_term_string}",
+                target: "https://natalune.com/signe/{search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             }),

@@ -6,7 +6,7 @@ const SIGNS = [
   "balance", "scorpion", "sagittaire", "capricorne", "verseau", "poissons",
 ];
 
-const BASE_URL = "https://ciel-natal.vercel.app";
+const BASE_URL = "https://natalune.com";
 
 const langs = {
   fr: BASE_URL,

@@ -23,7 +23,7 @@ export async function generateMetadata({
   const article = articles.find((a) => a.slug === slug);
   if (!article) return {};
   return {
-    title: `${article.titleFr} — Blog | Ciel Natal`,
+    title: `${article.titleFr} — Blog | Natalune`,
     description: article.excerptFr,
     keywords: [
       "astrologie",
@@ -34,14 +34,14 @@ export async function generateMetadata({
       article.titleEn,
     ],
     openGraph: {
-      title: `${article.titleFr} — Ciel Natal`,
+      title: `${article.titleFr} — Natalune`,
       description: article.excerptFr,
       images: [`/api/og?title=${encodeURIComponent(article.titleFr)}`],
       type: "article",
       publishedTime: article.date,
     },
     alternates: {
-      canonical: `https://ciel-natal.vercel.app/blog/${slug}`,
+      canonical: `https://natalune.com/blog/${slug}`,
     },
   };
 }
@@ -65,10 +65,10 @@ export default async function BlogArticlePage({
     headline: article.titleFr,
     description: article.excerptFr,
     datePublished: article.date,
-    author: { "@type": "Organization", name: "Ciel Natal" },
-    publisher: { "@type": "Organization", name: "Ciel Natal", url: "https://ciel-natal.vercel.app" },
-    image: `https://ciel-natal.vercel.app/api/og?title=${encodeURIComponent(article.titleFr)}`,
-    url: `https://ciel-natal.vercel.app/blog/${slug}`,
+    author: { "@type": "Organization", name: "Natalune" },
+    publisher: { "@type": "Organization", name: "Natalune", url: "https://natalune.com" },
+    image: `https://natalune.com/api/og?title=${encodeURIComponent(article.titleFr)}`,
+    url: `https://natalune.com/blog/${slug}`,
     inLanguage: ["fr", "en"],
   };
 

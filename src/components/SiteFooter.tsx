@@ -12,7 +12,7 @@ export default function SiteFooter() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-center sm:text-left">
             <Link href="/" className="font-cinzel text-sm text-[var(--color-text-primary)] hover:text-[var(--color-accent-lavender)] transition">
-              Ciel Natal
+              Natalune
             </Link>
             <p className="text-xs text-[var(--color-text-secondary)] mt-1">
               {t("footer.tagline")}
@@ -45,7 +45,7 @@ export default function SiteFooter() {
         </div>
         <div className="text-center mt-8">
           <p className="text-xs text-[var(--color-text-secondary)]/40">
-            &copy; {new Date().getFullYear()} Ciel Natal. {t("footer.copyright")} {t("footer.disclaimer")}
+            &copy; {new Date().getFullYear()} Natalune. {t("footer.copyright")} {t("footer.disclaimer")}
           </p>
         </div>
       </div>

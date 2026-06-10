@@ -1,4 +1,4 @@
-# Ciel Natal — Setup Guide
+# Natalune — Setup Guide
 
 ## Prerequisites
 
@@ -20,8 +20,8 @@
    - **Email**: enable (confirm email = on)
    - **Google**: enable (requires Google Cloud Console OAuth client)
 5. Add redirect URL in **Authentication > URL Configuration**:
-   - Site URL: `https://ciel-natal.vercel.app`
-   - Redirect URLs: `https://ciel-natal.vercel.app/auth/callback`
+   - Site URL: `https://natalune.com`
+   - Redirect URLs: `https://natalune.com/auth/callback`
 6. Create storage bucket in **Storage**:
    - Name: `audio`
    - Public: yes
@@ -45,7 +45,7 @@
 2. Get API keys from **Developers > API keys**:
    - `STRIPE_SECRET_KEY` = Secret key (sk_live_... or sk_test_...)
 3. Set up webhook in **Developers > Webhooks**:
-   - Endpoint URL: `https://ciel-natal.vercel.app/api/stripe/webhook`
+   - Endpoint URL: `https://natalune.com/api/stripe/webhook`
    - Events: `checkout.session.completed`
    - Copy the signing secret: `STRIPE_WEBHOOK_SECRET` = whsec_...
 
