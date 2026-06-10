@@ -30,7 +30,9 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.upstash.io https://api.anthropic.com https://api.openai.com https://nominatim.openstreetmap.org https://secure.geonames.org https://*.sentry.io https://*.ingest.sentry.io",
+              // AI providers (Anthropic/OpenAI) are called server-side only, so
+              // they don't belong in connect-src (which governs browser fetch).
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.upstash.io https://nominatim.openstreetmap.org https://secure.geonames.org https://*.sentry.io https://*.ingest.sentry.io",
               "media-src 'self' https://*.supabase.co",
               "frame-src https://js.stripe.com https://checkout.stripe.com",
             ].join("; "),
