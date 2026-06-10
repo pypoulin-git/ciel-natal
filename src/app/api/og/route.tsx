@@ -36,7 +36,7 @@ const FOOTER = { position: "absolute" as const, bottom: 32, display: "flex" as c
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const name = sanitize(searchParams.get("name") || "Ciel Natal", 40);
+  const name = sanitize(searchParams.get("name") || "Natalune", 40);
   const sun = sanitizeSign(searchParams.get("sun") || "");
   const moon = sanitizeSign(searchParams.get("moon") || "");
   const asc = sanitizeSign(searchParams.get("asc") || "");
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           <div style={{ fontSize: 80, color: "rgba(168,158,200,0.5)", marginBottom: 16, display: "flex" }}>{glyph}</div>
           <div style={{ fontSize: 48, color: "#ddd9e4", fontWeight: 700, marginBottom: 8, display: "flex" }}>{signName}</div>
           <div style={{ fontSize: 18, color: "#9590a8", letterSpacing: 3, textTransform: "uppercase" as const, display: "flex" }}>Astrologie psychologique</div>
-          <div style={FOOTER}><span style={{ fontSize: 14, color: "rgba(168,158,200,0.4)", letterSpacing: 2 }}>CIEL NATAL</span></div>
+          <div style={FOOTER}><span style={{ fontSize: 14, color: "rgba(168,158,200,0.4)", letterSpacing: 2 }}>NATALUNE</span></div>
         </div>
       ),
       { width: 1200, height: 630 }
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
           <div style={{ ...STAR, top: 40, left: 60, fontSize: 24 }}>✦</div>
           <div style={{ fontSize: 16, color: "#9590a8", letterSpacing: 3, textTransform: "uppercase" as const, marginBottom: 24, display: "flex" }}>Blog</div>
           <div style={{ fontSize: 40, color: "#ddd9e4", fontWeight: 700, textAlign: "center", lineHeight: 1.3, maxWidth: 900, display: "flex" }}>{title}</div>
-          <div style={FOOTER}><span style={{ fontSize: 14, color: "rgba(168,158,200,0.4)", letterSpacing: 2 }}>CIEL NATAL</span></div>
+          <div style={FOOTER}><span style={{ fontSize: 14, color: "rgba(168,158,200,0.4)", letterSpacing: 2 }}>NATALUNE</span></div>
         </div>
       ),
       { width: 1200, height: 630 }
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
             )}
           </div>
         )}
-        <div style={FOOTER}><span style={{ fontSize: 14, color: "rgba(168,158,200,0.4)", letterSpacing: 2 }}>CIEL NATAL</span></div>
+        <div style={FOOTER}><span style={{ fontSize: 14, color: "rgba(168,158,200,0.4)", letterSpacing: 2 }}>NATALUNE</span></div>
       </div>
     ),
     { width: 1200, height: 630 }

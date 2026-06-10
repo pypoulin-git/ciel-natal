@@ -21,7 +21,7 @@ function fallbackRateLimited(ip: string): boolean {
 
 async function sendEmail(name: string, email: string, message: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const toEmail = process.env.CONTACT_EMAIL || "contact@ciel-natal.com";
+  const toEmail = process.env.CONTACT_EMAIL || "contact@natalune.com";
 
   if (!apiKey) {
     console.warn("[Contact] RESEND_API_KEY not set — email not sent, logging only.");
@@ -42,10 +42,10 @@ async function sendEmail(name: string, email: string, message: string): Promise<
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Ciel Natal <noreply@ciel-natal.vercel.app>",
+        from: "Natalune <noreply@natalune.com>",
         to: [toEmail],
         reply_to: email,
-        subject: `[Ciel Natal] Message de ${subjectName}`,
+        subject: `[Natalune] Message de ${subjectName}`,
         text: `De: ${name} <${email}>\n\n${message}`,
         html: `<p><strong>De:</strong> ${safeName} &lt;${safeEmail}&gt;</p><hr/><p>${safeMessage}</p>`,
       }),

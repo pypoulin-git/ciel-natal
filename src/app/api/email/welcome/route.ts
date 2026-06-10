@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.RESEND_FROM || "Ciel Natal <onboarding@resend.dev>";
+    const from = process.env.RESEND_FROM || "Natalune <onboarding@resend.dev>";
 
     if (!apiKey) {
       return NextResponse.json({ error: "Email service not configured" }, { status: 503 });
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
     const subjectName = singleLine(rawName).slice(0, 80);
 
     const subject = fr
-      ? `Bienvenue chez Ciel Natal, ${subjectName} ✦`
-      : `Welcome to Ciel Natal, ${subjectName} ✦`;
+      ? `Bienvenue chez Natalune, ${subjectName} ✦`
+      : `Welcome to Natalune, ${subjectName} ✦`;
 
     const html = fr
       ? `
@@ -59,9 +59,9 @@ export async function POST(req: Request) {
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border:1px solid rgba(167,139,250,0.15);border-radius:16px;overflow:hidden;">
         <tr><td style="padding:40px 32px;">
           <p style="font-size:32px;text-align:center;margin:0 0 16px;color:#a78bfa;opacity:0.4;">✦</p>
-          <h1 style="font-size:28px;text-align:center;margin:0 0 12px;color:#e8e3f5;font-weight:400;">Bienvenue chez Ciel Natal</h1>
+          <h1 style="font-size:28px;text-align:center;margin:0 0 12px;color:#e8e3f5;font-weight:400;">Bienvenue chez Natalune</h1>
           <p style="font-size:16px;line-height:1.7;text-align:center;margin:0 0 24px;color:#a8a3b5;">
-            Bonjour ${safeName}, et merci d'avoir rejoint Ciel Natal. Ton espace personnel est prêt pour explorer les étoiles qui t'habitent.
+            Bonjour ${safeName}, et merci d'avoir rejoint Natalune. Ton espace personnel est prêt pour explorer les étoiles qui t'habitent.
           </p>
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;color:#c8c3d5;">
             Voici ce que tu peux faire dès maintenant :
@@ -73,11 +73,11 @@ export async function POST(req: Request) {
             <li>Explorer la <strong>synastrie</strong> et la <strong>révolution solaire</strong> (Premium)</li>
           </ul>
           <div style="text-align:center;margin:32px 0;">
-            <a href="https://ciel-natal.vercel.app/" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#a78bfa,#7c6ad8);color:#ffffff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:500;">Calculer mon thème natal</a>
+            <a href="https://natalune.com/" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#a78bfa,#7c6ad8);color:#ffffff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:500;">Calculer mon thème natal</a>
           </div>
           <p style="font-size:13px;line-height:1.6;text-align:center;margin:32px 0 0;color:#6b6880;opacity:0.7;">
-            Ciel Natal — astrologie psychologique inspirée de Jung et Liz Greene<br>
-            <a href="https://ciel-natal.vercel.app" style="color:#a78bfa;text-decoration:none;">ciel-natal.vercel.app</a>
+            Natalune — astrologie psychologique inspirée de Jung et Liz Greene<br>
+            <a href="https://natalune.com" style="color:#a78bfa;text-decoration:none;">natalune.com</a>
           </p>
         </td></tr>
       </table>
@@ -95,9 +95,9 @@ export async function POST(req: Request) {
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border:1px solid rgba(167,139,250,0.15);border-radius:16px;overflow:hidden;">
         <tr><td style="padding:40px 32px;">
           <p style="font-size:32px;text-align:center;margin:0 0 16px;color:#a78bfa;opacity:0.4;">✦</p>
-          <h1 style="font-size:28px;text-align:center;margin:0 0 12px;color:#e8e3f5;font-weight:400;">Welcome to Ciel Natal</h1>
+          <h1 style="font-size:28px;text-align:center;margin:0 0 12px;color:#e8e3f5;font-weight:400;">Welcome to Natalune</h1>
           <p style="font-size:16px;line-height:1.7;text-align:center;margin:0 0 24px;color:#a8a3b5;">
-            Hello ${safeName}, and thank you for joining Ciel Natal. Your personal space is ready to explore the stars within you.
+            Hello ${safeName}, and thank you for joining Natalune. Your personal space is ready to explore the stars within you.
           </p>
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;color:#c8c3d5;">
             Here is what you can do right now:
@@ -109,11 +109,11 @@ export async function POST(req: Request) {
             <li>Explore <strong>synastry</strong> and <strong>solar return</strong> (Premium)</li>
           </ul>
           <div style="text-align:center;margin:32px 0;">
-            <a href="https://ciel-natal.vercel.app/" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#a78bfa,#7c6ad8);color:#ffffff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:500;">Calculate my birth chart</a>
+            <a href="https://natalune.com/" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#a78bfa,#7c6ad8);color:#ffffff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:500;">Calculate my birth chart</a>
           </div>
           <p style="font-size:13px;line-height:1.6;text-align:center;margin:32px 0 0;color:#6b6880;opacity:0.7;">
-            Ciel Natal — psychological astrology inspired by Jung and Liz Greene<br>
-            <a href="https://ciel-natal.vercel.app" style="color:#a78bfa;text-decoration:none;">ciel-natal.vercel.app</a>
+            Natalune — psychological astrology inspired by Jung and Liz Greene<br>
+            <a href="https://natalune.com" style="color:#a78bfa;text-decoration:none;">natalune.com</a>
           </p>
         </td></tr>
       </table>

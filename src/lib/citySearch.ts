@@ -32,7 +32,7 @@ export async function searchCities(
 ): Promise<CityResult[]> {
   if (query.length < 2) return [];
 
-  const headers = { "User-Agent": "CielNatal/1.0" };
+  const headers = { "User-Agent": "Natalune/1.0" };
 
   // Helper to parse Nominatim results
   const parseNominatim = (

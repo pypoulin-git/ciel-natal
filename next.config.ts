@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
@@ -22,11 +24,15 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+              // 'unsafe-eval' is only needed by Next's dev HMR/React Refresh.
+              // Drop it in production to harden against injected-script execution.
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://js.stripe.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.upstash.io https://api.anthropic.com https://api.openai.com https://nominatim.openstreetmap.org https://secure.geonames.org https://*.sentry.io https://*.ingest.sentry.io",
+              // AI providers (Anthropic/OpenAI) are called server-side only, so
+              // they don't belong in connect-src (which governs browser fetch).
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.upstash.io https://nominatim.openstreetmap.org https://secure.geonames.org https://*.sentry.io https://*.ingest.sentry.io",
               "media-src 'self' https://*.supabase.co",
               "frame-src https://js.stripe.com https://checkout.stripe.com",
             ].join("; "),

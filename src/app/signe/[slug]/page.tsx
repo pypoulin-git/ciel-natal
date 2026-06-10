@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const sign = signs[slug];
   if (!sign) return {};
   return {
-    title: `${sign.nameFr} (${sign.glyph}) — ${sign.nameEn} | Ciel Natal`,
+    title: `${sign.nameFr} (${sign.glyph}) — ${sign.nameEn} | Natalune`,
     description: `Discover the ${sign.nameEn} zodiac sign in psychological astrology: deep personality, strengths, challenges, love compatibility and career. ${sign.datesEn}. / Découvrez le signe ${sign.nameFr} : personnalité profonde, forces et défis, amour et travail. ${sign.datesFr}.`,
     keywords: [
       sign.nameFr,
@@ -32,12 +32,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       sign.elementEn,
     ],
     openGraph: {
-      title: `${sign.glyph} ${sign.nameFr} / ${sign.nameEn} — Ciel Natal`,
+      title: `${sign.glyph} ${sign.nameFr} / ${sign.nameEn} — Natalune`,
       description: `Portrait astrologique du signe ${sign.nameFr}. ${sign.datesFr}. / Astrological portrait of ${sign.nameEn}. ${sign.datesEn}.`,
       images: [`/api/og?sign=${sign.slug}`],
     },
     alternates: {
-      canonical: `https://ciel-natal.vercel.app/signe/${slug}`,
+      canonical: `https://natalune.com/signe/${slug}`,
     },
   };
 }

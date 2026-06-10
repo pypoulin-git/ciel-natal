@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     // Cost guard — Gemini TTS pricing scales with input chars.
     const trimmedText = text.slice(0, 2500);
 
-    // Add a soft style instruction so the voice matches Ciel Natal's tone
+    // Add a soft style instruction so the voice matches Natalune's tone
     // (calm, warm, contemplative — not a corporate audiobook).
     const styledPrompt = `Lis ce texte sur un ton calme, chaleureux, contemplatif — comme si tu confiais une lecture intime à un·e ami·e :\n\n${trimmedText}`;
 

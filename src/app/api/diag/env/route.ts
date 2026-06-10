@@ -8,7 +8,7 @@ export const runtime = "nodejs";
  * be probed by anyone but the operator.
  *
  * Use:
- *   curl -H "x-internal-secret: $S" https://ciel-natal.vercel.app/api/_diag/env
+ *   curl -H "x-internal-secret: $S" https://natalune.com/api/_diag/env
  */
 export async function GET(req: NextRequest) {
   // .trim() defends against trailing-newline corruption from

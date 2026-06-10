@@ -10,7 +10,7 @@ export default function Conditions() {
   return (
     <PageShell title={fr ? "Conditions d'utilisation" : "Terms of Use"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 31 mars 2026" : "Last updated: March 31, 2026"}
+        {fr ? "Dernière mise à jour : 10 juin 2026" : "Last updated: June 10, 2026"}
       </p>
 
       <section>
@@ -19,8 +19,8 @@ export default function Conditions() {
         </h2>
         <p>
           {fr
-            ? "En utilisant Ciel Natal, vous acceptez les présentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser ce site."
-            : "By using Ciel Natal, you agree to these terms of use. If you do not accept these terms, please do not use this site."}
+            ? "En utilisant Natalune, vous acceptez les présentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser ce site."
+            : "By using Natalune, you agree to these terms of use. If you do not accept these terms, please do not use this site."}
         </p>
       </section>
 
@@ -30,8 +30,8 @@ export default function Conditions() {
         </h2>
         <p>
           {fr
-            ? "Ciel Natal est un outil gratuit de calcul et d'interprétation de thèmes astraux. Les calculs sont basés sur des algorithmes astronomiques (VSOP87 simplifiée) et les interprétations s'inspirent de l'astrologie psychologique."
-            : "Ciel Natal is a free natal chart calculator and interpretation tool. Calculations are based on astronomical algorithms (simplified VSOP87) and interpretations draw from psychological astrology."}
+            ? "Natalune est un outil gratuit de calcul et d'interprétation de thèmes astraux. Les calculs sont basés sur des algorithmes astronomiques (VSOP87 simplifiée) et les interprétations s'inspirent de l'astrologie psychologique."
+            : "Natalune is a free natal chart calculator and interpretation tool. Calculations are based on astronomical algorithms (simplified VSOP87) and interpretations draw from psychological astrology."}
         </p>
       </section>
 
@@ -41,8 +41,8 @@ export default function Conditions() {
         </h2>
         <p>
           {fr
-            ? "Les informations fournies par Ciel Natal sont à titre de réflexion personnelle uniquement. Elles ne constituent en aucun cas :"
-            : "The information provided by Ciel Natal is for personal reflection only. It does not constitute:"}
+            ? "Les informations fournies par Natalune sont à titre de réflexion personnelle uniquement. Elles ne constituent en aucun cas :"
+            : "The information provided by Natalune is for personal reflection only. It does not constitute:"}
         </p>
         <ul className="list-disc list-inside space-y-1 mt-2 text-[var(--color-text-secondary)]">
           <li>{fr ? "Un avis médical ou psychologique" : "Medical or psychological advice"}</li>
@@ -50,6 +50,11 @@ export default function Conditions() {
           <li>{fr ? "Une prédiction de l'avenir" : "A prediction of the future"}</li>
           <li>{fr ? "Un diagnostic de quelque nature que ce soit" : "A diagnosis of any kind"}</li>
         </ul>
+        <p className="mt-3">
+          {fr
+            ? "Les interprétations fournies ne constituent pas un diagnostic, un traitement ni un conseil psychologique, et ne remplacent pas l'accompagnement d'un professionnel de santé. Si vous traversez une période de détresse, consultez un professionnel qualifié ou une ligne d'écoute."
+            : "The interpretations provided are not a diagnosis, treatment or psychological advice, and are no substitute for the support of a health professional. If you are going through a period of distress, please consult a qualified professional or a helpline."}
+        </p>
         <p className="mt-3">
           {fr
             ? "Nous déclinons toute responsabilité quant aux décisions prises sur la base des interprétations fournies."
@@ -74,8 +79,8 @@ export default function Conditions() {
         </h2>
         <p>
           {fr
-            ? "Le code source, le design, les textes d'interprétation et le contenu de Ciel Natal sont protégés par le droit d'auteur. Toute reproduction non autorisée est interdite."
-            : "The source code, design, interpretation texts and content of Ciel Natal are protected by copyright. Unauthorized reproduction is prohibited."}
+            ? "Le code source, le design, les textes d'interprétation et le contenu de Natalune sont protégés par le droit d'auteur. Toute reproduction non autorisée est interdite."
+            : "The source code, design, interpretation texts and content of Natalune are protected by copyright. Unauthorized reproduction is prohibited."}
         </p>
       </section>
 

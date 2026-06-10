@@ -1,4 +1,4 @@
-// interpretations.ts — Ciel Natal
+// interpretations.ts — Natalune
 // Textes d'interprétation astrologique en français
 // Langage non-déterministe, empowering, inspiré de Liz Greene et Jung
 

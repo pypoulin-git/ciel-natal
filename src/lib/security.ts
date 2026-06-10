@@ -76,7 +76,7 @@ export function isSameOrigin(req: NextRequest): boolean {
     }
   }
   // Vercel preview deployments share the project alias.
-  allowed.add("https://ciel-natal.vercel.app");
+  allowed.add("https://natalune.com");
 
   return candidates.every((c) => allowed.has(c));
 }

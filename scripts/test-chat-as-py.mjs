@@ -41,7 +41,7 @@ async function main() {
 
   // Call /api/chat
   console.log("\nCalling /api/chat ...");
-  const chatRes = await fetch("https://ciel-natal.vercel.app/api/chat", {
+  const chatRes = await fetch("https://natalune.com/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({
