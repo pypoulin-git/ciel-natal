@@ -22,6 +22,10 @@ function fallbackRateLimited(ip: string): boolean {
 async function sendEmail(name: string, email: string, message: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const toEmail = process.env.CONTACT_EMAIL || "contact@natalune.com";
+  // Same pattern as the welcome + PDF routes: prefer the verified-domain sender
+  // from env, fall back to the Resend sandbox (which still delivers to the
+  // account owner, i.e. the contact recipient) until the domain is verified.
+  const from = process.env.RESEND_FROM || "Natalune <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.warn("[Contact] RESEND_API_KEY not set — email not sent, logging only.");
@@ -42,7 +46,7 @@ async function sendEmail(name: string, email: string, message: string): Promise<
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Natalune <noreply@natalune.com>",
+        from,
         to: [toEmail],
         reply_to: email,
         subject: `[Natalune] Message de ${subjectName}`,
