@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════
--- Ciel Natal — Initial Database Schema
+-- Natalune — Initial Database Schema
 -- Run this in Supabase SQL Editor after creating your project
 -- ═══════════════════════════════════════════════
 
@@ -96,5 +96,5 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- After running this migration:
 -- 1. Enable Email provider in Auth > Providers
 -- 2. Enable Google OAuth in Auth > Providers (needs Google Cloud Console client ID/secret)
--- 3. Add redirect URL: https://ciel-natal.vercel.app/auth/callback
+-- 3. Add redirect URL: https://natalune.com/auth/callback
 -- 4. Create "audio" storage bucket (public, 5MB limit, audio/mpeg only)

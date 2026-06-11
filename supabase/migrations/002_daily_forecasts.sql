@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════
--- Ciel Natal — Daily Cosmic Forecast Cache
+-- Natalune — Daily Cosmic Forecast Cache
 -- Run after 001_initial_schema.sql
 -- ═══════════════════════════════════════════════
 

@@ -75,8 +75,9 @@ export function isSameOrigin(req: NextRequest): boolean {
       if (trimmed) allowed.add(trimmed);
     }
   }
-  // Vercel preview deployments share the project alias.
+  // Production apex + www (DNS serves both; www must be allowed for CSRF checks).
   allowed.add("https://natalune.com");
+  allowed.add("https://www.natalune.com");
 
   return candidates.every((c) => allowed.has(c));
 }

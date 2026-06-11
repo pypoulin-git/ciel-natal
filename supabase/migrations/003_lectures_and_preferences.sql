@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════
--- Ciel Natal — Lectures (PDF history) + Reading Preferences
+-- Natalune — Lectures (PDF history) + Reading Preferences
 -- Run this in Supabase SQL Editor AFTER migrations 001 + 002.
 -- ═══════════════════════════════════════════════
 
