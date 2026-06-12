@@ -122,6 +122,35 @@ export async function POST(req: Request) {
 </body>
 </html>`;
 
+    // Plain-text alternative — multipart emails score better with spam filters.
+    const text = fr
+      ? `Bonjour ${singleLine(rawName)},
+
+Merci d'avoir rejoint Natalune. Ton espace personnel est prêt :
+
+- Calcule ton thème natal complet avec ton heure de naissance
+- Lis un portrait cosmique écrit pour toi
+- Pose tes questions à l'astrologue IA bienveillante
+- Explore la synastrie et la révolution solaire (Premium)
+
+Calculer mon thème natal : https://natalune.com/
+
+Natalune — astrologie psychologique inspirée de Jung et Liz Greene
+https://natalune.com`
+      : `Hello ${singleLine(rawName)},
+
+Thank you for joining Natalune. Your personal space is ready:
+
+- Calculate your full birth chart with your time of birth
+- Read a cosmic portrait written for you
+- Ask questions to the caring AI astrologer
+- Explore synastry and solar return (Premium)
+
+Calculate my birth chart: https://natalune.com/
+
+Natalune — psychological astrology inspired by Jung and Liz Greene
+https://natalune.com`;
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -131,15 +160,22 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         from,
         to: [email],
+        reply_to: process.env.CONTACT_EMAIL || "contact@natalune.com",
         subject,
         html,
+        text,
       }),
     });
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error("Resend error:", errBody);
-      return NextResponse.json({ error: "Failed to send email" }, { status: 502 });
+      console.error("Resend error:", res.status, errBody);
+      // Endpoint is internal-secret protected, so surfacing Resend's error
+      // detail here is safe and makes failures diagnosable from the caller.
+      return NextResponse.json(
+        { error: "Failed to send email", resendStatus: res.status, resendError: errBody.slice(0, 500) },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ sent: true });

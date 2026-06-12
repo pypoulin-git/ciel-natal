@@ -95,6 +95,36 @@ export async function POST(req: NextRequest) {
         console.error("Failed to activate premium:", error);
         return NextResponse.json({ error: "DB update failed" }, { status: 500 });
       }
+
+      // Premium confirmation email. Awaited (a fire-and-forget fetch can be
+      // frozen with the lambda before it completes) but never blocks the 200:
+      // Stripe must see success once the DB update above has gone through —
+      // the stripe_payment_id idempotency guard would skip a replay anyway.
+      try {
+        const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(userId);
+        const user = userRes?.user;
+        const email = session.customer_details?.email || user?.email;
+        if (email && process.env.RESEND_API_KEY) {
+          const displayName =
+            user?.user_metadata?.display_name ||
+            user?.user_metadata?.full_name ||
+            email.split("@")[0];
+          const origin = new URL(req.url).origin;
+          const res = await fetch(`${origin}/api/email/premium`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-internal-secret": (process.env.INTERNAL_API_SECRET || "").trim(),
+            },
+            body: JSON.stringify({ email, displayName, locale: "fr" }),
+          });
+          if (!res.ok) {
+            console.error("[stripe-webhook] premium email failed:", res.status, await res.text());
+          }
+        }
+      } catch (err) {
+        console.error("[stripe-webhook] premium email error:", err);
+      }
     }
 
     return NextResponse.json({ received: true });
