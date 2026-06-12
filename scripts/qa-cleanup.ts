@@ -1,5 +1,6 @@
 /**
- * QA cleanup — delete all Supabase users whose email matches py.poulin+qa*@gmail.com
+ * QA cleanup — delete all Supabase QA users:
+ *   py.poulin+qa*@gmail.com  et  nataltest*@mailinator.com
  *
  * Usage:
  *   npx tsx scripts/qa-cleanup.ts
@@ -31,7 +32,7 @@ if (!URL || !KEY) {
 }
 
 // Email pattern to wipe. Adjust if you use a different alias scheme.
-const EMAIL_PATTERN = /^py\.poulin\+qa\d*@gmail\.com$/i;
+const EMAIL_PATTERN = /^(py\.poulin\+qa\d*@gmail\.com|nataltest[a-z0-9]*@mailinator\.com)$/i;
 
 const supabase = createClient(URL, KEY);
 
