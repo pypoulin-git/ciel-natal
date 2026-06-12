@@ -6,6 +6,7 @@
 |---|---|---|---|
 | Confirmation d'inscription | `supabase.auth.signUp()` | Supabase (SMTP Supabase ou custom) | Dashboard Supabase → Authentication → Email Templates |
 | Welcome | 1ʳᵉ connexion après confirmation (`/auth/callback`) | Resend (`RESEND_FROM`) | `src/app/api/email/welcome/route.ts` |
+| Confirmation d'achat Premium | Webhook Stripe `checkout.session.completed` | Resend (`RESEND_FROM`) | `src/app/api/email/premium/route.ts` |
 | Carte du ciel PDF | Sauvegarde d'une lecture avec option email | Resend (`RESEND_FROM`) | `src/app/api/pdf/save/route.ts` |
 | Formulaire de contact | Soumission `/contact` | Resend (`RESEND_FROM`) → `CONTACT_EMAIL` | `src/app/api/contact/route.ts` |
 
