@@ -78,7 +78,10 @@ export default function CookieBanner() {
       <div
         className="max-w-xl mx-auto px-5 py-4 pointer-events-auto rounded-2xl border border-[var(--color-glass-border)] shadow-2xl"
         style={{
-          background: "rgba(15, 15, 22, 0.98)",
+          // Theme-aware surface (same token as the nav dropdown) so the banner
+          // and its ghost buttons stay legible in light mode — a hardcoded dark
+          // background here left dark-on-dark text when the theme flipped.
+          background: "var(--nav-menu-bg)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
         }}
