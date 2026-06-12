@@ -76,3 +76,4 @@ Test bout-en-bout (sans toucher à une vraie boîte) :
 | Resend accepte mais rien n'arrive | Voir Resend → Emails : `bounced` (adresse invalide) ou spam côté destinataire |
 | Email de confirmation Supabase n'arrive pas | Rate limit du SMTP intégré Supabase (~2-4/h) → configurer le SMTP custom (étape 3) |
 | Lien de confirmation pointe vers le mauvais domaine | Site URL / Redirect URLs pas à jour dans Supabase (étape 5) |
+| Clic sur le lien de confirmation → `/connexion?error=auth` | Lien `{{ .ConfirmationURL }}` (PKCE) ouvert dans un autre navigateur que celui de l'inscription, ou lien déjà consommé (scanner d'email, double clic). Utiliser les templates `supabase/templates/` qui passent par `token_hash` — insensible au navigateur. Le détail de l'erreur est loggé dans Vercel (`[auth-callback]`) |

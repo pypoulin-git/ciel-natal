@@ -1,7 +1,9 @@
 <!-- Template Supabase : Confirm signup
      À coller dans : Supabase Dashboard → Authentication → Email Templates → Confirm signup
      Sujet suggéré : Confirme ton inscription chez Natalune ✦
-     Variables Supabase disponibles : {{ .ConfirmationURL }}, {{ .Email }}, {{ .Data.display_name }} -->
+     Variables Supabase disponibles : {{ .SiteURL }}, {{ .TokenHash }}, {{ .Email }}, {{ .Data.display_name }}
+     Le lien token_hash (au lieu de {{ .ConfirmationURL }}) fonctionne même si
+     l'email est ouvert dans un autre navigateur que celui de l'inscription. -->
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="utf-8"><title>Confirme ton inscription chez Natalune</title></head>
@@ -17,11 +19,11 @@
             Confirme ton adresse email pour activer ton espace personnel et découvrir ton thème natal.
           </p>
           <div style="text-align:center;margin:32px 0;">
-            <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#a78bfa,#7c6ad8);color:#ffffff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:500;">Confirmer mon adresse</a>
+            <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#a78bfa,#7c6ad8);color:#ffffff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:500;">Confirmer mon adresse</a>
           </div>
           <p style="font-size:13px;line-height:1.6;text-align:center;margin:0 0 8px;color:#6b6880;">
             Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur :<br>
-            <a href="{{ .ConfirmationURL }}" style="color:#a78bfa;text-decoration:none;word-break:break-all;">{{ .ConfirmationURL }}</a>
+            <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup" style="color:#a78bfa;text-decoration:none;word-break:break-all;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup</a>
           </p>
           <p style="font-size:13px;line-height:1.6;text-align:center;margin:24px 0 0;color:#6b6880;opacity:0.7;">
             Tu n'es pas à l'origine de cette inscription ? Ignore simplement cet email.<br><br>
