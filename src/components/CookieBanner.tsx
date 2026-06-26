@@ -1,72 +1,89 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useLocale } from "@/lib/i18n";
+import { useState, useEffect } from 'react'
+import { useLocale } from '@/lib/i18n'
 
 type ConsentPrefs = {
-  essential: true;
-  analytics: boolean;
-  timestamp: number;
-};
+  essential: true
+  analytics: boolean
+  marketing: boolean
+  timestamp: number
+}
 
-const STORAGE_KEY = "ciel-natal-cookie-consent-v2";
+// Bumped to v3 when the "marketing" (advertising pixels) category was added so
+// previously-consented users are re-prompted and can opt into it explicitly.
+const STORAGE_KEY = 'ciel-natal-cookie-consent-v3'
 
 export function getConsent(): ConsentPrefs | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as ConsentPrefs;
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as ConsentPrefs
   } catch {
-    return null;
+    return null
   }
 }
 
 export default function CookieBanner() {
-  const { locale } = useLocale();
-  const [visible, setVisible] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  // OPT-IN by default per RGPD / Loi 25 — analytics stays off until the user
-  // explicitly accepts. Vercel Analytics is also gated on this flag in layout.tsx.
-  const [analytics, setAnalytics] = useState(false);
+  const { locale } = useLocale()
+  const [visible, setVisible] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
+  // OPT-IN by default per RGPD / Loi 25 — both categories stay off until the
+  // user explicitly accepts. Analytics gates Vercel Analytics (ConsentedAnalytics);
+  // marketing gates the advertising pixels (MarketingPixels).
+  const [analytics, setAnalytics] = useState(false)
+  const [marketing, setMarketing] = useState(false)
 
   useEffect(() => {
-    if (!getConsent()) setVisible(true);
-  }, []);
+    if (!getConsent()) setVisible(true)
+  }, [])
 
-  const save = (prefs: Omit<ConsentPrefs, "essential" | "timestamp">) => {
+  const save = (prefs: Omit<ConsentPrefs, 'essential' | 'timestamp'>) => {
     const payload: ConsentPrefs = {
       essential: true,
       analytics: prefs.analytics,
+      marketing: prefs.marketing,
       timestamp: Date.now(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    // Notify same-tab listeners (e.g. ConsentedAnalytics) that consent changed.
-    window.dispatchEvent(new Event("ciel-natal:consent-changed"));
-    setVisible(false);
-  };
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    // Notify same-tab listeners (e.g. ConsentedAnalytics, MarketingPixels) that
+    // consent changed.
+    window.dispatchEvent(new Event('ciel-natal:consent-changed'))
+    setVisible(false)
+  }
 
-  const acceptAll = () => save({ analytics: true });
-  const declineAll = () => save({ analytics: false });
-  const savePrefs = () => save({ analytics });
+  const acceptAll = () => save({ analytics: true, marketing: true })
+  const declineAll = () => save({ analytics: false, marketing: false })
+  const savePrefs = () => save({ analytics, marketing })
 
-  if (!visible) return null;
+  if (!visible) return null
 
   const t = {
-    title: locale === "fr" ? "Respect de ta vie privée" : "Your privacy matters",
-    message: locale === "fr"
-      ? "Nous utilisons des cookies essentiels pour le fonctionnement du site, et des cookies d'analyse anonyme pour l'améliorer."
-      : "We use essential cookies to run the site, and anonymous analytics cookies to improve it.",
-    essential: locale === "fr" ? "Essentiels" : "Essential",
-    essentialDesc: locale === "fr" ? "Nécessaires (session, préférences)" : "Required (session, preferences)",
-    always: locale === "fr" ? "Toujours actifs" : "Always on",
-    analytics: locale === "fr" ? "Analyse anonyme" : "Anonymous analytics",
-    analyticsDesc: locale === "fr" ? "Vercel Analytics, sans identifiant personnel" : "Vercel Analytics, no personal identifier",
-    customize: locale === "fr" ? "Personnaliser" : "Customize",
-    decline: locale === "fr" ? "Tout refuser" : "Decline all",
-    accept: locale === "fr" ? "Tout accepter" : "Accept all",
-    save: locale === "fr" ? "Enregistrer mes choix" : "Save my choices",
-  };
+    title: locale === 'fr' ? 'Respect de ta vie privée' : 'Your privacy matters',
+    message:
+      locale === 'fr'
+        ? "Nous utilisons des cookies essentiels pour le fonctionnement du site, des cookies d'analyse anonyme pour l'améliorer, et des cookies marketing pour mesurer nos campagnes."
+        : 'We use essential cookies to run the site, anonymous analytics cookies to improve it, and marketing cookies to measure our campaigns.',
+    essential: locale === 'fr' ? 'Essentiels' : 'Essential',
+    essentialDesc:
+      locale === 'fr' ? 'Nécessaires (session, préférences)' : 'Required (session, preferences)',
+    always: locale === 'fr' ? 'Toujours actifs' : 'Always on',
+    analytics: locale === 'fr' ? 'Analyse anonyme' : 'Anonymous analytics',
+    analyticsDesc:
+      locale === 'fr'
+        ? 'Vercel Analytics, sans identifiant personnel'
+        : 'Vercel Analytics, no personal identifier',
+    marketing: locale === 'fr' ? 'Marketing' : 'Marketing',
+    marketingDesc:
+      locale === 'fr'
+        ? 'Meta Pixel, Google Analytics — mesure des publicités'
+        : 'Meta Pixel, Google Analytics — ad measurement',
+    customize: locale === 'fr' ? 'Personnaliser' : 'Customize',
+    decline: locale === 'fr' ? 'Tout refuser' : 'Decline all',
+    accept: locale === 'fr' ? 'Tout accepter' : 'Accept all',
+    save: locale === 'fr' ? 'Enregistrer mes choix' : 'Save my choices',
+  }
 
   return (
     <div
@@ -81,9 +98,9 @@ export default function CookieBanner() {
           // Theme-aware surface (same token as the nav dropdown) so the banner
           // and its ghost buttons stay legible in light mode — a hardcoded dark
           // background here left dark-on-dark text when the theme flipped.
-          background: "var(--nav-menu-bg)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
+          background: 'var(--nav-menu-bg)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
         }}
       >
         {!showDetails ? (
@@ -98,16 +115,10 @@ export default function CookieBanner() {
               >
                 {t.customize}
               </button>
-              <button
-                onClick={declineAll}
-                className="btn-ghost text-xs px-3 py-2 min-h-[40px]"
-              >
+              <button onClick={declineAll} className="btn-ghost text-xs px-3 py-2 min-h-[40px]">
                 {t.decline}
               </button>
-              <button
-                onClick={acceptAll}
-                className="btn-primary text-xs px-3 py-2 min-h-[40px]"
-              >
+              <button onClick={acceptAll} className="btn-primary text-xs px-3 py-2 min-h-[40px]">
                 {t.accept}
               </button>
             </div>
@@ -121,10 +132,18 @@ export default function CookieBanner() {
               </div>
               <button
                 onClick={() => setShowDetails(false)}
-                aria-label={locale === "fr" ? "Fermer" : "Close"}
+                aria-label={locale === 'fr' ? 'Fermer' : 'Close'}
                 className="flex-shrink-0 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] p-1"
               >
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -132,7 +151,9 @@ export default function CookieBanner() {
 
             <div className="rounded-lg border border-[var(--color-glass-border)] p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-medium text-[var(--color-text-primary)]">{t.essential}</p>
+                <p className="text-xs font-medium text-[var(--color-text-primary)]">
+                  {t.essential}
+                </p>
                 <p className="text-[11px] text-[var(--color-text-secondary)]">{t.essentialDesc}</p>
               </div>
               <span className="text-[11px] text-[var(--color-accent-lavender)] opacity-80 flex-shrink-0">
@@ -142,7 +163,9 @@ export default function CookieBanner() {
 
             <label className="rounded-lg border border-[var(--color-glass-border)] p-3 flex items-center justify-between gap-3 cursor-pointer">
               <div className="min-w-0">
-                <p className="text-xs font-medium text-[var(--color-text-primary)]">{t.analytics}</p>
+                <p className="text-xs font-medium text-[var(--color-text-primary)]">
+                  {t.analytics}
+                </p>
                 <p className="text-[11px] text-[var(--color-text-secondary)]">{t.analyticsDesc}</p>
               </div>
               <input
@@ -151,6 +174,22 @@ export default function CookieBanner() {
                 onChange={(e) => setAnalytics(e.target.checked)}
                 className="w-5 h-5 flex-shrink-0 accent-[var(--color-accent-lavender)] cursor-pointer"
                 aria-label={t.analytics}
+              />
+            </label>
+
+            <label className="rounded-lg border border-[var(--color-glass-border)] p-3 flex items-center justify-between gap-3 cursor-pointer">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-[var(--color-text-primary)]">
+                  {t.marketing}
+                </p>
+                <p className="text-[11px] text-[var(--color-text-secondary)]">{t.marketingDesc}</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={marketing}
+                onChange={(e) => setMarketing(e.target.checked)}
+                className="w-5 h-5 flex-shrink-0 accent-[var(--color-accent-lavender)] cursor-pointer"
+                aria-label={t.marketing}
               />
             </label>
 
@@ -166,5 +205,5 @@ export default function CookieBanner() {
         )}
       </div>
     </div>
-  );
+  )
 }
