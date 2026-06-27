@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useLocale } from '@/lib/i18n'
 import { translateSign } from '@/lib/astro'
 import { SignIcon } from '@/components/AstroIcons'
+import MoonGlyph from '@/components/MoonGlyph'
 import { computeSkyToday, type SkyToday as SkyData } from '@/lib/skyToday'
 import {
   MOON_PHASES,
@@ -15,35 +17,6 @@ import {
   NATURE_COLOR,
   CONFIG_INFO,
 } from '@/data/skyInterpretations'
-
-// SVG Moon-phase glyph. The lit disc is masked by a same-radius shadow circle
-// whose horizontal offset tracks the Sun→Moon elongation, yielding correct
-// crescent / quarter / gibbous shapes.
-function MoonGlyph({ angle, size = 88 }: { angle: number; size?: number }) {
-  const r = size / 2
-  const a = ((angle % 360) + 360) % 360
-  const k = (1 - Math.cos((a * Math.PI) / 180)) / 2 // illuminated fraction 0..1
-  const waxing = a <= 180
-  const cx = r + (waxing ? -1 : 1) * 2 * r * k // shadow centre x
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-      <defs>
-        <radialGradient id="moon-lit" cx="38%" cy="34%" r="78%">
-          <stop offset="0%" stopColor="#fffdf6" />
-          <stop offset="60%" stopColor="#f0e9ff" />
-          <stop offset="100%" stopColor="#cdc1ee" />
-        </radialGradient>
-        <clipPath id="moon-disc">
-          <circle cx={r} cy={r} r={r} />
-        </clipPath>
-      </defs>
-      <circle cx={r} cy={r} r={r} fill="url(#moon-lit)" />
-      <circle cx={cx} cy={r} r={r} fill="var(--color-space-deep)" clipPath="url(#moon-disc)" />
-      <circle cx={r} cy={r} r={r - 0.5} fill="none" stroke="rgba(224,169,78,0.45)" />
-    </svg>
-  )
-}
 
 export default function SkyToday() {
   const { locale } = useLocale()
@@ -98,7 +71,7 @@ export default function SkyToday() {
           className="glass p-6 flex flex-col items-center text-center"
           style={{ borderColor: 'rgba(224,169,78,0.28)' }}
         >
-          <MoonGlyph angle={sky.moon.angle} size={88} />
+          <MoonGlyph angle={sky.moon.angle} size={88} idSuffix="today" />
           <h3 className="font-cinzel text-xl text-[var(--color-accent-gold)] mt-4">
             {fr ? monthly.name.fr : monthly.name.en}
           </h3>
@@ -269,7 +242,17 @@ export default function SkyToday() {
         </div>
       )}
 
-      <p className="text-center text-[11px] text-[var(--color-text-muted)] mt-6">
+      <div className="text-center mt-7">
+        <Link
+          href="/calendrier"
+          className="inline-flex items-center gap-2 text-sm text-[var(--color-accent-lavender)] hover:text-[var(--color-text-primary)] transition"
+        >
+          {fr ? 'Voir le calendrier des 12 prochains mois' : "See the next 12 months' calendar"}
+          <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+
+      <p className="text-center text-[11px] text-[var(--color-text-muted)] mt-4">
         {fr
           ? "Positions calculées en direct pour aujourd'hui — à titre indicatif."
           : 'Positions computed live for today — for guidance only.'}

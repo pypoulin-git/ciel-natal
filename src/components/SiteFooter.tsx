@@ -57,6 +57,12 @@ export default function SiteFooter() {
               {locale === 'fr' ? 'Mentions légales' : 'Legal notice'}
             </Link>
             <Link
+              href="/calendrier"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1"
+            >
+              {locale === 'fr' ? 'Calendrier' : 'Calendar'}
+            </Link>
+            <Link
               href="/signe"
               className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1"
             >
