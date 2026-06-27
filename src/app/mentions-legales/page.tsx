@@ -1,18 +1,20 @@
 'use client'
 
+import Link from 'next/link'
 import PageShell from '@/components/PageShell'
 import { useLocale } from '@/lib/i18n'
 
-// NOTE pour l'éditeur : remplace les champs marqués [À COMPLÉTER] par les
-// informations légales réelles (identité de l'éditeur, adresse, n° d'entreprise).
-// Obligatoire pour un site visant la France (LCEN art. 6) ; recommandé au Québec.
-const PUBLISHER_NAME = "[À COMPLÉTER — nom de l'éditeur / raison sociale]"
-const PUBLISHER_ADDRESS = '[À COMPLÉTER — adresse postale]'
-const PUBLISHER_CONTACT = '[À COMPLÉTER — courriel de contact]'
+// Éditeur : PY Poulin, travailleur autonome (Québec). Version allégée adaptée au
+// Québec — pas d'adresse de rue publique ; le contact passe par le formulaire.
+// Si tu vises la France un jour, la LCEN demandera en plus une adresse postale.
+const PUBLISHER_NAME = 'PY Poulin'
+const PUBLISHER_LOCATION_FR = 'Québec, Canada'
+const PUBLISHER_LOCATION_EN = 'Quebec, Canada'
 
 export default function MentionsLegales() {
   const { locale } = useLocale()
   const fr = locale === 'fr'
+  const location = fr ? PUBLISHER_LOCATION_FR : PUBLISHER_LOCATION_EN
 
   return (
     <PageShell title={fr ? 'Mentions légales' : 'Legal notice'}>
@@ -26,21 +28,23 @@ export default function MentionsLegales() {
         </h2>
         <p>
           {fr
-            ? 'Le site Natalune (natalune.com) est édité par :'
-            : 'The Natalune website (natalune.com) is published by:'}
+            ? `Natalune (natalune.com) est un service édité par ${PUBLISHER_NAME}, travailleur autonome basé à ${location}.`
+            : `Natalune (natalune.com) is a service published by ${PUBLISHER_NAME}, a self-employed individual based in ${location}.`}
         </p>
-        <ul className="list-disc list-inside space-y-1 mt-2 text-[var(--color-text-secondary)]">
-          <li>{PUBLISHER_NAME}</li>
-          <li>{PUBLISHER_ADDRESS}</li>
-          <li>
-            {fr ? 'Contact : ' : 'Contact: '}
-            {PUBLISHER_CONTACT}
-          </li>
-        </ul>
-        <p className="mt-3">
+      </section>
+
+      <section>
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
+          {fr ? 'Contact' : 'Contact'}
+        </h2>
+        <p>
           {fr
-            ? 'Vous pouvez également nous joindre via le formulaire de la page contact.'
-            : 'You can also reach us through the contact page form.'}
+            ? 'Pour toute question, écris-nous via le '
+            : 'For any question, reach us through the '}
+          <Link href="/contact" className="text-[var(--color-accent-lavender)] hover:underline">
+            {fr ? 'formulaire de contact' : 'contact form'}
+          </Link>
+          {fr ? '.' : '.'}
         </p>
       </section>
 
