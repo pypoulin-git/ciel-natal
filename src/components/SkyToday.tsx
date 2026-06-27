@@ -11,12 +11,24 @@ import {
   MOON_PHASES,
   MONTHLY_MOON,
   PLANET_LABEL,
-  RETRO_HEADLINE,
-  RETRO_TEXT,
   ASPECT_INFO,
   NATURE_COLOR,
   CONFIG_INFO,
 } from '@/data/skyInterpretations'
+
+// Compact aspect glyphs + one-word nature, for the dense alignment rows.
+const ASPECT_GLYPH: Record<string, string> = {
+  Conjonction: '☌',
+  Sextile: '⚹',
+  Carre: '□',
+  Trigone: '△',
+  Opposition: '☍',
+}
+const NATURE_LABEL: Record<string, { fr: string; en: string }> = {
+  fusion: { fr: 'fusion', en: 'fusion' },
+  harmonie: { fr: 'harmonie', en: 'harmony' },
+  tension: { fr: 'tension', en: 'tension' },
+}
 
 export default function SkyToday() {
   const { locale } = useLocale()
@@ -52,23 +64,23 @@ export default function SkyToday() {
     timeZone: 'UTC',
   })
 
-  const retros = sky.retrogrades.slice(0, 4)
+  const retros = sky.retrogrades.slice(0, 3)
 
   return (
-    <section id="ciel-du-jour" className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
-      <div className="text-center mb-8">
-        <p className="text-xs uppercase tracking-widest text-[var(--color-accent-gold)]/80 mb-3">
+    <section id="ciel-du-jour" className="max-w-6xl mx-auto px-4 py-10 sm:py-12">
+      <div className="text-center mb-6">
+        <p className="text-xs uppercase tracking-widest text-[var(--color-accent-gold)]/80 mb-2">
           ✦ {fr ? "Le ciel aujourd'hui" : 'The sky today'} · {dateLabel}
         </p>
-        <h2 className="font-cinzel text-3xl sm:text-4xl md:text-5xl text-[var(--color-text-primary)]">
+        <h2 className="font-cinzel text-2xl sm:text-3xl md:text-4xl text-[var(--color-text-primary)]">
           {fr ? 'Ce que racontent les astres en ce moment' : 'What the stars are saying right now'}
         </h2>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4 sm:gap-5 items-start">
+      <div className="grid md:grid-cols-3 gap-4 items-start">
         {/* ── Lune du mois + phase ── */}
         <div
-          className="glass p-6 flex flex-col items-center text-center"
+          className="glass p-5 flex flex-col items-center text-center"
           style={{ borderColor: 'rgba(224,169,78,0.28)' }}
         >
           <MoonGlyph angle={sky.moon.angle} size={88} idSuffix="today" />
@@ -93,8 +105,8 @@ export default function SkyToday() {
         </div>
 
         {/* ── Rétrogrades (en cours + à venir) ── */}
-        <div className="glass p-6">
-          <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/80 mb-4">
+        <div className="glass p-5">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/80 mb-3">
             {fr ? 'Rétrogrades' : 'Retrogrades'}
           </p>
           {retros.length === 0 ? (
@@ -104,43 +116,35 @@ export default function SkyToday() {
                 : 'Every planet is direct — a clear, forward sky.'}
             </p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-3">
               {retros.map((rx) => {
                 const current = rx.status === 'current'
                 const tint = current ? '#dba3b8' : 'var(--color-accent-lavender)'
                 const when = current
                   ? fr
-                    ? `En cours${rx.endISO ? ` · jusqu'au ${fmt(rx.endISO)}` : ''}`
-                    : `Ongoing${rx.endISO ? ` · until ${fmt(rx.endISO)}` : ''}`
-                  : fr
-                    ? `À venir · ${fmt(rx.startISO)} → ${fmt(rx.endISO)}`
-                    : `Upcoming · ${fmt(rx.startISO)} → ${fmt(rx.endISO)}`
+                    ? `jusqu'au ${fmt(rx.endISO)}`
+                    : `until ${fmt(rx.endISO)}`
+                  : `${fmt(rx.startISO)} → ${fmt(rx.endISO)}`
                 return (
-                  <li key={rx.planetKey}>
-                    <div className="flex items-center gap-2">
-                      <span
-                        aria-hidden="true"
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm shrink-0"
-                        style={{ background: `${tint}22`, color: tint }}
-                      >
-                        {rx.symbol}
-                      </span>
-                      <span className="text-sm text-[var(--color-text-primary)] font-medium">
-                        {label(rx.planetKey)} ℞
-                      </span>
-                      <span
-                        className="ml-auto text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap"
-                        style={{ background: `${tint}1f`, color: tint }}
-                      >
+                  <li key={rx.planetKey} className="flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm shrink-0"
+                      style={{ background: `${tint}22`, color: tint }}
+                    >
+                      {rx.symbol}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-[var(--color-text-primary)] font-medium leading-tight">
+                        {label(rx.planetKey)} ℞{' '}
+                        <span className="font-normal text-[var(--color-text-muted)]">
+                          {current ? (fr ? 'en cours' : 'now') : fr ? 'à venir' : 'soon'}
+                        </span>
+                      </p>
+                      <p className="text-xs leading-tight mt-0.5" style={{ color: tint }}>
                         {when}
-                      </span>
+                      </p>
                     </div>
-                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mt-1.5">
-                      <span className="text-[var(--color-text-primary)]">
-                        {fr ? RETRO_HEADLINE[rx.planetKey]?.fr : RETRO_HEADLINE[rx.planetKey]?.en}
-                      </span>{' '}
-                      — {fr ? RETRO_TEXT[rx.planetKey]?.fr : RETRO_TEXT[rx.planetKey]?.en}
-                    </p>
                   </li>
                 )
               })}
@@ -149,8 +153,8 @@ export default function SkyToday() {
         </div>
 
         {/* ── Alignements ── */}
-        <div className="glass p-6">
-          <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/80 mb-4">
+        <div className="glass p-5">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/80 mb-3">
             {fr ? 'Alignements du jour' : "Today's alignments"}
           </p>
           {sky.alignments.length === 0 ? (
@@ -160,35 +164,37 @@ export default function SkyToday() {
                 : 'A calm sky, with no notable aspect between the planets.'}
             </p>
           ) : (
-            <ul className="space-y-3.5">
-              {sky.alignments.map((al, i) => {
+            <ul className="space-y-2.5">
+              {sky.alignments.slice(0, 4).map((al, i) => {
                 const info = ASPECT_INFO[al.type]
                 const color = info ? NATURE_COLOR[info.nature] : 'var(--color-accent-lavender)'
                 return (
-                  <li key={i} className="flex gap-2.5">
+                  <li key={i} className="flex items-center gap-2 text-sm">
                     <span
                       aria-hidden="true"
-                      className="mt-1.5 w-2 h-2 rounded-full shrink-0"
+                      className="w-2 h-2 rounded-full shrink-0"
                       style={{ background: color }}
                     />
-                    <div>
-                      <p className="text-sm text-[var(--color-text-primary)]">
-                        <span aria-hidden="true" style={{ color }}>
-                          {al.symbol1}
-                        </span>{' '}
-                        {label(al.planet1)}{' '}
-                        <span className="text-[var(--color-text-secondary)] text-xs">
-                          {fr ? info?.name.fr : info?.name.en}
-                        </span>{' '}
-                        {label(al.planet2)}{' '}
-                        <span aria-hidden="true" style={{ color }}>
-                          {al.symbol2}
-                        </span>
-                      </p>
-                      <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mt-0.5">
-                        {fr ? info?.text.fr : info?.text.en}
-                      </p>
-                    </div>
+                    <span className="text-[var(--color-text-primary)] truncate">
+                      <span aria-hidden="true" className="text-[var(--color-text-secondary)]">
+                        {al.symbol1}
+                      </span>{' '}
+                      {label(al.planet1)}{' '}
+                      <span aria-hidden="true" style={{ color }}>
+                        {ASPECT_GLYPH[al.type]}
+                      </span>{' '}
+                      {label(al.planet2)}{' '}
+                      <span aria-hidden="true" className="text-[var(--color-text-secondary)]">
+                        {al.symbol2}
+                      </span>
+                    </span>
+                    <span className="ml-auto text-[10px] shrink-0" style={{ color }}>
+                      {info
+                        ? fr
+                          ? NATURE_LABEL[info.nature].fr
+                          : NATURE_LABEL[info.nature].en
+                        : ''}
+                    </span>
                   </li>
                 )
               })}
@@ -197,46 +203,31 @@ export default function SkyToday() {
         </div>
       </div>
 
-      {/* ── Configurations marquantes (pleine largeur) ── */}
+      {/* ── Configurations marquantes (puces fines) ── */}
       {sky.configs.length > 0 && (
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 mt-4 sm:mt-5">
+        <div className="flex flex-wrap justify-center gap-3 mt-5">
           {sky.configs.map((cfg, i) => {
             const info = CONFIG_INFO[cfg.kind]
             return (
-              <div
+              <span
                 key={i}
-                className="glass p-5 flex items-start gap-4"
+                title={fr ? info.text.fr : info.text.en}
+                className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border border-[var(--color-glass-border)]"
                 style={{
-                  background:
-                    'linear-gradient(135deg, color-mix(in srgb, var(--color-accent-lavender) 12%, transparent), transparent)',
+                  background: 'color-mix(in srgb, var(--color-accent-lavender) 10%, transparent)',
                 }}
               >
-                <div className="flex -space-x-1 shrink-0 pt-0.5">
-                  {cfg.planets.map((p) => (
-                    <span
-                      key={p.name}
-                      aria-hidden="true"
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm border border-[var(--color-glass-border)] bg-[var(--color-space-card)] text-[var(--color-accent-lavender)]"
-                    >
-                      {p.symbol}
-                    </span>
-                  ))}
-                </div>
-                <div>
-                  <p className="font-cinzel text-base text-[var(--color-text-primary)]">
-                    {fr ? info.name.fr : info.name.en}
-                    {cfg.signKey ? (
-                      <span className="text-[var(--color-accent-lavender)]">
-                        {' '}
-                        · {translateSign(cfg.signKey, locale)}
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mt-1">
-                    {fr ? info.text.fr : info.text.en}
-                  </p>
-                </div>
-              </div>
+                <span
+                  aria-hidden="true"
+                  className="text-[var(--color-accent-lavender)] tracking-tight"
+                >
+                  {cfg.planets.map((p) => p.symbol).join(' ')}
+                </span>
+                <span className="text-[var(--color-text-primary)] font-medium">
+                  {fr ? info.name.fr : info.name.en}
+                  {cfg.signKey ? ` · ${translateSign(cfg.signKey, locale)}` : ''}
+                </span>
+              </span>
             )
           })}
         </div>
