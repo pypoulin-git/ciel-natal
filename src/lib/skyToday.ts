@@ -1,12 +1,20 @@
-// "Ciel du jour" — current sky snapshot computed from the same simplified
-// ephemeris used for natal charts (src/lib/astro.ts). Pure client-side compute:
-// no network, no cron. Returns language-agnostic data; copy lives in
+// "Ciel du jour" — current sky snapshot. Pure client-side compute (no network,
+// no cron). Returns language-agnostic data; copy lives in
 // src/data/skyInterpretations.ts and is composed by the SkyToday component.
+//
+// Moon phase reuses the natal ephemeris (src/lib/astro.ts). Everything that
+// depends on *geocentric* motion — retrogrades, planet-to-planet aspects,
+// configurations — uses src/lib/ephemeris.ts, because astro.ts's mean
+// longitudes can't reproduce retrograde motion.
 
-import { calculateNatalChart, type NatalChart } from './astro'
+import { calculateNatalChart, SIGNS } from './astro'
+import { geocentricChart } from './ephemeris'
 
-// Planets that can appear retrograde (Sun, Moon and the Node are excluded).
-const RETRO_CANDIDATES = [
+const RETRO_CANDIDATES = ['Mercure', 'Venus', 'Mars', 'Jupiter', 'Saturne', 'Uranus', 'Neptune']
+
+// Sun + planets considered for aspects / configurations (no Moon, no Node).
+const PATTERN_PLANETS = [
+  'Soleil',
   'Mercure',
   'Venus',
   'Mars',
@@ -14,114 +22,270 @@ const RETRO_CANDIDATES = [
   'Saturne',
   'Uranus',
   'Neptune',
-  'Pluton',
 ]
+
+const PLANET_SYMBOL: Record<string, string> = {
+  Soleil: '☉',
+  Mercure: '☿',
+  Venus: '♀',
+  Mars: '♂',
+  Jupiter: '♃',
+  Saturne: '♄',
+  Uranus: '♅',
+  Neptune: '♆',
+}
+
+const ASPECTS = [
+  { type: 'Conjonction', angle: 0, orb: 8 },
+  { type: 'Sextile', angle: 60, orb: 6 },
+  { type: 'Carre', angle: 90, orb: 7 },
+  { type: 'Trigone', angle: 120, orb: 7 },
+  { type: 'Opposition', angle: 180, orb: 8 },
+]
+
+const RETRO_HORIZON_DAYS = 200 // far enough to always catch the next Mercury Rx
+const DAY_MS = 86400000
 
 function normalize360(a: number): number {
   return ((a % 360) + 360) % 360
 }
-
-// Shortest signed difference b - a, in [-180, 180].
 function signedDelta(a: number, b: number): number {
   let d = normalize360(b - a)
   if (d > 180) d -= 360
   return d
 }
+function separation(a: number, b: number): number {
+  const d = Math.abs(normalize360(a - b))
+  return d > 180 ? 360 - d : d
+}
+function signKeyOf(lon: number): string {
+  return SIGNS[Math.floor(normalize360(lon) / 30)]
+}
 
 export interface SkyMoon {
   phaseIndex: number // 0..7 (0 = New, 4 = Full)
   angle: number // Sun→Moon elongation, 0..360 (drives the glyph)
-  illumination: number // 0..100 (approx. illuminated fraction)
-  signKey: string // internal French sign key (e.g. "Scorpion")
+  illumination: number // 0..100
+  signKey: string
+  monthIndex: number // 0..11 — traditional monthly Moon name
 }
-
-export interface SkyRetrograde {
-  planetKey: string // internal name (e.g. "Mercure")
-  symbol: string // astrological glyph
+export interface SkyRetro {
+  planetKey: string
+  symbol: string
+  status: 'current' | 'upcoming'
+  startISO?: string
+  endISO?: string
 }
-
 export interface SkyAlignment {
   planet1: string
   symbol1: string
   planet2: string
   symbol2: string
-  type: string // "Conjonction" | "Sextile" | "Carre" | "Trigone" | "Opposition"
+  type: string
   orb: number
 }
-
+export interface SkyConfig {
+  kind: 'stellium' | 'grand-trine' | 't-square'
+  signKey?: string
+  planets: { name: string; symbol: string }[]
+}
 export interface SkyToday {
   date: string // yyyy-mm-dd (UTC)
   moon: SkyMoon
-  sunSignKey: string
-  retrogrades: SkyRetrograde[]
+  retrogrades: SkyRetro[]
   alignments: SkyAlignment[]
+  configs: SkyConfig[]
 }
 
-// Positions at midday UTC, no birth time (planets only, no ascendant/houses).
-function chartFor(d: Date): NatalChart {
-  return calculateNatalChart(
-    d.getUTCFullYear(),
-    d.getUTCMonth() + 1,
+function isoOf(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(
     d.getUTCDate(),
+  ).padStart(2, '0')}`
+}
+function phaseIndex(angle: number): number {
+  return Math.floor((normalize360(angle) + 22.5) / 45) % 8
+}
+
+function classifyAspect(sep: number): { type: string; orb: number } | null {
+  for (const a of ASPECTS) {
+    const orb = Math.abs(sep - a.angle)
+    if (orb <= a.orb) return { type: a.type, orb: Math.round(orb * 10) / 10 }
+  }
+  return null
+}
+
+// From a daily series of geocentric longitudes, return the current retrograde
+// window or the next upcoming one (null if neither within horizon).
+function retrogradeFor(
+  name: string,
+  lon: number[],
+  dates: Date[],
+  todayIdx: number,
+): SkyRetro | null {
+  const motion: number[] = []
+  for (let i = 0; i < lon.length - 1; i++) motion.push(signedDelta(lon[i], lon[i + 1]))
+
+  if (motion[todayIdx] < 0) {
+    let end = todayIdx
+    while (end < motion.length && motion[end] < 0) end++
+    return {
+      planetKey: name,
+      symbol: PLANET_SYMBOL[name],
+      status: 'current',
+      endISO: end < motion.length ? isoOf(dates[end]) : undefined,
+    }
+  }
+  for (let i = todayIdx; i < motion.length - 1; i++) {
+    if (motion[i] >= 0 && motion[i + 1] < 0) {
+      const start = i + 1
+      let end = start
+      while (end < motion.length && motion[end] < 0) end++
+      return {
+        planetKey: name,
+        symbol: PLANET_SYMBOL[name],
+        status: 'upcoming',
+        startISO: isoOf(dates[start]),
+        endISO: end < motion.length ? isoOf(dates[end]) : undefined,
+      }
+    }
+  }
+  return null
+}
+
+function detectConfigs(lonByName: Record<string, number>): SkyConfig[] {
+  const pts = PATTERN_PLANETS.map((name) => ({
+    name,
+    symbol: PLANET_SYMBOL[name],
+    lon: lonByName[name],
+  }))
+  const configs: SkyConfig[] = []
+
+  // Stellium: 3+ planets sharing a sign.
+  const bySign: Record<string, typeof pts> = {}
+  for (const p of pts) (bySign[signKeyOf(p.lon)] ??= []).push(p)
+  for (const [sign, group] of Object.entries(bySign)) {
+    if (group.length >= 3) {
+      configs.push({
+        kind: 'stellium',
+        signKey: sign,
+        planets: group.map((p) => ({ name: p.name, symbol: p.symbol })),
+      })
+    }
+  }
+
+  // Grand Trine: three planets each ~120° apart.
+  for (let i = 0; i < pts.length; i++)
+    for (let j = i + 1; j < pts.length; j++)
+      for (let k = j + 1; k < pts.length; k++) {
+        const t = (x: number) => Math.abs(x - 120) <= 7
+        if (
+          t(separation(pts[i].lon, pts[j].lon)) &&
+          t(separation(pts[j].lon, pts[k].lon)) &&
+          t(separation(pts[i].lon, pts[k].lon))
+        ) {
+          configs.push({
+            kind: 'grand-trine',
+            planets: [pts[i], pts[j], pts[k]].map((p) => ({ name: p.name, symbol: p.symbol })),
+          })
+        }
+      }
+
+  // T-Square: an opposition both ends of which square a third planet.
+  for (let i = 0; i < pts.length; i++)
+    for (let j = i + 1; j < pts.length; j++) {
+      if (Math.abs(separation(pts[i].lon, pts[j].lon) - 180) > 7) continue
+      for (let k = 0; k < pts.length; k++) {
+        if (k === i || k === j) continue
+        const sq = (x: number) => Math.abs(x - 90) <= 6
+        if (sq(separation(pts[k].lon, pts[i].lon)) && sq(separation(pts[k].lon, pts[j].lon))) {
+          configs.push({
+            kind: 't-square',
+            planets: [pts[i], pts[j], pts[k]].map((p) => ({ name: p.name, symbol: p.symbol })),
+          })
+        }
+      }
+    }
+
+  const order = { stellium: 0, 'grand-trine': 1, 't-square': 2 } as const
+  return configs.sort((x, y) => order[x.kind] - order[y.kind]).slice(0, 2)
+}
+
+export function computeSkyToday(now: Date): SkyToday {
+  // ── Moon phase (from the natal ephemeris — validated, fine for phase) ──
+  const natal = calculateNatalChart(
+    now.getUTCFullYear(),
+    now.getUTCMonth() + 1,
+    now.getUTCDate(),
     12,
     0,
     0,
     0,
     false,
   )
-}
-
-// 8 phase sectors centred on the canonical phase points (New at 0°, Full at 180°).
-function phaseIndex(angle: number): number {
-  return Math.floor((normalize360(angle) + 22.5) / 45) % 8
-}
-
-export function computeSkyToday(now: Date): SkyToday {
-  const today = chartFor(now)
-  const sun = today.planets[0]
-  const moon = today.planets[1]
-
-  const gap = normalize360(moon.longitude - sun.longitude)
+  const sunLon = natal.planets[0].longitude
+  const moonLon = natal.planets[1].longitude
+  const gap = normalize360(moonLon - sunLon)
   const illumination = Math.round(((1 - Math.cos((gap * Math.PI) / 180)) / 2) * 100)
 
-  // Retrograde detection: compare each planet's longitude ±2 days. A 4-day
-  // baseline is wide enough to read the direction of motion even for the slow
-  // outer planets, while the simplified theory stays smooth.
-  const before = chartFor(new Date(now.getTime() - 2 * 86400000))
-  const after = chartFor(new Date(now.getTime() + 2 * 86400000))
-  const lonOf = (c: NatalChart, name: string) => c.planets.find((p) => p.name === name)!.longitude
+  // ── Geocentric planet positions for aspects / configurations ──
+  const today = geocentricChart(now).lon
 
-  const retrogrades: SkyRetrograde[] = []
-  for (const name of RETRO_CANDIDATES) {
-    const motion = signedDelta(lonOf(before, name), lonOf(after, name))
-    if (motion < 0) {
-      const p = today.planets.find((pl) => pl.name === name)!
-      retrogrades.push({ planetKey: name, symbol: p.symbol })
+  const alignments: SkyAlignment[] = []
+  for (let i = 0; i < PATTERN_PLANETS.length; i++) {
+    for (let j = i + 1; j < PATTERN_PLANETS.length; j++) {
+      const a = PATTERN_PLANETS[i]
+      const b = PATTERN_PLANETS[j]
+      const asp = classifyAspect(separation(today[a], today[b]))
+      if (asp) {
+        alignments.push({
+          planet1: a,
+          symbol1: PLANET_SYMBOL[a],
+          planet2: b,
+          symbol2: PLANET_SYMBOL[b],
+          type: asp.type,
+          orb: asp.orb,
+        })
+      }
     }
   }
+  alignments.sort((x, y) => x.orb - y.orb)
 
-  // Notable alignments: tightest transiting aspects, excluding the fast Moon
-  // (its phase is shown separately) and the North Node. Top 3 by orb.
-  const alignments: SkyAlignment[] = today.aspects
-    .filter((a) => ![a.planet1, a.planet2].some((n) => n === 'Lune' || n === 'Noeud Nord'))
-    .sort((a, b) => a.orb - b.orb)
-    .slice(0, 3)
-    .map((a) => ({
-      planet1: a.planet1,
-      symbol1: a.symbol1,
-      planet2: a.planet2,
-      symbol2: a.symbol2,
-      type: a.type,
-      orb: a.orb,
-    }))
-
-  const iso = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`
+  // ── Retrogrades: daily geocentric series over the horizon ──
+  const startOffset = 3
+  const dates: Date[] = []
+  const series: Record<string, number>[] = []
+  for (let off = -startOffset; off <= RETRO_HORIZON_DAYS; off++) {
+    const d = new Date(now.getTime() + off * DAY_MS)
+    dates.push(d)
+    series.push(geocentricChart(d).lon)
+  }
+  const todayIdx = startOffset
+  const retrogrades: SkyRetro[] = []
+  for (const name of RETRO_CANDIDATES) {
+    const rx = retrogradeFor(
+      name,
+      series.map((s) => s[name]),
+      dates,
+      todayIdx,
+    )
+    if (rx) retrogrades.push(rx)
+  }
+  retrogrades.sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'current' ? -1 : 1
+    return (a.startISO ?? '').localeCompare(b.startISO ?? '')
+  })
 
   return {
-    date: iso,
-    moon: { phaseIndex: phaseIndex(gap), angle: gap, illumination, signKey: moon.sign },
-    sunSignKey: sun.sign,
+    date: isoOf(now),
+    moon: {
+      phaseIndex: phaseIndex(gap),
+      angle: gap,
+      illumination,
+      signKey: signKeyOf(moonLon),
+      monthIndex: now.getUTCMonth(),
+    },
     retrogrades,
-    alignments,
+    alignments: alignments.slice(0, 5),
+    configs: detectConfigs(today),
   }
 }
