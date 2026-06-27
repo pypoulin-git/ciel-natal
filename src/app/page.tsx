@@ -805,7 +805,7 @@ export default function Home() {
         {/* ═══ HERO ═══ */}
         {step === 0 && (
           <>
-            <section className="relative overflow-hidden min-h-screen flex flex-col items-center justify-center px-4 text-center">
+            <section className="relative overflow-hidden min-h-[86vh] flex flex-col items-center justify-center px-4 text-center">
               {/* Soft radial halo behind the title — adds cosmic depth. */}
               <div
                 aria-hidden="true"
