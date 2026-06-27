@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Starfield from '@/components/Starfield'
 import SiteFooter from '@/components/SiteFooter'
 import MoonGlyph from '@/components/MoonGlyph'
+import { SignIcon } from '@/components/AstroIcons'
 import { useLocale } from '@/lib/i18n'
 import { translateSign } from '@/lib/astro'
 import { computeCalendar, type CalEvent, type CalMonth } from '@/lib/skyCalendar'
@@ -17,6 +18,32 @@ const TYPE_COLOR: Record<CalEvent['type'], string> = {
   'retro-begin': 'var(--color-accent-lavender)',
   'retro-end': '#86d9b9',
   'sun-ingress': '#9fc8e8',
+}
+
+const PLANET_GLYPH: Record<string, string> = {
+  Mercure: '☿',
+  Venus: '♀',
+  Mars: '♂',
+  Jupiter: '♃',
+  Saturne: '♄',
+  Uranus: '♅',
+  Neptune: '♆',
+}
+
+// French article for "Saison ___" so the season label reads naturally.
+const SEASON_ART: Record<string, string> = {
+  Belier: 'du',
+  Taureau: 'du',
+  Gemeaux: 'des',
+  Cancer: 'du',
+  Lion: 'du',
+  Vierge: 'de la',
+  Balance: 'de la',
+  Scorpion: 'du',
+  Sagittaire: 'du',
+  Capricorne: 'du',
+  Verseau: 'du',
+  Poissons: 'des',
 }
 
 export default function CalendrierPage() {
@@ -65,18 +92,34 @@ export default function CalendrierPage() {
       case 'retro-end':
         return fr ? `${planet} redevient direct` : `${planet} turns direct`
       case 'sun-ingress':
-        return fr ? `Le Soleil entre en ${sign}` : `The Sun enters ${sign}`
+        return fr ? `Saison ${SEASON_ART[e.signKey] ?? 'du'} ${sign}` : `${sign} season begins`
     }
   }
 
-  const EventRow = ({ e }: { e: CalEvent }) => (
-    <li className="flex items-baseline gap-2.5">
+  const EventIcon = ({ e }: { e: CalEvent }) =>
+    e.planetKey ? (
       <span
-        className="text-xs tabular-nums w-6 shrink-0 text-right"
+        aria-hidden="true"
+        className="w-4 text-center text-sm shrink-0"
+        style={{ color: TYPE_COLOR[e.type] }}
+      >
+        {PLANET_GLYPH[e.planetKey]}
+      </span>
+    ) : (
+      <span className="w-4 shrink-0 flex justify-center">
+        <SignIcon name={e.signKey} size={14} color={TYPE_COLOR[e.type]} />
+      </span>
+    )
+
+  const EventRow = ({ e }: { e: CalEvent }) => (
+    <li className="flex items-center gap-2">
+      <span
+        className="text-xs tabular-nums w-5 shrink-0 text-right"
         style={{ color: TYPE_COLOR[e.type] }}
       >
         {dayOf(e.dateISO)}
       </span>
+      <EventIcon e={e} />
       <span className="text-sm text-[var(--color-text-secondary)] leading-snug">
         {eventLabel(e)}
       </span>
@@ -157,10 +200,10 @@ export default function CalendrierPage() {
             </div>
 
             {/* ── 11 mois suivants ── */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
               {months.slice(1).map((m, idx) => (
-                <div key={idx} className="glass p-5">
-                  <div className="flex items-center gap-3 mb-3">
+                <div key={idx} className="glass p-4">
+                  <div className="flex items-center gap-3 mb-2.5">
                     <MoonGlyph angle={180} size={34} idSuffix={`m${idx}`} />
                     <div>
                       <p className="text-sm text-[var(--color-text-primary)] capitalize leading-tight">
@@ -178,7 +221,7 @@ export default function CalendrierPage() {
                       {fr ? 'Un mois paisible.' : 'A quiet month.'}
                     </p>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                       {m.events.map((e, i) => (
                         <EventRow key={i} e={e} />
                       ))}
