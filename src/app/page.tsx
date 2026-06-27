@@ -6,6 +6,7 @@ import Starfield from "@/components/Starfield";
 import TitleSparkles from "@/components/TitleSparkles";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
+import SkyToday from "@/components/SkyToday";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
@@ -853,6 +854,9 @@ export default function Home() {
                 </svg>
               </div>
             </section>
+
+            {/* ═══ LE CIEL AUJOURD'HUI ═══ */}
+            <SkyToday />
 
             {/* ═══ COMMENT ÇA MARCHE ═══ */}
             <section className="max-w-5xl mx-auto px-4 py-20 sm:py-28">
