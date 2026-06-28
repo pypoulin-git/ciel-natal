@@ -11,7 +11,7 @@ import ThemeToggle from './ThemeToggle'
 type NavLink = { href: string; labelFr: string; labelEn: string }
 
 const NAV_LINKS: NavLink[] = [
-  { href: '/', labelFr: 'Carte', labelEn: 'Chart' },
+  { href: '/', labelFr: 'Carte natale', labelEn: 'Natal chart' },
   { href: '/calendrier', labelFr: 'Calendrier', labelEn: 'Calendar' },
   { href: '/signe', labelFr: 'Signes', labelEn: 'Signs' },
   { href: '/synastrie', labelFr: 'Synastrie', labelEn: 'Synastry' },
@@ -60,15 +60,12 @@ export default function TopNav() {
             ✦
           </span>
           <span className="font-cinzel text-lg tracking-wide text-[var(--color-text-primary)]">
-            Natalune
+            Nata<span className="text-[var(--color-accent-lavender)]">lune</span>
           </span>
         </Link>
 
         {/* ─── Desktop nav links (centered) ─── */}
-        <nav
-          className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2"
-          aria-label="Main"
-        >
+        <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center" aria-label="Main">
           {NAV_LINKS.map((link) => {
             const active = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href)
             return (
@@ -76,7 +73,7 @@ export default function TopNav() {
                 key={link.href}
                 href={link.href}
                 aria-current={active ? 'page' : undefined}
-                className={`relative px-3.5 py-2 text-sm font-medium transition-colors ${
+                className={`relative px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                   active
                     ? 'text-[var(--color-text-primary)]'
                     : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
@@ -228,7 +225,7 @@ export default function TopNav() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 -mr-2 text-[var(--color-text-secondary)]"
+            className="lg:hidden p-2 -mr-2 text-[var(--color-text-secondary)]"
             aria-label={label('Menu', 'Menu')}
             aria-expanded={mobileOpen}
           >
@@ -260,7 +257,7 @@ export default function TopNav() {
       {/* ─── Mobile nav drawer ─── */}
       {mobileOpen && (
         <div
-          className="md:hidden border-t px-4 py-3 space-y-1"
+          className="lg:hidden border-t px-4 py-3 space-y-1"
           style={{ background: 'var(--nav-menu-bg)', borderColor: 'var(--nav-border)' }}
         >
           {NAV_LINKS.map((link) => {
