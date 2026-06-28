@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useLocale } from '@/lib/i18n'
+import MoonGlyph from '@/components/MoonGlyph'
 
 export default function SiteFooter() {
   const { t, locale } = useLocale()
@@ -14,13 +15,24 @@ export default function SiteFooter() {
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-center sm:text-left">
+            {/* Jeu de mots : Natal + Lune = Natalune */}
             <Link
               href="/"
-              className="font-cinzel text-sm text-[var(--color-text-primary)] hover:text-[var(--color-accent-lavender)] transition"
+              className="group inline-flex items-baseline gap-1.5"
+              aria-label="Natalune — natal + lune"
             >
-              Natalune
+              <span className="font-cinzel text-base text-[var(--color-text-primary)] transition group-hover:text-[var(--color-accent-lavender)]">
+                Nata<span className="text-[var(--color-accent-lavender)]">lune</span>
+              </span>
+              <span className="translate-y-[2px]">
+                <MoonGlyph angle={52} size={15} idSuffix="brand" />
+              </span>
             </Link>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">{t('footer.tagline')}</p>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+              {locale === 'fr'
+                ? 'natal + lune — ta carte natale au clair de Lune'
+                : 'natal + moon — your natal chart by moonlight'}
+            </p>
           </div>
           <nav
             className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
