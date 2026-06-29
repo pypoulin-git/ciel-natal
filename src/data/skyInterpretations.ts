@@ -264,3 +264,57 @@ export const CONFIG_INFO: Record<'stellium' | 'grand-trine' | 't-square', { name
       },
     },
   }
+
+// Plain-language meaning helpers — used to turn raw aspects/stelliums into
+// sentences a newcomer understands.
+
+// One concept per planet, composed into alignment readings.
+export const PLANET_THEME: Record<string, Bi> = {
+  Soleil: { fr: "l'identité", en: 'identity' },
+  Mercure: { fr: 'le mental', en: 'the mind' },
+  Venus: { fr: "l'amour", en: 'love' },
+  Mars: { fr: "l'action", en: 'action' },
+  Jupiter: { fr: 'la chance', en: 'luck' },
+  Saturne: { fr: 'la discipline', en: 'discipline' },
+  Uranus: { fr: 'la liberté', en: 'freedom' },
+  Neptune: { fr: "l'intuition", en: 'intuition' },
+}
+
+// What each sign is "about" — to explain a stellium in plain words.
+export const SIGN_THEME: Record<string, Bi> = {
+  Belier: { fr: "l'action et l'affirmation de soi", en: 'action and self-assertion' },
+  Taureau: { fr: 'la sécurité et les plaisirs simples', en: 'security and simple pleasures' },
+  Gemeaux: { fr: 'les échanges et la curiosité', en: 'exchange and curiosity' },
+  Cancer: { fr: 'le foyer, les émotions et les racines', en: 'home, emotions and roots' },
+  Lion: { fr: 'la créativité et le rayonnement', en: 'creativity and shining' },
+  Vierge: { fr: 'le travail et le soin du détail', en: 'work and attention to detail' },
+  Balance: { fr: "les relations et l'équilibre", en: 'relationships and balance' },
+  Scorpion: { fr: "l'intensité et la transformation", en: 'intensity and transformation' },
+  Sagittaire: { fr: "l'aventure et le sens", en: 'adventure and meaning' },
+  Capricorne: { fr: "l'ambition et la structure", en: 'ambition and structure' },
+  Verseau: { fr: 'la liberté et les idées neuves', en: 'freedom and new ideas' },
+  Poissons: { fr: 'le rêve et la compassion', en: 'dreams and compassion' },
+}
+
+// Turns "{theme1} et {theme2} {framing}" into a readable alignment sentence.
+export const NATURE_FRAMING: Record<AspectNature, Bi> = {
+  fusion: { fr: 'se fondent en une seule force', en: 'merge into a single force' },
+  harmonie: { fr: "s'accordent avec fluidité", en: 'flow together easily' },
+  tension: { fr: 'se confrontent — un défi à relever', en: 'clash — a challenge to face' },
+}
+
+// Short one-liner explaining each concept to a newcomer (card intros).
+export const SKY_EXPLAINERS = {
+  retro: {
+    fr: 'Une planète rétrograde semble reculer dans le ciel : son énergie se tourne vers l’intérieur — on révise, on ralentit, plutôt qu’on fonce.',
+    en: 'A retrograde planet appears to move backwards: its energy turns inward — a time to review and slow down rather than push ahead.',
+  },
+  alignments: {
+    fr: 'Quand deux planètes forment un angle précis, leurs énergies dialoguent — en douceur (harmonie) ou en friction (tension).',
+    en: 'When two planets form a precise angle, their energies interact — gently (harmony) or with friction (tension).',
+  },
+  stellium: {
+    fr: 'Un stellium, c’est trois planètes ou plus réunies dans le même signe : une concentration d’énergie qui met ce thème en avant.',
+    en: 'A stellium is three or more planets gathered in the same sign: a concentration of energy that spotlights that theme.',
+  },
+}
