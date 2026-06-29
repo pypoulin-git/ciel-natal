@@ -899,42 +899,51 @@ export default function Home() {
             {/* ═══ EXPLORE NATALUNE — les sections du site ═══ */}
             <ExploreSections onStart={() => setStep(1)} />
 
-            {/* ═══ CE QUE TU OBTIENS ═══ */}
-            <section className="max-w-4xl mx-auto px-4 py-10">
-              <div className="text-center mb-10">
+            {/* ═══ GRATUIT + PASSE PREMIUM ═══ */}
+            <section className="max-w-4xl mx-auto px-4 py-12">
+              <div className="text-center mb-9">
+                <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-2">
+                  {locale === "fr" ? "Gratuit, et un peu plus" : "Free, and a little more"}
+                </p>
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-3">
-                  {locale === "fr" ? "Ce que tu obtiens" : "What you get"}
+                  {locale === "fr" ? "Gratuit pour tous — Premium pour aller plus loin" : "Free for everyone — Premium to go further"}
                 </h2>
-                <p className="text-sm text-[var(--color-text-secondary)] max-w-xl mx-auto">
+                <p className="text-sm text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
                   {locale === "fr"
-                    ? "Le calcul de carte est gratuit. Sans compte, sans email, sans engagement."
-                    : "The chart calculation is free. No account, no email, no strings attached."}
+                    ? "Le cœur de Natalune est gratuit, sans compte ni courriel. La passe Premium — un paiement unique — soutient ce projet indépendant et débloque les lectures les plus riches."
+                    : "The heart of Natalune is free, no account or email. The Premium pass — a one-time payment — supports this independent project and unlocks the richest readings."}
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="glass p-5">
-                  <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-2">
+                  <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-3">
                     {locale === "fr" ? "Gratuit · sans compte" : "Free · no account"}
                   </p>
                   <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
-                    <li>✦ {locale === "fr" ? "Ta carte natale complète (roue zodiacale)" : "Your full birth chart (zodiac wheel)"}</li>
-                    <li>✦ {locale === "fr" ? "Portrait Soleil, Lune, Ascendant" : "Sun, Moon and Ascendant portrait"}</li>
-                    <li>✦ {locale === "fr" ? "Maisons, aspects, éléments" : "Houses, aspects, elements"}</li>
-                    <li>✦ {locale === "fr" ? "Aperçu des transits du jour" : "Today's transits preview"}</li>
+                    <li>✦ {locale === "fr" ? "Ta carte natale complète : roue, planètes, ascendant" : "Your full birth chart: wheel, planets, ascendant"}</li>
+                    <li>✦ {locale === "fr" ? "Portrait Soleil · Lune · Ascendant" : "Sun · Moon · Ascendant portrait"}</li>
+                    <li>✦ {locale === "fr" ? "Maisons, aspects et éléments" : "Houses, aspects and elements"}</li>
+                    <li>✦ {locale === "fr" ? "Le ciel du jour, le calendrier et les signes" : "The daily sky, the calendar and the signs"}</li>
                   </ul>
                 </div>
-                <div className="glass p-5 border border-[var(--color-accent-lavender)]/30">
-                  <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)] mb-2">
-                    {locale === "fr" ? "Premium · 9,99 $ une fois" : "Premium · $9.99 one-time"}
+                <div
+                  className="glass p-5"
+                  style={{ borderColor: "rgba(224,169,78,0.32)", background: "linear-gradient(135deg, color-mix(in srgb, var(--color-accent-gold) 8%, transparent), transparent)" }}
+                >
+                  <p className="text-xs uppercase tracking-widest text-[var(--color-accent-gold)]/85 mb-3">
+                    {locale === "fr" ? "✦ Passe Premium · 9,99 $ une fois" : "✦ Premium pass · $9.99 one-time"}
                   </p>
                   <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
-                    <li>✦ {locale === "fr" ? "Interprétations complètes et détaillées" : "Full detailed interpretations"}</li>
+                    <li>✦ {locale === "fr" ? "Interprétations complètes et détaillées" : "Full, detailed interpretations"}</li>
                     <li>✦ {locale === "fr" ? "Chat avec un astrologue IA bienveillant" : "Chat with a caring AI astrologer"}</li>
-                    <li>✦ {locale === "fr" ? "Synastrie" : "Synastry"}</li>
-                    <li>✦ {locale === "fr" ? "Export PDF, sauvegarde et email" : "PDF export, save and email"}</li>
+                    <li>✦ {locale === "fr" ? "Synastrie — l'alchimie de deux âmes" : "Synastry — the alchemy of two souls"}</li>
+                    <li>✦ {locale === "fr" ? "Narration audio de ta lecture" : "Audio narration of your reading"}</li>
+                    <li>✦ {locale === "fr" ? "Sauvegarde de tes cartes + PDF par courriel" : "Save your charts + PDF by email"}</li>
                   </ul>
                   <p className="mt-3 text-xs text-[var(--color-text-secondary)]/70 italic">
-                    {locale === "fr" ? "Paiement unique. Pas d'abonnement. À vie." : "One-time payment. No subscription. Forever."}
+                    {locale === "fr"
+                      ? "Paiement unique, à vie — et tu soutiens un projet indépendant. 💛"
+                      : "One-time, forever — and you support an independent project. 💛"}
                   </p>
                 </div>
               </div>

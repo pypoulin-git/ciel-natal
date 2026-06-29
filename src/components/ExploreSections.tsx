@@ -74,9 +74,9 @@ export default function ExploreSections({ onStart }: { onStart: () => void }) {
       icon: <SynastryIcon />,
       title: fr ? 'Synastrie' : 'Synastry',
       desc: fr
-        ? 'La compatibilité entre deux cartes du ciel.'
-        : 'The compatibility between two birth charts.',
-      cta: fr ? 'Comparer deux cartes' : 'Compare two charts',
+        ? 'Deux cartes du ciel superposées : l’alchimie de vos âmes, là où elles s’attirent et grandissent ensemble.'
+        : 'Two birth charts overlaid: the alchemy of your souls — where they attract and grow together.',
+      cta: fr ? 'Révéler votre lien' : 'Reveal your bond',
     },
     {
       href: '/blog',
