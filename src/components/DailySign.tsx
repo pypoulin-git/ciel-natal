@@ -105,13 +105,15 @@ export default function DailySign() {
   const message = dynamicMsg ? (locale === "fr" ? dynamicMsg.fr : dynamicMsg.en) : fallback;
 
   return (
-    <div className="glass px-5 py-4 max-w-sm mx-auto text-center">
-      <div className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-2">{label}</div>
-      <div className="flex items-center justify-center gap-3 mb-2">
-        <SignIcon name={sign.fr} size={26} color="var(--color-accent-lavender)" glow />
-        <span className="font-cinzel text-xl text-[var(--color-text-primary)]">{name}</span>
+    <div className="glass px-6 py-5 max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 text-center sm:text-left">
+      <div className="flex flex-col items-center sm:items-start shrink-0 sm:border-r sm:border-[var(--color-glass-border)] sm:pr-6">
+        <div className="text-[11px] uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-1.5">{label}</div>
+        <div className="flex items-center gap-2.5">
+          <SignIcon name={sign.fr} size={28} color="var(--color-accent-lavender)" glow />
+          <span className="font-cinzel text-2xl text-[var(--color-text-primary)]">{name}</span>
+        </div>
       </div>
-      <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{message}</p>
+      <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed flex-1">{message}</p>
     </div>
   );
 }

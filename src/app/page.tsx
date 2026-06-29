@@ -7,6 +7,7 @@ import TitleSparkles from "@/components/TitleSparkles";
 import SiteFooter from "@/components/SiteFooter";
 import DailySign from "@/components/DailySign";
 import SkyToday from "@/components/SkyToday";
+import ExploreSections from "@/components/ExploreSections";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
@@ -805,7 +806,7 @@ export default function Home() {
         {/* ═══ HERO ═══ */}
         {step === 0 && (
           <>
-            <section className="relative overflow-hidden min-h-[86vh] flex flex-col items-center justify-center px-4 text-center">
+            <section className="relative overflow-hidden min-h-[68vh] flex flex-col items-center justify-center px-4 text-center pt-10">
               {/* Soft radial halo behind the title — adds cosmic depth. */}
               <div
                 aria-hidden="true"
@@ -842,9 +843,6 @@ export default function Home() {
                 <p className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] opacity-70 tracking-wide">
                   {locale === "fr" ? "Gratuit · Aucun compte requis · 3 minutes" : "Free · No account needed · 3 minutes"}
                 </p>
-                <div className="mt-12">
-                  <DailySign />
-                </div>
               </div>
 
               {/* Scroll cue — invites exploring the sections below. */}
@@ -855,54 +853,54 @@ export default function Home() {
               </div>
             </section>
 
-            {/* ═══ LE CIEL AUJOURD'HUI ═══ */}
-            <SkyToday />
-
-            {/* ═══ COMMENT ÇA MARCHE ═══ */}
-            <section className="max-w-5xl mx-auto px-4 py-20 sm:py-28">
-              <div className="text-center mb-12">
-                <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-3">
-                  {locale === "fr" ? "Comment ça marche" : "How it works"}
-                </p>
-                <h2 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)]">
-                  {locale === "fr" ? "Trois minutes, et le ciel te parle" : "Three minutes, and the sky speaks"}
-                </h2>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-6">
+            {/* ═══ COMMENT ÇA MARCHE — bandeau compact ═══ */}
+            <section className="max-w-4xl mx-auto px-4 pt-8 pb-2">
+              <div className="grid sm:grid-cols-3 gap-3">
                 {[
                   {
                     n: "1",
-                    fr: { title: "Tes données de naissance", desc: "Date, heure, lieu. Plus l'heure est précise, plus la lecture est juste." },
-                    en: { title: "Your birth details", desc: "Date, time, place. The more precise the time, the truer the reading." },
+                    fr: { title: "Tes données de naissance", desc: "Date, heure, lieu." },
+                    en: { title: "Your birth details", desc: "Date, time, place." },
                   },
                   {
                     n: "2",
-                    fr: { title: "Calcul instantané", desc: "Positions planétaires, ascendant, maisons, aspects — tout est calculé directement dans ton navigateur." },
-                    en: { title: "Instant calculation", desc: "Planets, ascendant, houses, aspects — everything computed right in your browser." },
+                    fr: { title: "Calcul instantané", desc: "Dans ton navigateur, en direct." },
+                    en: { title: "Instant calculation", desc: "Right in your browser, live." },
                   },
                   {
                     n: "3",
-                    fr: { title: "Lecture personnelle", desc: "Un portrait écrit pour toi, à ton rythme. Et un PDF si tu veux le garder." },
-                    en: { title: "A personal reading", desc: "A portrait written for you, at your own pace. And a PDF if you want to keep it." },
+                    fr: { title: "Lecture personnelle", desc: "Un portrait écrit pour toi." },
+                    en: { title: "A personal reading", desc: "A portrait written for you." },
                   },
                 ].map((step) => (
-                  <div key={step.n} className="glass p-6 text-center">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-accent-lavender)]/15 text-[var(--color-accent-lavender)] font-cinzel text-xl mb-4">
+                  <div key={step.n} className="glass px-4 py-3.5 flex items-center gap-3 text-left">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-accent-lavender)]/15 text-[var(--color-accent-lavender)] font-cinzel text-base shrink-0">
                       {step.n}
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">
+                        {locale === "fr" ? step.fr.title : step.en.title}
+                      </h3>
+                      <p className="text-xs text-[var(--color-text-secondary)] leading-tight mt-0.5">
+                        {locale === "fr" ? step.fr.desc : step.en.desc}
+                      </p>
                     </div>
-                    <h3 className="font-cinzel text-lg text-[var(--color-text-primary)] mb-2">
-                      {locale === "fr" ? step.fr.title : step.en.title}
-                    </h3>
-                    <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                      {locale === "fr" ? step.fr.desc : step.en.desc}
-                    </p>
                   </div>
                 ))}
               </div>
             </section>
 
+            {/* ═══ LE CIEL AUJOURD'HUI — énergie du jour + cartes ═══ */}
+            <div className="max-w-6xl mx-auto px-4 pt-10">
+              <DailySign />
+            </div>
+            <SkyToday />
+
+            {/* ═══ EXPLORE NATALUNE — les sections du site ═══ */}
+            <ExploreSections onStart={() => setStep(1)} />
+
             {/* ═══ CE QUE TU OBTIENS ═══ */}
-            <section className="max-w-4xl mx-auto px-4 py-12 sm:py-16">
+            <section className="max-w-4xl mx-auto px-4 py-10">
               <div className="text-center mb-10">
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-3">
                   {locale === "fr" ? "Ce que tu obtiens" : "What you get"}
