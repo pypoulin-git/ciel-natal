@@ -304,10 +304,12 @@ export default function SynastryPage() {
         </a>
 
         <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2">
-          {locale === "fr" ? "Synastrie — Compatibilité" : "Synastry — Compatibility"}
+          {locale === "fr" ? "Synastrie — l'alchimie de deux âmes" : "Synastry — the alchemy of two souls"}
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mb-6">
-          {locale === "fr" ? "Compare deux thèmes natals et découvre les dynamiques relationnelles." : "Compare two natal charts and discover relationship dynamics."}
+          {locale === "fr"
+            ? "Superpose deux cartes du ciel et révèle ce qui vous lie : là où vos âmes s'attirent, vibrent et grandissent ensemble."
+            : "Overlay two birth charts and reveal what binds you: where your souls attract, resonate and grow together."}
         </p>
 
         {/* Intro contextuelle */}
@@ -315,8 +317,8 @@ export default function SynastryPage() {
           <div className="glass rounded-xl px-5 py-4 mb-8 border border-white/5 space-y-2">
             <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
               {locale === "fr"
-                ? "La synastrie compare les positions planétaires de deux personnes pour révéler les dynamiques relationnelles — attractions, complémentarités et zones de tension. Plus les données sont précises (heure, lieu), plus l'analyse est riche."
-                : "Synastry compares the planetary positions of two people to reveal relationship dynamics — attractions, complementarities and areas of tension. The more precise the data (time, place), the richer the analysis."}
+                ? "La synastrie superpose vos deux cartes du ciel pour révéler la danse entre vos âmes : vos attractions, vos complémentarités et les défis à traverser ensemble — un miroir précieux pour mieux vous comprendre, en amour comme en amitié. Plus les données sont précises (heure, lieu), plus la lecture est juste."
+                : "Synastry overlays your two birth charts to reveal the dance between your souls: your attractions, your complementarities and the challenges to face together — a precious mirror to understand each other better, in love and in friendship. The more precise the data (time, place), the truer the reading."}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] opacity-60 flex items-center gap-1.5">
               <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -422,7 +424,7 @@ export default function SynastryPage() {
             <div className="md:col-span-2 text-center">
               <button onClick={compute} disabled={!canCompute}
                 className="btn-primary px-8 py-3 rounded-xl font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed">
-                {locale === "fr" ? "Comparer les thèmes" : "Compare charts"}
+                {locale === "fr" ? "Révéler votre alchimie ✦" : "Reveal your alchemy ✦"}
               </button>
             </div>
           </div>
