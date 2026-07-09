@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Starfield from '@/components/Starfield'
 import SiteFooter from '@/components/SiteFooter'
 import MoonGlyph from '@/components/MoonGlyph'
 import { SignIcon } from '@/components/AstroIcons'
+import PersonalEvents, { type PersonalEvent } from '@/components/PersonalEvents'
 import { useLocale } from '@/lib/i18n'
 import { translateSign } from '@/lib/astro'
 import { computeCalendar, type CalEvent, type CalMonth } from '@/lib/skyCalendar'
@@ -52,6 +53,21 @@ export default function CalendrierPage() {
   const fr = locale === 'fr'
   const [months, setMonths] = useState<CalMonth[] | null>(null)
   const [sky, setSky] = useState<SkyToday | null>(null)
+  const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([])
+  const onEventsChange = useCallback((evts: PersonalEvent[]) => setPersonalEvents(evts), [])
+
+  // Personal events belonging to a given displayed month (exact date, or
+  // month+day match for yearly recurring ones like birthdays).
+  const personalFor = (m: CalMonth): { day: number; ev: PersonalEvent }[] =>
+    personalEvents
+      .filter((ev) => {
+        const d = new Date(ev.event_date + 'T12:00:00Z')
+        const sameMonth = d.getUTCMonth() + 1 === m.month
+        if (!sameMonth) return false
+        return ev.recurring ? true : d.getUTCFullYear() === m.year
+      })
+      .map((ev) => ({ day: new Date(ev.event_date + 'T12:00:00Z').getUTCDate(), ev }))
+      .sort((a, b) => a.day - b.day)
 
   useEffect(() => {
     try {
@@ -127,6 +143,25 @@ export default function CalendrierPage() {
     </li>
   )
 
+  // Personal (Premium) events, woven among the celestial ones with a warm tint.
+  const PersoRow = ({ day, ev }: { day: number; ev: PersonalEvent }) => {
+    const tint =
+      ev.kind === 'anniversaire' ? 'var(--color-accent-gold)' : 'var(--color-accent-rose)'
+    return (
+      <li className="flex items-center gap-2">
+        <span className="text-xs tabular-nums w-5 shrink-0 text-right" style={{ color: tint }}>
+          {day}
+        </span>
+        <span aria-hidden="true" className="w-4 shrink-0 flex justify-center">
+          <span className="w-2 h-2 rounded-full" style={{ background: tint }} />
+        </span>
+        <span className="text-sm leading-snug truncate" style={{ color: tint }}>
+          {ev.title}
+        </span>
+      </li>
+    )
+  }
+
   return (
     <main className="relative min-h-screen">
       <Starfield />
@@ -186,7 +221,7 @@ export default function CalendrierPage() {
                 <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/80 mb-3">
                   {monthLabel(months[0])} · {fr ? 'ce mois-ci' : 'this month'}
                 </p>
-                {months[0].events.length === 0 ? (
+                {months[0].events.length === 0 && personalFor(months[0]).length === 0 ? (
                   <p className="text-sm text-[var(--color-text-muted)]">
                     {fr ? 'Un mois paisible.' : 'A quiet month.'}
                   </p>
@@ -194,6 +229,9 @@ export default function CalendrierPage() {
                   <ul className="space-y-2.5">
                     {months[0].events.map((e, i) => (
                       <EventRow key={i} e={e} />
+                    ))}
+                    {personalFor(months[0]).map(({ day, ev }) => (
+                      <PersoRow key={ev.id} day={day} ev={ev} />
                     ))}
                   </ul>
                 )}
@@ -217,7 +255,7 @@ export default function CalendrierPage() {
                       </p>
                     </div>
                   </div>
-                  {m.events.length === 0 ? (
+                  {m.events.length === 0 && personalFor(m).length === 0 ? (
                     <p className="text-xs text-[var(--color-text-muted)]">
                       {fr ? 'Un mois paisible.' : 'A quiet month.'}
                     </p>
@@ -226,11 +264,17 @@ export default function CalendrierPage() {
                       {m.events.map((e, i) => (
                         <EventRow key={i} e={e} />
                       ))}
+                      {personalFor(m).map(({ day, ev }) => (
+                        <PersoRow key={ev.id} day={day} ev={ev} />
+                      ))}
                     </ul>
                   )}
                 </div>
               ))}
             </div>
+
+            {/* ── Dates personnelles (Premium) ── */}
+            <PersonalEvents onEventsChange={onEventsChange} />
 
             <p className="text-center text-[11px] text-[var(--color-text-muted)] mt-8">
               {fr
