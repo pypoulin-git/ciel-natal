@@ -1,6 +1,9 @@
-// Simplified astronomical calculations for natal chart positions
-// Based on Jean Meeus' "Astronomical Algorithms" and VSOP87 simplified theory
-// Accuracy: ~1° for most planets (sufficient for sign determination)
+// Astronomical calculations for natal chart positions.
+// Sun & Moon: Jean Meeus' "Astronomical Algorithms" (geocentric, ~0.01°/0.3°).
+// Mercury → Pluto: geocentric ephemeris from Keplerian elements (ephemeris.ts),
+// which reproduces true positions AND retrograde motion (~1° accuracy).
+
+import { geocentricLongitudes } from "./ephemeris";
 
 export interface PlanetPosition {
   name: string;
@@ -10,6 +13,7 @@ export interface PlanetPosition {
   signIndex: number;
   degree: number; // degree within sign (0-29)
   house?: number;
+  retrograde?: boolean; // apparent backward motion at that moment (℞)
 }
 
 export interface Aspect {
@@ -130,54 +134,9 @@ function moonLongitude(T: number): number {
   return normalize(lon);
 }
 
-// Simplified planetary longitudes using mean orbital elements + first-order corrections
-function mercuryLongitude(T: number): number {
-  const L = normalize(252.2509 + 149474.0722 * T);
-  const M = normalize(174.7948 + 149472.5153 * T);
-  return normalize(L + 5.7 * Math.sin(rad(M)) + 1.0 * Math.sin(rad(2 * M)));
-}
-
-function venusLongitude(T: number): number {
-  const L = normalize(181.9798 + 58519.2130 * T);
-  const M = normalize(50.4161 + 58517.8039 * T);
-  return normalize(L + 0.727 * Math.sin(rad(M)));
-}
-
-function marsLongitude(T: number): number {
-  const L = normalize(355.4330 + 19141.6964 * T);
-  const M = normalize(19.3730 + 19139.8585 * T);
-  return normalize(L + 10.691 * Math.sin(rad(M)) + 0.623 * Math.sin(rad(2 * M)));
-}
-
-function jupiterLongitude(T: number): number {
-  const L = normalize(34.3515 + 3036.3027 * T);
-  const M = normalize(20.0202 + 3034.6958 * T);
-  return normalize(L + 5.555 * Math.sin(rad(M)) + 0.168 * Math.sin(rad(2 * M)));
-}
-
-function saturnLongitude(T: number): number {
-  const L = normalize(50.0774 + 1223.5110 * T);
-  const M = normalize(317.0207 + 1222.1138 * T);
-  return normalize(L + 6.399 * Math.sin(rad(M)) + 0.319 * Math.sin(rad(2 * M)));
-}
-
-function uranusLongitude(T: number): number {
-  const L = normalize(314.055 + 429.8640 * T);
-  const M = normalize(142.5905 + 428.4946 * T);
-  return normalize(L + 5.32 * Math.sin(rad(M)));
-}
-
-function neptuneLongitude(T: number): number {
-  const L = normalize(304.349 + 219.8833 * T);
-  const M = normalize(256.225 + 218.4862 * T);
-  return normalize(L + 0.814 * Math.sin(rad(M)));
-}
-
-function plutoLongitude(T: number): number {
-  // Very simplified — Pluto moves ~1.5° per year
-  const L = normalize(238.929 + 145.1781 * T);
-  return L;
-}
+// Mercury → Pluto longitudes now come from the geocentric ephemeris
+// (src/lib/ephemeris.ts) — the old heliocentric mean-element approximations
+// were ~1° off and could never show retrograde motion.
 
 // North Node (Mean)
 function northNodeLongitude(T: number): number {
@@ -369,18 +328,40 @@ export function calculateNatalChart(
   const jd = toJulianDay(year, month, day, decimalHour);
   const T = toJulianCenturies(jd);
 
+  // Geocentric planet longitudes (Mercury → Pluto) on the same timebase as jd.
+  // ±1 day gives the apparent motion, hence the retrograde (℞) flag.
+  const dEph = jd - 2451543.5;
+  const geoNow = geocentricLongitudes(dEph);
+  const geoPrev = geocentricLongitudes(dEph - 1);
+  const geoNext = geocentricLongitudes(dEph + 1);
+  const isRetro = (name: string): boolean => {
+    let motion = (geoNext[name] - geoPrev[name]) % 360;
+    if (motion > 180) motion -= 360;
+    if (motion < -180) motion += 360;
+    return motion < 0;
+  };
+  const geo = (name: string) => ({
+    fn: () => geoNow[name],
+    retro: isRetro(name),
+  });
+
   // Calculate planetary longitudes
-  const planetCalcs: { name: string; symbol: string; fn: (T: number) => number }[] = [
+  const planetCalcs: {
+    name: string;
+    symbol: string;
+    fn: (T: number) => number;
+    retro?: boolean;
+  }[] = [
     { name: "Soleil", symbol: "☉", fn: sunLongitude },
     { name: "Lune", symbol: "☽", fn: moonLongitude },
-    { name: "Mercure", symbol: "☿", fn: mercuryLongitude },
-    { name: "Venus", symbol: "♀", fn: venusLongitude },
-    { name: "Mars", symbol: "♂", fn: marsLongitude },
-    { name: "Jupiter", symbol: "♃", fn: jupiterLongitude },
-    { name: "Saturne", symbol: "♄", fn: saturnLongitude },
-    { name: "Uranus", symbol: "♅", fn: uranusLongitude },
-    { name: "Neptune", symbol: "♆", fn: neptuneLongitude },
-    { name: "Pluton", symbol: "⯓", fn: plutoLongitude },
+    { name: "Mercure", symbol: "☿", ...geo("Mercure") },
+    { name: "Venus", symbol: "♀", ...geo("Venus") },
+    { name: "Mars", symbol: "♂", ...geo("Mars") },
+    { name: "Jupiter", symbol: "♃", ...geo("Jupiter") },
+    { name: "Saturne", symbol: "♄", ...geo("Saturne") },
+    { name: "Uranus", symbol: "♅", ...geo("Uranus") },
+    { name: "Neptune", symbol: "♆", ...geo("Neptune") },
+    { name: "Pluton", symbol: "⯓", ...geo("Pluton") },
     { name: "Noeud Nord", symbol: "☊", fn: northNodeLongitude },
   ];
 
@@ -400,10 +381,11 @@ export function calculateNatalChart(
     };
   }
 
-  const planets: PlanetPosition[] = planetCalcs.map(({ name, symbol, fn }) => {
+  const planets: PlanetPosition[] = planetCalcs.map(({ name, symbol, fn, retro }) => {
     const lon = fn(T);
     const info = toSignInfo(lon);
     const pos: PlanetPosition = { name, symbol, longitude: lon, ...info };
+    if (retro) pos.retrograde = true;
     if (hasTime && houses.length) {
       pos.house = getHouse(lon, houses);
     }

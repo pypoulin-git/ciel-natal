@@ -1,14 +1,13 @@
 // Compact geocentric ephemeris (Paul Schlyter's low-precision method).
 //
-// Why this exists: src/lib/astro.ts computes *heliocentric mean* longitudes
-// whose dominant linear term always increases — so planets there never appear
-// retrograde. Retrograde motion is a purely *geocentric* effect (it comes from
-// Earth overtaking the other planet), so it requires real geocentric positions.
-// This module computes them from Keplerian orbital elements, which correctly
-// reproduces retrograde loops, stations, and current planet-to-planet aspects.
+// This is the single source of truth for Mercury → Pluto positions across the
+// site: the natal chart (astro.ts), the "sky today" panel and the celestial
+// calendar. Positions are *geocentric* (computed from Keplerian orbital
+// elements + the Earth→Sun vector), which is what astrology uses and the only
+// frame where retrograde loops and stations exist at all.
 //
-// Accuracy ~1–2° in longitude (stations good to a few days) — plenty for a
-// "sky today" panel. The natal-chart code is left untouched.
+// Accuracy ~1° in longitude (stations good to a couple of days) — validated
+// in __tests__/ephemeris.test.ts against known positions and Rx windows.
 
 const DEG = Math.PI / 180
 const sind = (x: number) => Math.sin(x * DEG)
@@ -34,6 +33,7 @@ interface Elements {
 }
 
 // Internal French planet keys (matching astro.ts / skyInterpretations.ts).
+// Pluto is computed separately (Schlyter's trig series, not Keplerian elements).
 export const EPHEM_PLANETS = [
   'Mercure',
   'Venus',
@@ -42,6 +42,7 @@ export const EPHEM_PLANETS = [
   'Saturne',
   'Uranus',
   'Neptune',
+  'Pluton',
 ] as const
 
 const ELEMENTS: Record<string, Elements> = {
@@ -151,18 +152,82 @@ function planetGeoLon(key: string, d: number, xs: number, ys: number): number {
   return rev(atan2d(yh + ys, xh + xs))
 }
 
+// Pluto — Schlyter's trigonometric series (valid ~1900–2100). No Keplerian
+// elements work well for Pluto over a human timescale; this fit does.
+// Returns heliocentric ecliptic lon/lat (degrees) and distance (AU).
+function plutoHelio(d: number): { lon: number; lat: number; r: number } {
+  const S = 50.03 + 0.033459652 * d
+  const P = 238.95 + 0.003968789 * d
+  const lon = rev(
+    238.9508 +
+      0.00400703 * d -
+      19.799 * sind(P) +
+      19.848 * cosd(P) +
+      0.897 * sind(2 * P) -
+      4.956 * cosd(2 * P) +
+      0.61 * sind(3 * P) +
+      1.211 * cosd(3 * P) +
+      0.341 * sind(4 * P) -
+      0.19 * cosd(4 * P) +
+      0.128 * sind(5 * P) -
+      0.034 * cosd(5 * P) -
+      0.038 * sind(6 * P) +
+      0.031 * cosd(6 * P) +
+      0.02 * sind(S - P) -
+      0.01 * cosd(S - P),
+  )
+  const lat =
+    -3.9082 -
+    5.453 * sind(P) -
+    14.975 * cosd(P) +
+    3.527 * sind(2 * P) +
+    1.673 * cosd(2 * P) -
+    1.051 * sind(3 * P) +
+    0.328 * cosd(3 * P) +
+    0.179 * sind(4 * P) -
+    0.292 * cosd(4 * P) +
+    0.019 * sind(5 * P) +
+    0.1 * cosd(5 * P) -
+    0.031 * sind(6 * P) -
+    0.026 * cosd(6 * P) +
+    0.011 * cosd(S - P)
+  const r =
+    40.72 +
+    6.68 * sind(P) +
+    6.9 * cosd(P) -
+    1.18 * sind(2 * P) -
+    0.03 * cosd(2 * P) +
+    0.15 * sind(3 * P) -
+    0.14 * cosd(3 * P)
+  return { lon, lat, r }
+}
+
+function plutoGeoLon(d: number, xs: number, ys: number): number {
+  const { lon, lat, r } = plutoHelio(d)
+  const xh = r * cosd(lon) * cosd(lat)
+  const yh = r * sind(lon) * cosd(lat)
+  return rev(atan2d(yh + ys, xh + xs))
+}
+
 export interface GeoChart {
   // Internal name → geocentric ecliptic longitude (0..360). Includes "Soleil".
   lon: Record<string, number>
 }
 
-// Geocentric longitudes of the Sun + Mercury…Neptune for a given date.
-export function geocentricChart(date: Date): GeoChart {
-  const d = daysSince2000(date)
+// Low-level entry point: geocentric longitudes for a "days since 2000 Jan 0.0"
+// value (d = JD − 2451543.5). Lets astro.ts reuse its own Julian Day so the
+// natal chart and the sky panels stay on the exact same timebase.
+export function geocentricLongitudes(d: number): Record<string, number> {
   const sun = sunGeo(d)
   const lon: Record<string, number> = { Soleil: sun.lon }
   for (const key of EPHEM_PLANETS) {
-    lon[key] = planetGeoLon(key, d, sun.xs, sun.ys)
+    lon[key] =
+      key === 'Pluton' ? plutoGeoLon(d, sun.xs, sun.ys) : planetGeoLon(key, d, sun.xs, sun.ys)
   }
-  return { lon }
+  return lon
+}
+
+// Geocentric longitudes of the Sun + Mercury…Pluto for a given date.
+export function geocentricChart(date: Date): GeoChart {
+  return { lon: geocentricLongitudes(daysSince2000(date)) }
 }

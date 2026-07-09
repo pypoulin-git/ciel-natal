@@ -284,7 +284,7 @@ export function serializeChartForAI(
     ...(asc ? [`Ascendant: ${asc.sign} ${asc.degree}°`] : []),
     ``,
     `Planètes:`,
-    ...chart.planets.slice(2).map((p) => `  ${p.name}: ${p.sign} ${p.degree}°${p.house ? ` (Maison ${p.house})` : ""}`),
+    ...chart.planets.slice(2).map((p) => `  ${p.name}: ${p.sign} ${p.degree}°${p.retrograde ? " rétrograde" : ""}${p.house ? ` (Maison ${p.house})` : ""}`),
     ``,
     `Élément dominant: ${dominantEl} (${elCount[dominantEl]} planètes)`,
     ``,

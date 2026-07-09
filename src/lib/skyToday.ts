@@ -10,7 +10,16 @@
 import { calculateNatalChart, SIGNS } from './astro'
 import { geocentricChart } from './ephemeris'
 
-const RETRO_CANDIDATES = ['Mercure', 'Venus', 'Mars', 'Jupiter', 'Saturne', 'Uranus', 'Neptune']
+const RETRO_CANDIDATES = [
+  'Mercure',
+  'Venus',
+  'Mars',
+  'Jupiter',
+  'Saturne',
+  'Uranus',
+  'Neptune',
+  'Pluton',
+]
 
 // Sun + planets considered for aspects / configurations (no Moon, no Node).
 const PATTERN_PLANETS = [
@@ -22,6 +31,7 @@ const PATTERN_PLANETS = [
   'Saturne',
   'Uranus',
   'Neptune',
+  'Pluton',
 ]
 
 const PLANET_SYMBOL: Record<string, string> = {
@@ -33,6 +43,7 @@ const PLANET_SYMBOL: Record<string, string> = {
   Saturne: '♄',
   Uranus: '♅',
   Neptune: '♆',
+  Pluton: '⯓',
 }
 
 const ASPECTS = [
