@@ -196,6 +196,7 @@ export default function Confidentialite() {
           <li>{fr ? "Rectification — corriger toute donnée inexacte." : "Rectification — correct any inaccurate data."}</li>
           <li>{fr ? "Suppression — demander l'effacement de ton compte et de tes données (bouton dans Paramètres, ou par courriel)." : "Deletion — request your account and data be erased (button in Settings, or by email)."}</li>
           <li>{fr ? "Portabilité — récupérer tes données dans un format lisible par machine (JSON)." : "Portability — receive your data in a machine-readable format (JSON)."}</li>
+          <li>{fr ? "Désindexation — demander qu'un lien vers tes renseignements personnels cesse d'être diffusé ou soit désindexé (droit à l'oubli, Loi 25 art. 28.1)." : "De-indexing — request that a link to your personal information stop being disseminated or be de-indexed (right to be forgotten, Quebec Law 25 s. 28.1)."}</li>
           <li>{fr ? "Opposition — refuser certains traitements (par exemple : analytics)." : "Objection — refuse certain processing (e.g. analytics)."}</li>
           <li>{fr ? "Retrait du consentement — à tout moment, sans justification." : "Withdrawal of consent — anytime, no reason needed."}</li>
         </ul>

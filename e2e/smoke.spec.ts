@@ -10,14 +10,17 @@ import { test, expect } from "@playwright/test";
 test.describe("Accueil", () => {
   test("affiche le hero et le CTA de lecture", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Ciel Natal" })).toBeVisible();
-    // Deux CTA "Lire ma carte" sur la page (hero + bas de page)
-    await expect(page.getByRole("button", { name: "Lire ma carte" }).first()).toBeVisible();
+    // Rebranding 2026-07 : Ciel Natal → Natalune
+    await expect(page.getByRole("heading", { name: "Natalune" })).toBeVisible();
+    // Plusieurs CTA "Lire ma carte natale" sur la page (hero + bas de page)
+    await expect(page.getByRole("button", { name: /Lire ma carte/ }).first()).toBeVisible();
   });
 
   test("le wizard démarre : prénom puis date de naissance", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Lire ma carte" }).first().click();
+    // La bannière cookies (nouveau visiteur) recouvre les contrôles du wizard
+    await page.getByRole("button", { name: "Tout refuser" }).click().catch(() => {});
+    await page.getByRole("button", { name: /Lire ma carte/ }).first().click();
     await expect(page.getByText("Comment t'appelles-tu")).toBeVisible();
     await page.getByPlaceholder("Ton prénom").fill("Test");
     await page.getByRole("button", { name: "Suivant →" }).click();
