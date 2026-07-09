@@ -940,6 +940,7 @@ export default function Home() {
                     <li>✦ {locale === "fr" ? "Interprétations complètes et détaillées" : "Full, detailed interpretations"}</li>
                     <li>✦ {locale === "fr" ? "Chat avec un astrologue IA bienveillant" : "Chat with a caring AI astrologer"}</li>
                     <li>✦ {locale === "fr" ? "Synastrie — l'alchimie de deux âmes" : "Synastry — the alchemy of two souls"}</li>
+                    <li>✦ {locale === "fr" ? "Tes anniversaires et dates perso dans le calendrier céleste" : "Your birthdays and personal dates in the celestial calendar"}</li>
                     <li>✦ {locale === "fr" ? "Narration audio de ta lecture" : "Audio narration of your reading"}</li>
                     <li>✦ {locale === "fr" ? "Sauvegarde de tes cartes + PDF par courriel" : "Save your charts + PDF by email"}</li>
                   </ul>
