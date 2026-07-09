@@ -747,9 +747,12 @@ export default function Home() {
   };
 
   // ─── Generate shareable URL ───
+  // Links point to /carte, whose server-rendered metadata gives messengers and
+  // social networks a per-chart preview (Big Three og:image) before humans are
+  // forwarded back to the full experience on /?c=.
   // Full link (with name) — for personal use
   const getShareUrl = (): string => {
-    const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const base = typeof window !== "undefined" ? window.location.origin + "/carte" : "/carte";
     const payload = {
       n: form.prenom, g: form.genre, j: form.jour, m: form.mois, a: form.annee,
       h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
@@ -760,7 +763,7 @@ export default function Home() {
 
   // Anonymous link — no name, no city name
   const getAnonymousShareUrl = (): string => {
-    const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const base = typeof window !== "undefined" ? window.location.origin + "/carte" : "/carte";
     const payload = {
       g: form.genre, j: form.jour, m: form.mois, a: form.annee,
       h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
