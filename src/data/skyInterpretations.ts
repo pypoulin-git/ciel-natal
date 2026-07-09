@@ -278,6 +278,7 @@ export const PLANET_THEME: Record<string, Bi> = {
   Saturne: { fr: 'la discipline', en: 'discipline' },
   Uranus: { fr: 'la liberté', en: 'freedom' },
   Neptune: { fr: "l'intuition", en: 'intuition' },
+  Pluton: { fr: 'la transformation', en: 'transformation' },
 }
 
 // What each sign is "about" — to explain a stellium in plain words.

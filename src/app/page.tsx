@@ -786,7 +786,7 @@ export default function Home() {
       ...(asc ? [`  Asc.   : ${asc.sign} (${asc.degree}°)`] : []),
       ``,
       `POSITIONS PLANÉTAIRES`,
-      ...chart.planets.slice(2).map((p) => `  ${p.name.padEnd(9)} : ${p.sign} ${p.degree}°${p.house ? ` (M${p.house})` : ""}`),
+      ...chart.planets.slice(2).map((p) => `  ${p.name.padEnd(9)} : ${p.sign} ${p.degree}°${p.retrograde ? " ℞" : ""}${p.house ? ` (M${p.house})` : ""}`),
       ``,
       `ASPECTS MAJEURS`,
       ...chart.aspects.slice(0, 10).map((a) => `  ${a.planet1} ${ASPECT_SYMBOLS[a.type] || "·"} ${a.planet2} (${a.type}, ${a.orb}°)`),
@@ -1528,6 +1528,14 @@ export default function Home() {
                             <div>
                               <span className="inline-flex items-center gap-2">
                                 <span className="text-lg font-medium text-[var(--color-text-primary)]">{translatePlanet(planet.name, locale)}</span>
+                                {planet.retrograde && (
+                                  <span
+                                    className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--color-accent-rose)]/15 text-[var(--color-accent-rose)]"
+                                    title={locale === "fr" ? "Rétrograde à ta naissance — cette énergie s'exprime de façon plus intérieure." : "Retrograde at your birth — this energy expresses itself more inwardly."}
+                                  >
+                                    ℞
+                                  </span>
+                                )}
                               </span>
                               <span
                                 className="text-base text-[var(--color-text-secondary)] ml-2 underline decoration-dotted decoration-[var(--color-text-muted)]/40 underline-offset-4 cursor-help"

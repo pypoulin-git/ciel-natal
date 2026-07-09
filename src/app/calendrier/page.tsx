@@ -28,6 +28,7 @@ const PLANET_GLYPH: Record<string, string> = {
   Saturne: '♄',
   Uranus: '♅',
   Neptune: '♆',
+  Pluton: '⯓',
 }
 
 // French article for "Saison ___" so the season label reads naturally.
