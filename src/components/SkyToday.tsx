@@ -219,7 +219,13 @@ export default function SkyToday() {
         </>
       )}
       <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed mt-auto pt-4">
-        {fr ? SKY_EXPLAINERS.retro.fr : SKY_EXPLAINERS.retro.en}
+        {fr ? SKY_EXPLAINERS.retro.fr : SKY_EXPLAINERS.retro.en}{' '}
+        <Link
+          href="/mercure-retrograde"
+          className="text-[var(--color-accent-lavender)] hover:underline whitespace-nowrap"
+        >
+          {fr ? 'Le guide sans panique →' : 'The no-panic guide →'}
+        </Link>
       </p>
     </div>
   )
