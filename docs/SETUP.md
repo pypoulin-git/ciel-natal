@@ -71,9 +71,11 @@ Use Stripe test mode with card `4242 4242 4242 4242` (any future date, any CVC).
 1. Go to [console.anthropic.com](https://console.anthropic.com)
 2. Create an API key: `ANTHROPIC_API_KEY`
 
-### OpenAI (Audio TTS)
-1. Go to [platform.openai.com](https://platform.openai.com)
-2. Create an API key: `OPENAI_API_KEY`
+### xAI (Grok TTS — lecture audio Premium)
+1. Go to [console.x.ai](https://console.x.ai)
+2. Create an API key: `XAI_API_KEY`
+3. Sans cette clé, la lecture audio retombe automatiquement sur Gemini
+   (`GOOGLE_GENERATIVE_AI_API_KEY`). `TTS_PROVIDER=gemini` force le repli.
 
 ---
 
@@ -90,7 +92,7 @@ STRIPE_WEBHOOK_SECRET
 UPSTASH_REDIS_REST_URL
 UPSTASH_REDIS_REST_TOKEN
 ANTHROPIC_API_KEY
-OPENAI_API_KEY
+XAI_API_KEY
 ```
 
 Set scope to **Production** + **Preview** for all variables.
