@@ -11,12 +11,14 @@ function InscriptionInner() {
   const { locale } = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const intent = searchParams.get("intent") ?? ""; // "pdf" | ""
+  const intent = searchParams.get("intent") ?? ""; // "pdf" | "premium" | ""
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [wantPremium, setWantPremium] = useState(false);
+  // intent=premium (CTA « Débloquer Premium » de l'accueil) pre-ticks the
+  // premium option so signup flows straight into the Stripe checkout.
+  const [wantPremium, setWantPremium] = useState(intent === "premium");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -949,6 +949,22 @@ export default function Home() {
                       ? "Paiement unique, à vie — et tu soutiens un projet indépendant. 💛"
                       : "One-time, forever — and you support an independent project. 💛"}
                   </p>
+                  {!isPremium && (
+                    <a
+                      href={user ? "/premium" : "/inscription?intent=premium"}
+                      className="btn-primary mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full text-white text-sm font-medium glow-lavender"
+                      style={{ background: "linear-gradient(135deg, var(--color-accent-gold), #b8863f)" }}
+                    >
+                      <span aria-hidden="true">✦</span>
+                      {locale === "fr"
+                        ? user
+                          ? "Débloquer Premium — 9,99 $"
+                          : "Créer mon compte Premium — 9,99 $"
+                        : user
+                          ? "Unlock Premium — $9.99"
+                          : "Create my Premium account — $9.99"}
+                    </a>
+                  )}
                 </div>
               </div>
             </section>
