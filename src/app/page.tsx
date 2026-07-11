@@ -856,43 +856,6 @@ export default function Home() {
               </div>
             </section>
 
-            {/* ═══ COMMENT ÇA MARCHE — bandeau compact ═══ */}
-            <section className="max-w-4xl mx-auto px-4 pt-8 pb-2">
-              <div className="grid sm:grid-cols-3 gap-3">
-                {[
-                  {
-                    n: "1",
-                    fr: { title: "Tes données de naissance", desc: "Date, heure, lieu." },
-                    en: { title: "Your birth details", desc: "Date, time, place." },
-                  },
-                  {
-                    n: "2",
-                    fr: { title: "Calcul instantané", desc: "Dans ton navigateur, en direct." },
-                    en: { title: "Instant calculation", desc: "Right in your browser, live." },
-                  },
-                  {
-                    n: "3",
-                    fr: { title: "Lecture personnelle", desc: "Un portrait écrit pour toi." },
-                    en: { title: "A personal reading", desc: "A portrait written for you." },
-                  },
-                ].map((step) => (
-                  <div key={step.n} className="glass px-4 py-3.5 flex items-center gap-3 text-left">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-accent-lavender)]/15 text-[var(--color-accent-lavender)] font-cinzel text-base shrink-0">
-                      {step.n}
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-medium text-[var(--color-text-primary)] leading-tight">
-                        {locale === "fr" ? step.fr.title : step.en.title}
-                      </h3>
-                      <p className="text-xs text-[var(--color-text-secondary)] leading-tight mt-0.5">
-                        {locale === "fr" ? step.fr.desc : step.en.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
             {/* ═══ LE CIEL AUJOURD'HUI — énergie du jour + cartes ═══ */}
             <div className="max-w-6xl mx-auto px-4 pt-10">
               <DailySign />

@@ -231,3 +231,83 @@ export function geocentricLongitudes(d: number): Record<string, number> {
 export function geocentricChart(date: Date): GeoChart {
   return { lon: geocentricLongitudes(daysSince2000(date)) }
 }
+
+// ─── Moon ───────────────────────────────────────────────────────────────────
+// Schlyter's lunar theory: Keplerian elements + the 12 largest perturbation
+// terms in longitude, 5 in latitude, 2 in distance. Accuracy ~2 arc-minutes
+// in longitude — far more than enough for phase, sign and rise/set times.
+
+// Days since 2000 Jan 0.0 for an exact instant (not truncated to 12:00 UTC —
+// the Moon moves ~0.55°/hour so rise/set math needs the real time of day).
+export function daysSince2000At(date: Date): number {
+  return date.getTime() / 86400000 + 2440587.5 - 2451543.5
+}
+
+export interface MoonEcliptic {
+  lon: number // geocentric ecliptic longitude (degrees, 0..360)
+  lat: number // geocentric ecliptic latitude (degrees)
+  r: number // distance in Earth radii (~60.27 mean)
+}
+
+export function moonEcliptic(d: number): MoonEcliptic {
+  // Orbital elements of the Moon.
+  const N = rev(125.1228 - 0.0529538083 * d)
+  const i = 5.1454
+  const w = rev(318.0634 + 0.1643573223 * d)
+  const a = 60.2666 // Earth radii
+  const e = 0.0549
+  const M = rev(115.3654 + 13.0649929509 * d)
+
+  const E = eccentricAnomaly(M, e)
+  const xv = a * (cosd(E) - e)
+  const yv = a * (Math.sqrt(1 - e * e) * sind(E))
+  const v = atan2d(yv, xv)
+  const r0 = Math.sqrt(xv * xv + yv * yv)
+
+  const u = v + w
+  const xh = r0 * (cosd(N) * cosd(u) - sind(N) * sind(u) * cosd(i))
+  const yh = r0 * (sind(N) * cosd(u) + cosd(N) * sind(u) * cosd(i))
+  const zh = r0 * (sind(u) * sind(i))
+
+  let lon = rev(atan2d(yh, xh))
+  let lat = atan2d(zh, Math.sqrt(xh * xh + yh * yh))
+  let r = r0
+
+  // Fundamental arguments for the perturbations.
+  const Ms = rev(356.047 + 0.9856002585 * d) // Sun's mean anomaly
+  const ws = 282.9404 + 4.70935e-5 * d // Sun's argument of perihelion
+  const Ls = rev(Ms + ws) // Sun's mean longitude
+  const Lm = rev(N + w + M) // Moon's mean longitude
+  const D = rev(Lm - Ls) // mean elongation
+  const F = rev(Lm - N) // argument of latitude
+
+  lon +=
+    -1.274 * sind(M - 2 * D) + // evection
+    0.658 * sind(2 * D) + // variation
+    -0.186 * sind(Ms) + // yearly equation
+    -0.059 * sind(2 * M - 2 * D) +
+    -0.057 * sind(M - 2 * D + Ms) +
+    0.053 * sind(M + 2 * D) +
+    0.046 * sind(2 * D - Ms) +
+    0.041 * sind(M - Ms) +
+    -0.035 * sind(D) + // parallactic equation
+    -0.031 * sind(M + Ms) +
+    -0.015 * sind(2 * F - 2 * D) +
+    0.011 * sind(M - 4 * D)
+
+  lat +=
+    -0.173 * sind(F - 2 * D) +
+    -0.055 * sind(M - F - 2 * D) +
+    -0.046 * sind(M + F - 2 * D) +
+    0.033 * sind(F + 2 * D) +
+    0.017 * sind(2 * M + F)
+
+  r += -0.58 * cosd(M - 2 * D) - 0.46 * cosd(2 * D)
+
+  return { lon: rev(lon), lat, r }
+}
+
+// Sun's mean longitude — needed for sidereal time in rise/set calculations.
+export function sunMeanLongitude(d: number): number {
+  return rev(356.047 + 0.9856002585 * d + 282.9404 + 4.70935e-5 * d)
+}
