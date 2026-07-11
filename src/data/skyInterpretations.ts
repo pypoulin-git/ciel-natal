@@ -304,6 +304,154 @@ export const NATURE_FRAMING: Record<AspectNature, Bi> = {
   tension: { fr: 'se confrontent — un défi à relever', en: 'clash — a challenge to face' },
 }
 
+// ── Énergies lunaires ────────────────────────────────────────────────────────
+// Copy for the global Moon banner and the enriched Moon card: what the Moon's
+// presence in (or below) the sky colours emotionally, per phase (0..7, same
+// indexing as MOON_PHASES). "up" = the Moon is above the horizon right now;
+// "down" = she has set (or not yet risen).
+export const MOON_SKY_ENERGY: { up: Bi; down: Bi }[] = [
+  {
+    // Nouvelle Lune
+    up: {
+      fr: 'La Lune nouvelle voyage avec le Soleil, invisible mais présente — un bon moment pour formuler une intention en silence.',
+      en: 'The new Moon travels with the Sun, unseen but present — a good moment to set an intention quietly.',
+    },
+    down: {
+      fr: 'Lune couchée, ciel vide : le calme parfait pour tourner la page et laisser germer ce qui vient.',
+      en: 'Moon below the horizon, an empty sky: perfect stillness to turn the page and let what comes take root.',
+    },
+  },
+  {
+    // Premier Croissant
+    up: {
+      fr: 'Le jeune croissant est levé : son élan discret soutient les premiers pas — avance, même modestement.',
+      en: 'The young crescent is up: its quiet momentum favours first steps — move, even modestly.',
+    },
+    down: {
+      fr: 'Le croissant repose sous l’horizon : consolide en coulisse ce que tu viens de commencer.',
+      en: 'The crescent rests below the horizon: quietly consolidate what you have just begun.',
+    },
+  },
+  {
+    // Premier Quartier
+    up: {
+      fr: 'Demi-lune au ciel : l’énergie du cap à tenir. Les frictions du moment sont un test, pas un mur.',
+      en: 'Half Moon overhead: the energy of staying the course. Today’s friction is a test, not a wall.',
+    },
+    down: {
+      fr: 'La demi-lune a quitté le ciel : relâche la pression, la décision mûrira mieux la nuit.',
+      en: 'The half Moon has left the sky: ease the pressure — the decision will ripen better overnight.',
+    },
+  },
+  {
+    // Gibbeuse croissante
+    up: {
+      fr: 'La gibbeuse s’arrondit au-dessus de toi : affine, peaufine — la pleine lumière approche.',
+      en: 'The gibbous Moon swells above you: refine and polish — full light is near.',
+    },
+    down: {
+      fr: 'La gibbeuse est couchée : laisse reposer ce que tu prépares, il est presque prêt.',
+      en: 'The gibbous Moon has set: let what you are preparing rest — it is almost ready.',
+    },
+  },
+  {
+    // Pleine Lune
+    up: {
+      fr: 'La Pleine Lune éclaire tout : émotions à leur sommet, vérités qui remontent — accueille ce qui se montre.',
+      en: 'The full Moon lights everything: emotions at their peak, truths surfacing — welcome what shows itself.',
+    },
+    down: {
+      fr: 'La Pleine Lune brille sous l’horizon : son intensité travaille en profondeur, même sans la voir.',
+      en: 'The full Moon shines below the horizon: its intensity works in the depths, even out of sight.',
+    },
+  },
+  {
+    // Gibbeuse décroissante
+    up: {
+      fr: 'La Lune décroît, encore généreuse : le moment de partager ce que le cycle t’a appris.',
+      en: 'The waning Moon, still generous: a moment to share what this cycle has taught you.',
+    },
+    down: {
+      fr: 'La Lune décroissante repose : la gratitude se cultive aussi les yeux fermés.',
+      en: 'The waning Moon rests: gratitude can be tended with your eyes closed, too.',
+    },
+  },
+  {
+    // Dernier Quartier
+    up: {
+      fr: 'Le dernier quartier veille : fais le tri, pardonne, allège — le cycle demande de l’espace.',
+      en: 'The last quarter keeps watch: sort, forgive, lighten — the cycle is asking for space.',
+    },
+    down: {
+      fr: 'Le dernier quartier s’est retiré : ce que tu relâches maintenant ne te suivra pas au prochain cycle.',
+      en: 'The last quarter has withdrawn: what you release now will not follow you into the next cycle.',
+    },
+  },
+  {
+    // Dernier Croissant
+    up: {
+      fr: 'Le vieux croissant se lève tard et bas : écoute tes rêves, ils préparent la Lune nouvelle.',
+      en: 'The old crescent rises late and low: listen to your dreams — they are preparing the new Moon.',
+    },
+    down: {
+      fr: 'Le dernier croissant dort : repos profond avant le renouveau. Toi aussi, ralentis.',
+      en: 'The waning crescent sleeps: deep rest before renewal. You can slow down, too.',
+    },
+  },
+]
+
+// What the Moon colours while she transits each sign — the emotional weather.
+export const MOON_IN_SIGN: Record<string, Bi> = {
+  Belier: {
+    fr: 'les émotions s’allument vite et réclament de l’action — canalise plutôt que retenir',
+    en: 'feelings spark fast and demand action — channel them rather than hold them',
+  },
+  Taureau: {
+    fr: 'besoin de lenteur, de confort et de choses tangibles — ancre-toi dans les sens',
+    en: 'a need for slowness, comfort and tangible things — anchor yourself in the senses',
+  },
+  Gemeaux: {
+    fr: 'le cœur passe par les mots — parle, écris, échange ce que tu ressens',
+    en: 'the heart moves through words — talk, write, trade what you feel',
+  },
+  Cancer: {
+    fr: 'la Lune est chez elle : sensibilité à fleur de peau, besoin de cocon et des tiens',
+    en: 'the Moon is home: heightened sensitivity, a need for your nest and your people',
+  },
+  Lion: {
+    fr: 'les émotions veulent une scène — exprime, crée, laisse ton cœur rayonner',
+    en: 'emotions want a stage — express, create, let your heart shine',
+  },
+  Vierge: {
+    fr: 'apaiser passe par l’ordre — trier, soigner, remettre chaque chose à sa place',
+    en: 'soothing comes through order — sorting, tending, putting each thing in its place',
+  },
+  Balance: {
+    fr: 'l’humeur cherche l’harmonie et l’autre — les liens se rééquilibrent en douceur',
+    en: 'the mood seeks harmony and company — bonds gently rebalance',
+  },
+  Scorpion: {
+    fr: 'tout se vit en profondeur — les émotions creusent, transforment, régénèrent',
+    en: 'everything runs deep — feelings dig, transform, regenerate',
+  },
+  Sagittaire: {
+    fr: 'le cœur veut de l’air et du sens — vise plus loin que le quotidien',
+    en: 'the heart wants air and meaning — aim beyond the everyday',
+  },
+  Capricorne: {
+    fr: 'les émotions se structurent — on tient bon, on bâtit, on garde le cap',
+    en: 'feelings take structure — holding steady, building, keeping course',
+  },
+  Verseau: {
+    fr: 'un pas de côté émotionnel — la lucidité et l’amitié passent avant le drame',
+    en: 'an emotional step aside — clarity and friendship come before drama',
+  },
+  Poissons: {
+    fr: 'la frontière s’efface entre soi et le monde — intuition haute, rêves parlants',
+    en: 'the line between self and world blurs — high intuition, talkative dreams',
+  },
+}
+
 // Short one-liner explaining each concept to a newcomer (card intros).
 export const SKY_EXPLAINERS = {
   retro: {

@@ -5,6 +5,7 @@ import { LocaleProvider } from '@/lib/i18n'
 import { ThemeProvider } from '@/lib/theme'
 import { AuthProvider } from '@/lib/auth-context'
 import TopNav from '@/components/TopNav'
+import MoonBanner from '@/components/MoonBanner'
 import CookieBanner from '@/components/CookieBanner'
 import ConsentedAnalytics from '@/components/ConsentedAnalytics'
 import MarketingPixels from '@/components/MarketingPixels'
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Skip to content
               </a>
               <TopNav />
+              <MoonBanner />
               <ViewTransition>
                 <main id="main-content" role="main">
                   {children}

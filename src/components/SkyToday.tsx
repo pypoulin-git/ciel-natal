@@ -8,8 +8,10 @@ import { cn } from '@/lib/utils'
 import { SignIcon } from '@/components/AstroIcons'
 import MoonGlyph from '@/components/MoonGlyph'
 import { computeSkyToday, type SkyToday as SkyData } from '@/lib/skyToday'
+import { computeMoonDay, type MoonDay } from '@/lib/moonTimes'
 import {
   MOON_PHASES,
+  MOON_IN_SIGN,
   MONTHLY_MOON,
   PLANET_LABEL,
   PLANET_THEME,
@@ -35,6 +37,7 @@ export default function SkyToday() {
   const { locale } = useLocale()
   const fr = locale === 'fr'
   const [sky, setSky] = useState<SkyData | null>(null)
+  const [moonDay, setMoonDay] = useState<MoonDay | null>(null)
 
   // Carousel state (mobile scroll-snap). On desktop the cards are a grid.
   const railRef = useRef<HTMLDivElement>(null)
@@ -43,6 +46,7 @@ export default function SkyToday() {
   useEffect(() => {
     try {
       setSky(computeSkyToday(new Date()))
+      setMoonDay(computeMoonDay(new Date()))
     } catch {
       /* leave null — section quietly stays hidden */
     }
@@ -138,7 +142,26 @@ export default function SkyToday() {
         <SignIcon name={sky.moon.signKey} size={14} color="var(--color-accent-lavender)" />
         {fr ? 'Lune en ' : 'Moon in '}
         {translateSign(sky.moon.signKey, locale)}
+        {MOON_IN_SIGN[sky.moon.signKey] ? (
+          <> — {fr ? MOON_IN_SIGN[sky.moon.signKey].fr : MOON_IN_SIGN[sky.moon.signKey].en}</>
+        ) : null}
       </p>
+      {moonDay && (moonDay.rise || moonDay.set) && (
+        <p className="flex items-center justify-center gap-3 text-xs text-[var(--color-text-secondary)] mt-2 tabular-nums">
+          <span className="whitespace-nowrap">
+            <span aria-hidden="true" className="text-[var(--color-accent-gold)]">
+              ↑
+            </span>{' '}
+            {fr ? 'Lever' : 'Rise'} {fmtTime(moonDay.rise, fr)}
+          </span>
+          <span className="whitespace-nowrap">
+            <span aria-hidden="true" className="text-[var(--color-accent-lavender)]">
+              ↓
+            </span>{' '}
+            {fr ? 'Coucher' : 'Set'} {fmtTime(moonDay.set, fr)}
+          </span>
+        </p>
+      )}
       <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mt-3">
         {fr ? phase.text.fr : phase.text.en}
       </p>
@@ -403,6 +426,11 @@ export default function SkyToday() {
       </p>
     </section>
   )
+}
+
+// Local wall-clock time of a rise/set instant ("—" when the event is absent).
+function fmtTime(t: Date | null, fr: boolean): string {
+  return t ? t.toLocaleTimeString(fr ? 'fr-CA' : 'en-CA', { hour: '2-digit', minute: '2-digit' }) : '—'
 }
 
 // rgba-ish helper that works with hex or CSS var (falls back to color-mix for vars).
