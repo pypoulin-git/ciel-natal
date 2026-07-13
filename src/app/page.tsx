@@ -28,6 +28,7 @@ import { signMetaLine } from "@/lib/signMeta";
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
 const ElementBalance = dynamic(() => import("@/components/results/ElementBalance"), { ssr: false });
+const PlanetSystem = dynamic(() => import("@/components/results/PlanetSystem"), { ssr: false });
 const HousesMap = dynamic(() => import("@/components/results/HousesMap"), { ssr: false });
 const ChartChat = dynamic(() => import("@/components/results/ChartChat"), { ssr: false });
 const AudioPlayer = dynamic(() => import("@/components/AudioPlayer"), { ssr: false });
@@ -145,7 +146,7 @@ export default function Home() {
   const [cityError, setCityError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("portrait");
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
-  const [expandedPlanets, setExpandedPlanets] = useState<Set<string>>(new Set());
+  const [planetFocus, setPlanetFocus] = useState<string | null>(null);
   const [expandedAspects, setExpandedAspects] = useState<Set<number>>(new Set());
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
@@ -205,14 +206,6 @@ export default function Home() {
       observer.disconnect();
     };
   }, [step]);
-
-  const togglePlanet = (name: string) => {
-    setExpandedPlanets((prev) => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
 
   const toggleAspect = (i: number) => {
     setExpandedAspects((prev) => {
@@ -1365,7 +1358,7 @@ export default function Home() {
                     )}
                   </div>
                   <div ref={zodiacWheelRef}>
-                    <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); if (activeTab !== "planets") { scrollToTab("planets"); setTimeout(() => togglePlanet(p.name), 200); } else { togglePlanet(p.name); } }} />
+                    <ZodiacWheel planets={chart.planets} ascendant={chart.ascendant} selectedPlanet={selectedPlanet} showAspects={showWheelAspects} onTapPlanet={(p) => { setSelectedPlanet(p.name); const isPersonal = !["Soleil", "Lune", "Uranus", "Neptune", "Pluton", "Noeud Nord"].includes(p.name); if (isPersonal) { if (activeTab !== "planets") scrollToTab("planets"); setPlanetFocus(p.name); } }} />
                   </div>
                 </div>
 
@@ -1494,60 +1487,27 @@ export default function Home() {
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">⊙</span> {t("results.planets")}
                 </h2>
-                <p className="text-base text-[var(--color-text-secondary)] mb-5">{t("results.planetDesc")}</p>
-                <div className="space-y-2">
-                  {chart.planets
-                    .filter((p) => !["Soleil", "Lune", "Uranus", "Neptune", "Pluton"].includes(p.name))
-                    .map((planet) => {
-                    const isOpen = expandedPlanets.has(planet.name);
-                    return (
-                      <div key={planet.name} className="glass overflow-hidden">
-                        <button onClick={() => togglePlanet(planet.name)}
-                          className="w-full flex items-center justify-between p-4 sm:p-5 text-left btn-hover group">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-white/5 backdrop-blur-sm flex items-center justify-center border border-white/10 group-hover:border-[var(--color-accent-lavender)]/25 transition shadow-inner">
-                              <PlanetIcon name={planet.name} size={26} color="var(--color-accent-lavender)" />
-                            </div>
-                            <div>
-                              <span className="inline-flex items-center gap-2">
-                                <span className="text-lg font-medium text-[var(--color-text-primary)]">{translatePlanet(planet.name, locale)}</span>
-                                {planet.retrograde && (
-                                  <span
-                                    className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--color-accent-rose)]/15 text-[var(--color-accent-rose)]"
-                                    title={locale === "fr" ? "Rétrograde à ta naissance — cette énergie s'exprime de façon plus intérieure." : "Retrograde at your birth — this energy expresses itself more inwardly."}
-                                  >
-                                    ℞
-                                  </span>
-                                )}
-                              </span>
-                              <span
-                                className="text-base text-[var(--color-text-secondary)] ml-2 underline decoration-dotted decoration-[var(--color-text-muted)]/40 underline-offset-4 cursor-help"
-                                title={signMetaLine(planet.sign, locale)}
-                              >{translateSign(planet.sign, locale)}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-mono text-[var(--color-text-secondary)]">{planet.degree}°</span>
-                            {planet.house && <span className="text-xs font-mono text-[var(--color-text-secondary)]">M{planet.house}</span>}
-                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"
-                              className={`text-[var(--color-text-secondary)] opacity-40 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
-                              <path d="M3 5l4 4 4-4" />
-                            </svg>
-                          </div>
-                        </button>
-                        <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "600px" : "0", opacity: isOpen ? 1 : 0 }}>
-                          <div className="px-5 pb-5 text-base text-[var(--color-text-primary)] leading-relaxed border-t border-white/5">
-                            <div className="pt-4 whitespace-pre-line">
-                              {getInterp(planet.name, planet.sign, planet.house) || (
-                                <span className="text-[var(--color-text-secondary)]">{translatePlanet(planet.name, locale)} {locale === "en" ? "in" : "en"} {translateSign(planet.sign, locale)} {locale === "en" ? "colors how you express the qualities of this sign." : "colore ta manière d'exprimer les qualités de ce signe."}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <p className="text-base text-[var(--color-text-secondary)] mb-5">
+                  {locale === "fr"
+                    ? "Fais tourner le système solaire — glisse d'une planète à l'autre pour lire son énergie chez toi."
+                    : "Turn the solar system — swipe from planet to planet to read its energy in you."}
+                </p>
+                <PlanetSystem
+                  locale={locale}
+                  focusName={planetFocus}
+                  onFocus={(name) => setSelectedPlanet(name)}
+                  planets={chart.planets
+                    .filter((p) => !["Soleil", "Lune", "Uranus", "Neptune", "Pluton", "Noeud Nord"].includes(p.name))
+                    .map((p) => ({
+                      name: p.name,
+                      sign: p.sign,
+                      degree: p.degree,
+                      house: p.house,
+                      retrograde: p.retrograde,
+                      interp: getInterp(p.name, p.sign, p.house),
+                      signMeta: signMetaLine(p.sign, locale),
+                    }))}
+                />
               </div>
 
               <SectionTransition
@@ -1998,7 +1958,7 @@ export default function Home() {
               </div>
 
               <div className="text-center pb-8">
-                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setExpandedPlanets(new Set()); setExpandedAspects(new Set()); setActiveTab("portrait"); }}
+                <button onClick={() => { setStep(0); setChart(null); setSelectedPlanet(null); setPlanetFocus(null); setExpandedAspects(new Set()); setActiveTab("portrait"); }}
                   className="btn-ghost px-6 py-3 rounded-xl text-sm">{t("results.newChart")}</button>
               </div>
             </div>
