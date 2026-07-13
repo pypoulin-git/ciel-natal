@@ -1487,7 +1487,7 @@ export default function Home() {
                 <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
                   <span className="text-[var(--color-accent-lavender)] opacity-50">⊙</span> {t("results.planets")}
                 </h2>
-                <p className="text-base text-[var(--color-text-secondary)] mb-5">
+                <p className="text-base text-[var(--color-text-secondary)] mb-2">
                   {locale === "fr"
                     ? "Fais tourner le système solaire — glisse d'une planète à l'autre pour lire son énergie chez toi."
                     : "Turn the solar system — swipe from planet to planet to read its energy in you."}

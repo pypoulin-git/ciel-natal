@@ -77,6 +77,9 @@ Réponds uniquement avec le JSON, rien d'autre.`;
     model: google("gemini-2.5-flash-lite"),
     prompt,
     temperature: 0.85,
+    // No thinking needed for a short structured forecast — keeps latency/cost
+    // down and avoids reasoning tokens eating into the reply.
+    providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
     experimental_telemetry: { isEnabled: true, functionId: "daily-forecast" },
   });
 

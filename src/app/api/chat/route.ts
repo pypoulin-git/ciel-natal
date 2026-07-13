@@ -231,6 +231,12 @@ Exemple à éviter :
       messages,
       maxOutputTokens: maxTokens,
       temperature: 0.7,
+      // Gemini 2.5 Flash is a "thinking" model: reasoning tokens count toward
+      // the output budget. With a low maxOutputTokens (650–900) the thinking
+      // could swallow the whole budget and return an EMPTY answer (the "chat
+      // renders nothing" bug). Disable thinking so the full budget goes to the
+      // reply — no reasoning needed for this conversational task.
+      providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } },
       // Sentry AI Monitoring — captures model, tokens, latency. Prompts and
       // completions stay private (sendDefaultPii: false → recordInputs/Outputs
       // default to false).
