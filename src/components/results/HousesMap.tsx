@@ -76,8 +76,8 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
               <div className="w-full flex items-center gap-3 p-3 sm:p-4 select-none">
                 {/* Badge M{h} avec tooltip = description longue de la maison */}
                 <Tooltip
-                  content={desc ? truncateForTip(genderize(desc.description, genre), 200) : ""}
-                  maxWidth={280}
+                  content={desc ? truncateForTip(genderize(desc.description, genre), 95) : ""}
+                  maxWidth={230}
                 >
                   <span
                     className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-mono text-xs font-semibold cursor-help ${
@@ -110,9 +110,9 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
                   <span className="flex gap-1.5 flex-shrink-0 mr-1">
                     {occupants.map((p) => {
                       const interp = planetInHouse[p.name]?.[h];
-                      const tipText = interp ? truncateForTip(genderize(interp, genre), 140) : `${p.name} ${locale === "en" ? "in house" : "en maison"} ${h}`;
+                      const tipText = interp ? truncateForTip(genderize(interp, genre), 95) : `${p.name} ${locale === "en" ? "in house" : "en maison"} ${h}`;
                       return (
-                        <Tooltip key={p.name} content={tipText} maxWidth={220}>
+                        <Tooltip key={p.name} content={tipText} maxWidth={210}>
                           <span className="cursor-help">
                             <PlanetIcon name={p.name} size={16} color="var(--color-accent-gold)" />
                           </span>

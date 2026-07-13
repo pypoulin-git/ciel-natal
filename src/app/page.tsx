@@ -1550,32 +1550,55 @@ export default function Home() {
                       <AudioPlayer
                         section="houses"
                         prenom={form.prenom}
-                        chartParams={{ asc: chart.ascendant.sign, planets: chart.planets.map(p => `${p.name}-${p.sign}-M${p.house}`).join("|") }}
+                        chartParams={{ _v: "houses-interp2", asc: chart.ascendant.sign, planets: chart.planets.map(p => `${p.name}-${p.sign}-M${p.house}`).join("|") }}
                         narrativeText={(() => {
-                          // Group planets by house. Only mention the houses that
-                          // actually have at least one planet — empty houses are
-                          // narratively dull and would dilute the audio.
+                          // Woven from the SAME rich per-placement interpretations
+                          // shown on screen (planetInHouse) — not a dry list of
+                          // alignments. Two sentences per placement keeps it lively
+                          // and 100% about what it MEANS for the person.
+                          const mod = interpretations as unknown as {
+                            planetInHouse?: Record<string, Record<number, string>>;
+                            houseDescriptions?: Record<number, { name: string; domain: string; description: string }>;
+                          } | null;
+                          const pih = mod?.planetInHouse;
+                          const hd = mod?.houseDescriptions;
+                          const ascSign = translateSign(chart.ascendant!.sign, locale);
+
+                          // "Maison III — La Communication" → "La Communication"
+                          const shortLabel = (h: number) => {
+                            const name = hd?.[h]?.name ?? "";
+                            const p = name.split("—");
+                            return (p[1] ?? p[0] ?? "").trim() || `${locale === "fr" ? "Maison" : "House"} ${h}`;
+                          };
+                          // Keep the first two sentences of a placement reading.
+                          const twoSentences = (txt: string) => {
+                            const m = txt.match(/^\s*([^.!?]*[.!?]\s+[^.!?]*[.!?])/);
+                            return (m ? m[1] : txt).trim();
+                          };
+
                           const byHouse = new Map<number, string[]>();
                           for (const p of chart.planets) {
-                            if (typeof p.house === "number") {
+                            const interp = typeof p.house === "number" ? pih?.[p.name]?.[p.house] : undefined;
+                            if (typeof p.house === "number" && interp) {
                               if (!byHouse.has(p.house)) byHouse.set(p.house, []);
-                              byHouse.get(p.house)!.push(`${p.name} en ${translateSign(p.sign, locale)}`);
+                              byHouse.get(p.house)!.push(twoSentences(genderize(interp, form.genre)));
                             }
                           }
-                          const ascSign = chart.ascendant ? translateSign(chart.ascendant.sign, locale) : "";
-                          const lines = [
+
+                          const parts: string[] = [
                             locale === "fr"
-                              ? `Ton Ascendant en ${ascSign} ouvre ta première maison : la manière dont tu arrives au monde, le seuil entre toi et les autres.`
-                              : `Your Ascendant in ${ascSign} opens your first house: the way you arrive in the world, the threshold between you and others.`,
+                              ? `Tes maisons, c'est la carte concrète de ta vie — les territoires où l'énergie de ton ciel se pose vraiment. Ton Ascendant en ${ascSign} ouvre la première : la façon dont tu arrives quelque part, dont on te ressent avant même que tu parles.`
+                              : `Your houses are the concrete map of your life — the territories where your sky's energy actually lands. Your Ascendant in ${ascSign} opens the first: the way you arrive somewhere, how you're felt before you even speak.`,
                           ];
-                          for (const [h, planets] of [...byHouse.entries()].sort((a, b) => a[0] - b[0])) {
-                            if (locale === "fr") {
-                              lines.push(`Maison ${h} : ${planets.join(", ")}. Ce domaine te demande de l'attention.`);
-                            } else {
-                              lines.push(`House ${h}: ${planets.join(", ")}. This field asks for your attention.`);
-                            }
+                          for (const [h, texts] of [...byHouse.entries()].sort((a, b) => a[0] - b[0])) {
+                            parts.push(`${shortLabel(h)}. ${texts.join(" ")}`);
                           }
-                          return lines.join(" ");
+                          if (byHouse.size === 0) {
+                            parts.push(locale === "fr"
+                              ? `Aucune maison ne concentre tes planètes de façon marquée : ton énergie se distribue avec souplesse, elle touche à tout sans se fixer sur un seul territoire.`
+                              : `No single house strongly concentrates your planets: your energy spreads with ease, touching everything without fixing on one territory.`);
+                          }
+                          return parts.join(" ");
                         })()}
                       />
                     </div>
