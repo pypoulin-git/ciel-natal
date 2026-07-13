@@ -126,29 +126,30 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
   const orbitR = (i: number) => 0.2 + (i / Math.max(1, n - 1)) * 0.62
 
   return (
-    <div>
-      {/* ── Scène orbitale (projection 2D d'un plan incliné) ── */}
+    // Le glisser agit sur TOUT le bloc — scène ET carte modale dessous — pour
+    // qu'on puisse swiper aussi bien les planètes que le contenu sous elles.
+    <div onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+      {/* ── Scène orbitale (projection 2D d'un plan incliné) ──
+          Ratio volontairement bas + preserveAspectRatio="none" : les orbites
+          remplissent la largeur sans laisser de grands vides verticaux. */}
       <div
-        className="relative mx-auto w-full max-w-[440px] aspect-square select-none touch-pan-y outline-none"
+        className="relative mx-auto w-full max-w-[440px] select-none touch-pan-y outline-none"
+        style={{ aspectRatio: '1 / 0.62' }}
         tabIndex={0}
         role="group"
         aria-label={fr ? 'Système solaire — tes planètes' : 'Solar system — your planets'}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
         onKeyDown={(e) => {
           if (e.key === 'ArrowRight') { e.preventDefault(); goTo(focus + 1) }
           if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(focus - 1) }
         }}
       >
-        {/* Orbites */}
-        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" aria-hidden="true">
-          <defs>
-            <radialGradient id="ps-sun" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#fff3d6" />
-              <stop offset="45%" stopColor="var(--color-sun)" />
-              <stop offset="100%" stopColor="color-mix(in srgb, var(--color-sun) 30%, transparent)" />
-            </radialGradient>
-          </defs>
+        {/* Orbites (étirées pour épouser le conteneur) */}
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 w-full h-full"
+          aria-hidden="true"
+        >
           {planets.map((p, i) => {
             const r = orbitR(i) * 50
             const focused = i === focus
@@ -164,14 +165,29 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
                 stroke={focused ? style.color : 'var(--color-glass-border)'}
                 strokeWidth={focused ? 0.5 : 0.3}
                 opacity={focused ? 0.9 : 0.5}
+                vectorEffect="non-scaling-stroke"
                 style={{ transition: 'stroke 0.5s, opacity 0.5s, stroke-width 0.5s' }}
               />
             )
           })}
-          {/* Halo + Soleil au centre */}
-          <circle cx="50" cy="50" r="9" fill="url(#ps-sun)" />
-          <circle cx="50" cy="50" r="4.4" fill="#fff3d6" />
         </svg>
+
+        {/* Soleil au centre — élément HTML pour rester parfaitement rond
+            malgré l'étirement du SVG. */}
+        <div
+          aria-hidden="true"
+          className="absolute rounded-full"
+          style={{
+            left: '50%',
+            top: '50%',
+            width: '13%',
+            aspectRatio: '1',
+            transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(circle at 42% 38%, #fff6de, var(--color-sun) 62%, color-mix(in srgb, var(--color-sun) 40%, transparent))',
+            boxShadow: '0 0 28px color-mix(in srgb, var(--color-sun) 65%, transparent), 0 0 60px color-mix(in srgb, var(--color-sun) 35%, transparent)',
+            zIndex: 90,
+          }}
+        />
 
         {/* Pastilles planètes (positionnées en px, upright) */}
         {planets.map((p, i) => {
@@ -240,7 +256,7 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
       </div>
 
       {/* Points de navigation */}
-      <div className="flex justify-center gap-2 mt-3">
+      <div className="flex justify-center gap-2 mt-1">
         {planets.map((p, i) => (
           <button
             key={p.name}
@@ -258,7 +274,7 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
       {/* ── Boîte modale : contenu personnalisé de la planète focalisée ── */}
       <div
         key={cur.name}
-        className="glass mt-5 p-5 sm:p-6 animate-scale-in"
+        className="glass mt-3 p-5 sm:p-6 animate-scale-in"
         style={{ borderColor: `color-mix(in srgb, ${curStyle.color} 35%, transparent)` }}
       >
         <div className="flex items-center gap-4 mb-3">

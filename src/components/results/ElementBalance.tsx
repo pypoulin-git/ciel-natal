@@ -1,7 +1,62 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { PlanetPosition, translatePlanet } from "@/lib/astro";
 import { ElementGlyph, ModalityGlyph } from "@/components/AstroIcons";
+
+// Carrousel horizontal réutilisable (scroll-snap) — même geste de glisser que
+// la vue planètes. Suit la carte active pour animer les points de navigation.
+function SwipeRail({ children, count }: { children: React.ReactNode; count: number }) {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+
+  const onScroll = () => {
+    const el = railRef.current;
+    if (!el) return;
+    const kids = Array.from(el.children) as HTMLElement[];
+    if (!kids.length) return;
+    const base = kids[0].offsetLeft;
+    let best = 0;
+    let bestDist = Infinity;
+    kids.forEach((c, i) => {
+      const d = Math.abs(c.offsetLeft - base - el.scrollLeft);
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+    setActive(best);
+  };
+
+  const goTo = (i: number) => {
+    const el = railRef.current;
+    const kid = el?.children[i] as HTMLElement | undefined;
+    kid?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  };
+
+  return (
+    <>
+      <div
+        ref={railRef}
+        onScroll={onScroll}
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {children}
+      </div>
+      <div className="flex justify-center gap-2 mt-3">
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            aria-label={`Carte ${i + 1}`}
+            className="h-1.5 rounded-full transition-all"
+            style={{
+              width: i === active ? 20 : 6,
+              background: i === active ? "var(--color-accent-lavender)" : "var(--color-glass-border)",
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
 
 const ELEMENT_MAP: Record<string, string> = {
   Belier: "Feu", Taureau: "Terre", Gemeaux: "Air", Cancer: "Eau",
@@ -91,10 +146,13 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
 
       {/* ── ELEMENTS ─────────────────────────────────────────── */}
       <div>
-        <h3 className="text-xs uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-6 font-semibold">
+        <h3 className="text-xs uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-4 font-semibold">
           {isFr ? "Éléments" : "Elements"}
+          <span className="ml-2 normal-case tracking-normal opacity-60 font-normal">
+            {isFr ? "· glisse pour explorer les quatre" : "· swipe to explore all four"}
+          </span>
         </h3>
-        <div className="space-y-5 stagger-in">
+        <SwipeRail count={4}>
           {(["Feu", "Terre", "Air", "Eau"] as const).map((el) => {
             const config = ELEMENT_CONFIG[el];
             const count = elementCount[el];
@@ -105,7 +163,7 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
             return (
               <div
                 key={el}
-                className="glass p-4 sm:p-5"
+                className="snap-center shrink-0 w-[86%] sm:w-[47%] lg:w-[31%] glass p-4 sm:p-5 flex flex-col"
                 style={{
                   borderColor: isDominant ? `${config.color}40` : undefined,
                   // Glow only on the dominant element (PY: actif/dominant seulement).
@@ -164,28 +222,30 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
                   </div>
                 )}
 
-                {/* Life insight — only for dominant or empty */}
-                {(isDominant || count === 0) && (
-                  <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] mt-2 pt-2 border-t border-white/5">
-                    {count === 0
-                      ? (isFr
-                          ? `L'absence de ${el} dans ton thème ne signifie pas un manque — c'est une invitation à développer consciemment ces qualités : ${config.desc.toLowerCase()}.`
-                          : `The absence of ${displayName} in your chart doesn't mean a lack — it's an invitation to consciously develop these qualities: ${config.desc.toLowerCase()}.`)
-                      : config.life}
-                  </p>
-                )}
+                {/* Life insight — documented for EVERY element (the absent
+                    ones get a "how to cultivate it" reading instead). */}
+                <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] mt-2 pt-2 border-t border-white/5">
+                  {count === 0
+                    ? (isFr
+                        ? `L'absence de ${el} dans ton thème ne signifie pas un manque — c'est une invitation à développer consciemment ces qualités : ${config.desc.toLowerCase()}.`
+                        : `The absence of ${displayName} in your chart doesn't mean a lack — it's an invitation to consciously develop these qualities: ${config.desc.toLowerCase()}.`)
+                    : config.life}
+                </p>
               </div>
             );
           })}
-        </div>
+        </SwipeRail>
       </div>
 
       {/* ── MODALITIES ───────────────────────────────────────── */}
       <div>
-        <h3 className="text-xs uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-6 font-semibold">
+        <h3 className="text-xs uppercase tracking-[0.2em] text-[var(--color-text-secondary)] mb-4 font-semibold">
           {isFr ? "Modalités" : "Modalities"}
+          <span className="ml-2 normal-case tracking-normal opacity-60 font-normal">
+            {isFr ? "· glisse pour explorer les trois" : "· swipe to explore all three"}
+          </span>
         </h3>
-        <div className="space-y-5 stagger-in">
+        <SwipeRail count={3}>
           {(["Cardinal", "Fixe", "Mutable"] as const).map((mod) => {
             const config = MODALITY_CONFIG[mod];
             const count = modalityCount[mod];
@@ -196,7 +256,7 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
             return (
               <div
                 key={mod}
-                className="glass p-4 sm:p-5"
+                className="snap-center shrink-0 w-[86%] sm:w-[47%] lg:w-[31%] glass p-4 sm:p-5 flex flex-col"
                 style={{
                   borderColor: isDominant ? "rgba(179,167,224,0.4)" : undefined,
                   boxShadow: isDominant ? "0 0 24px rgba(179,167,224,0.2), 0 0 52px rgba(179,167,224,0.1)" : undefined,
@@ -240,15 +300,13 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
                   </div>
                 )}
 
-                {isDominant && (
-                  <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] mt-3 pt-2 border-t border-white/5">
-                    {config.life}
-                  </p>
-                )}
+                <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] mt-3 pt-2 border-t border-white/5">
+                  {config.life}
+                </p>
               </div>
             );
           })}
-        </div>
+        </SwipeRail>
       </div>
 
       {/* ── SYNTHESIS ────────────────────────────────────────── */}
