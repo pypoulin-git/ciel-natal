@@ -106,16 +106,24 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
   }, [focusName, planets, goTo])
 
   // ── Gestes tactiles + souris (glisser gauche/droite) ──
-  const dragX = useRef<number | null>(null)
+  // On suit aussi le Y : un geste franchement vertical = scroll de page, on ne
+  // le capte pas. `touch-action: pan-y` (sur le conteneur) laisse passer le
+  // scroll vertical tout en livrant les gestes horizontaux à JS (sinon le
+  // navigateur annule le drag avant le pointerup → « je ne peux pas swiper »).
+  const drag = useRef<{ x: number; y: number } | null>(null)
   const onPointerDown = (e: React.PointerEvent) => {
-    dragX.current = e.clientX
+    drag.current = { x: e.clientX, y: e.clientY }
   }
   const onPointerUp = (e: React.PointerEvent) => {
-    if (dragX.current === null) return
-    const dx = e.clientX - dragX.current
-    dragX.current = null
-    if (Math.abs(dx) > 40) goTo(focus + (dx < 0 ? 1 : -1))
+    if (!drag.current) return
+    const dx = e.clientX - drag.current.x
+    const dy = e.clientY - drag.current.y
+    drag.current = null
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy)) {
+      goTo(focus + (dx < 0 ? 1 : -1))
+    }
   }
+  const onPointerCancel = () => { drag.current = null }
 
   if (n === 0) return null
 
@@ -128,7 +136,14 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
   return (
     // Le glisser agit sur TOUT le bloc — scène ET carte modale dessous — pour
     // qu'on puisse swiper aussi bien les planètes que le contenu sous elles.
-    <div onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+    // touch-pan-y : le navigateur ne récupère que le scroll vertical, les
+    // gestes horizontaux nous reviennent (sinon le swipe sur la carte est mangé).
+    <div
+      className="touch-pan-y select-none"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+    >
       {/* ── Scène orbitale (projection 2D d'un plan incliné) ──
           Ratio volontairement bas + preserveAspectRatio="none" : les orbites
           remplissent la largeur sans laisser de grands vides verticaux. */}
