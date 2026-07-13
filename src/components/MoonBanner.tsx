@@ -38,12 +38,13 @@ function computeMoonNow(now: Date): MoonNow {
 
 // The Moon's path across the sky, as a shallow arc; the glowing dot sits at
 // `progress` (0 = rise, 1 = set). Rendered dimmed when the Moon is down.
+// Colors go through theme vars so the arc reads on both dark and pale skies.
 function MoonArc({ progress, up }: { progress: number | null; up: boolean }) {
-  const W = 132
-  const H = 30
-  const P0 = { x: 5, y: 25 }
-  const P1 = { x: W / 2, y: -12 } // control point — arc peaks ~mid-sky
-  const P2 = { x: W - 5, y: 25 }
+  const W = 104
+  const H = 18
+  const P0 = { x: 4, y: 14 }
+  const P1 = { x: W / 2, y: -8 } // control point — arc peaks ~mid-sky
+  const P2 = { x: W - 4, y: 14 }
   const t = progress ?? 0
   const mt = 1 - t
   const dot = {
@@ -62,7 +63,7 @@ function MoonArc({ progress, up }: { progress: number | null; up: boolean }) {
       <path
         d={`M ${P0.x} ${P0.y} Q ${P1.x} ${P1.y} ${P2.x} ${P2.y}`}
         fill="none"
-        stroke="rgba(224,169,78,0.35)"
+        stroke="color-mix(in srgb, var(--color-accent-gold) 45%, transparent)"
         strokeWidth="1"
         strokeDasharray="3 3"
       />
@@ -77,8 +78,20 @@ function MoonArc({ progress, up }: { progress: number | null; up: boolean }) {
       />
       {up && progress !== null && (
         <>
-          <circle cx={dot.x} cy={dot.y} r="7" fill="rgba(240,233,255,0.18)" />
-          <circle cx={dot.x} cy={dot.y} r="3.2" fill="#f0e9ff" />
+          <circle
+            cx={dot.x}
+            cy={dot.y}
+            r="5.5"
+            fill="color-mix(in srgb, var(--color-accent-gold) 22%, transparent)"
+          />
+          <circle
+            cx={dot.x}
+            cy={dot.y}
+            r="2.6"
+            fill="var(--moon-lit-mid)"
+            stroke="var(--moon-ring)"
+            strokeWidth="0.75"
+          />
         </>
       )}
     </svg>
@@ -128,13 +141,17 @@ export default function MoonBanner() {
         borderColor: 'var(--nav-border)',
       }}
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+      {/* One slim row — the arc is the visual centerpiece. The energy line
+          only joins on wider screens (truncated) to keep the strip thin. */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-1 flex items-center gap-x-3">
         {/* Phase + sign */}
-        <span className="flex items-center gap-2 shrink-0">
-          <MoonGlyph angle={moon.angle} size={22} idSuffix="banner" />
-          <span className="text-xs text-[var(--color-text-primary)] whitespace-nowrap">
+        <span className="flex items-center gap-1.5 min-w-0">
+          <span className="shrink-0 flex">
+            <MoonGlyph angle={moon.angle} size={16} idSuffix="banner" />
+          </span>
+          <span className="text-[11px] text-[var(--color-text-primary)] truncate">
             {fr ? phase.name.fr : phase.name.en}
-            <span className="text-[var(--color-text-muted)]">
+            <span className="text-[var(--color-text-muted)] hidden sm:inline">
               {' · '}
               {fr ? 'en ' : 'in '}
               {translateSign(moon.signKey, locale)}
@@ -144,7 +161,7 @@ export default function MoonBanner() {
 
         {/* Rise → arc progression → set */}
         {noEvents ? (
-          <span className="text-[11px] text-[var(--color-text-muted)] whitespace-nowrap">
+          <span className="text-[10px] text-[var(--color-text-muted)] whitespace-nowrap">
             {moon.day.alwaysUp
               ? fr
                 ? 'Lune visible toute la journée'
@@ -154,15 +171,15 @@ export default function MoonBanner() {
                 : 'Moon below the horizon today'}
           </span>
         ) : (
-          <span className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] tabular-nums text-[var(--color-text-secondary)] whitespace-nowrap">
+          <span className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] tabular-nums text-[var(--color-text-secondary)] whitespace-nowrap">
               <span aria-hidden="true" className="text-[var(--color-accent-gold)]">
                 ↑
               </span>{' '}
               {fmt(moon.day.rise)}
             </span>
             <MoonArc progress={moon.day.progress} up={moon.day.up} />
-            <span className="text-[11px] tabular-nums text-[var(--color-text-secondary)] whitespace-nowrap">
+            <span className="text-[10px] tabular-nums text-[var(--color-text-secondary)] whitespace-nowrap">
               <span aria-hidden="true" className="text-[var(--color-accent-lavender)]">
                 ↓
               </span>{' '}
@@ -171,8 +188,8 @@ export default function MoonBanner() {
           </span>
         )}
 
-        {/* Lunar energy microcopy — full width on mobile, inline on desktop */}
-        <span className="w-full md:w-auto md:flex-1 md:min-w-0 pb-1 md:pb-0 text-[11px] italic leading-snug text-[var(--color-text-muted)] md:truncate">
+        {/* Lunar energy microcopy — desktop only, one truncated line */}
+        <span className="hidden md:block flex-1 min-w-0 text-[11px] italic leading-none text-[var(--color-text-muted)] truncate">
           {fr ? energy.fr : energy.en}
         </span>
       </div>

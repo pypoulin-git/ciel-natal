@@ -23,17 +23,19 @@ export default function MoonGlyph({
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
       <defs>
         <radialGradient id={gid} cx="38%" cy="34%" r="78%">
-          <stop offset="0%" stopColor="#fffdf6" />
-          <stop offset="60%" stopColor="#f0e9ff" />
-          <stop offset="100%" stopColor="#cdc1ee" />
+          {/* Theme vars (globals.css): near-white moon in dark mode, golden
+              moon in light mode so it stays visible on the pale sky. */}
+          <stop offset="0%" stopColor="var(--moon-lit-core)" />
+          <stop offset="60%" stopColor="var(--moon-lit-mid)" />
+          <stop offset="100%" stopColor="var(--moon-lit-edge)" />
         </radialGradient>
         <clipPath id={cid}>
           <circle cx={r} cy={r} r={r} />
         </clipPath>
       </defs>
       <circle cx={r} cy={r} r={r} fill={`url(#${gid})`} />
-      <circle cx={cx} cy={r} r={r} fill="var(--color-space-deep)" clipPath={`url(#${cid})`} />
-      <circle cx={r} cy={r} r={r - 0.5} fill="none" stroke="rgba(224,169,78,0.45)" />
+      <circle cx={cx} cy={r} r={r} fill="var(--moon-shadow)" clipPath={`url(#${cid})`} />
+      <circle cx={r} cy={r} r={r - 0.5} fill="none" stroke="var(--moon-ring)" />
     </svg>
   )
 }
