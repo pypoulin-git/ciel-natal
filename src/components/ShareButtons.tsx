@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useLocale } from "@/lib/i18n";
-import { blogShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 
 interface Props {
   /** URL to share (absolute). Defaults to current page URL at runtime. */
@@ -21,15 +20,11 @@ export default function ShareButtons({ url, title, compact = false }: Props) {
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedTitle = encodeURIComponent(title);
 
+  // WhatsApp + email were removed: both are already covered by the phone's
+  // native share sheet, and less used here. We keep X, Facebook, copy link,
+  // plus the native share button on mobile.
   const twitter = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
   const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
-  const whatsapp = `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
-  // Email body: warm, contextualized note from a friend rather than just
-  // pasting the URL in the subject line (PY's screenshot was the worst case
-  // — Gmail "Objet" field showed only the raw URL).
-  const email = toMailtoUrl(
-    blogShareMessage({ url: shareUrl, title, locale: locale === "en" ? "en" : "fr" })
-  );
 
   const copyLink = async () => {
     if (!shareUrl) return;
@@ -91,21 +86,6 @@ export default function ShareButtons({ url, title, compact = false }: Props) {
       <a href={facebook} target="_blank" rel="noopener noreferrer" className={`${btn} ${size}`} aria-label="Facebook">
         <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M13.397 20.997v-8.196h2.765l.411-3.209h-3.176V7.548c0-.926.258-1.56 1.587-1.56h1.684V3.127A22 22 0 0 0 14.21 3c-2.426 0-4.087 1.481-4.087 4.2v2.393H7.354v3.209h2.769v8.196z"/>
-        </svg>
-      </a>
-
-      {/* WhatsApp */}
-      <a href={whatsapp} target="_blank" rel="noopener noreferrer" className={`${btn} ${size}`} aria-label="WhatsApp">
-        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967s-.47-.149-.669.149-.767.966-.94 1.164-.347.223-.644.074-1.255-.462-2.39-1.475c-.883-.788-1.48-1.761-1.653-2.059s-.018-.458.13-.606c.134-.133.297-.347.446-.52.149-.174.198-.298.297-.496s.05-.372-.025-.521c-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51-.173-.008-.372-.01-.571-.01s-.521.074-.792.372-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413s-.273-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.82 9.82 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.82 11.82 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.88 11.88 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 0 0-3.48-8.413z"/>
-        </svg>
-      </a>
-
-      {/* Email */}
-      <a href={email} className={`${btn} ${size}`} aria-label="Email">
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-          <polyline points="22,6 12,13 2,6" />
         </svg>
       </a>
 

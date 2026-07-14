@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { articles } from "@/data/blog/articles";
+import { extraFor } from "@/data/blog/extras";
+import ArticleHero from "@/components/blog/ArticleHero";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 import { useLocale } from "@/lib/i18n";
@@ -43,19 +45,22 @@ export default function BlogPage() {
             <Link
               key={article.slug}
               href={`/blog/${article.slug}`}
-              className="group glass p-6 rounded-xl border border-[var(--color-glass-border)] hover:border-[var(--color-accent-lavender)]/40 transition-all duration-300"
+              className="group glass rounded-xl overflow-hidden border border-[var(--color-glass-border)] hover:border-[var(--color-accent-lavender)]/40 transition-all duration-300"
             >
-              <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)] mb-3">
-                <time dateTime={article.date}>{article.date}</time>
-                <span aria-hidden="true">&middot;</span>
-                <span>{article.readingTime}</span>
+              <ArticleHero variant={extraFor(article.slug).hero} rounded="" className="h-28" />
+              <div className="p-6">
+                <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)] mb-3">
+                  <time dateTime={article.date}>{article.date}</time>
+                  <span aria-hidden="true">&middot;</span>
+                  <span>{article.readingTime}</span>
+                </div>
+                <h2 className="font-cinzel text-base text-[var(--color-text-primary)] group-hover:text-[var(--color-accent-lavender)] transition mb-2">
+                  {isFr ? article.titleFr : article.titleEn}
+                </h2>
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">
+                  {isFr ? article.excerptFr : article.excerptEn}
+                </p>
               </div>
-              <h2 className="font-cinzel text-base text-[var(--color-text-primary)] group-hover:text-[var(--color-accent-lavender)] transition mb-2">
-                {isFr ? article.titleFr : article.titleEn}
-              </h2>
-              <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">
-                {isFr ? article.excerptFr : article.excerptEn}
-              </p>
             </Link>
           ))}
         </div>
