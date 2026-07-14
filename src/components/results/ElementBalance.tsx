@@ -33,12 +33,32 @@ function SwipeRail({ children, count }: { children: React.ReactNode; count: numb
 
   return (
     <>
-      <div
-        ref={railRef}
-        onScroll={onScroll}
-        className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {children}
+      <div className="relative">
+        <div
+          ref={railRef}
+          onScroll={onScroll}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {children}
+        </div>
+        {/* Flèches — surtout utiles sur ordinateur (le glisser marche au doigt
+            sur mobile). Masquées sur petit écran. */}
+        {(["prev", "next"] as const).map((dir) => {
+          const disabled = dir === "prev" ? active === 0 : active >= count - 1;
+          return (
+            <button
+              key={dir}
+              onClick={() => goTo(active + (dir === "next" ? 1 : -1))}
+              disabled={disabled}
+              aria-label={dir === "next" ? "Suivant" : "Précédent"}
+              className={`hidden sm:flex absolute top-1/2 -translate-y-1/2 ${dir === "next" ? "-right-3" : "-left-3"} w-9 h-9 rounded-full items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] bg-[var(--color-glass-bg)] border border-[var(--color-glass-border)] backdrop-blur-sm transition hover:border-[var(--color-accent-lavender)]/40 disabled:opacity-0 disabled:pointer-events-none z-10`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {dir === "next" ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
+              </svg>
+            </button>
+          );
+        })}
       </div>
       <div className="flex justify-center gap-2 mt-3">
         {Array.from({ length: count }, (_, i) => (

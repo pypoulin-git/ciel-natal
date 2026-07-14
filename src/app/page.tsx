@@ -1686,19 +1686,18 @@ export default function Home() {
                           </button>
                           <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: isOpen ? "800px" : "0", opacity: isOpen ? 1 : 0 }}>
                             <div className="px-5 pb-5 text-base leading-relaxed border-t border-white/5">
-                              {/* Explain: what is this aspect type? */}
+                              {/* What is this aspect? — light italic subtitle */}
                               {(() => {
                                 const mod = interpretations as { aspectTypeDescriptions?: Record<string, string> };
                                 const typeDesc = mod?.aspectTypeDescriptions?.[aspect.type];
                                 return typeDesc ? (
-                                  <div className="pt-4 mb-3 rounded-lg bg-white/[0.03] border border-white/5 p-3">
-                                    <span className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-secondary)] block mb-1">{locale === "fr" ? "Qu'est-ce que c'est ?" : "What is this?"}</span>
-                                    <p className="text-sm text-[var(--color-text-primary)] opacity-80">{genderize(typeDesc, form.genre)}</p>
-                                  </div>
+                                  <p className="pt-4 text-sm italic leading-relaxed text-[var(--color-text-secondary)] opacity-70">
+                                    {genderize(typeDesc, form.genre)}
+                                  </p>
                                 ) : null;
                               })()}
                               {/* Interpret: personal meaning */}
-                              <div className={`pt-${interpretations && (interpretations as { aspectTypeDescriptions?: Record<string, string> }).aspectTypeDescriptions?.[aspect.type] ? "1" : "4"}`}>
+                              <div className="pt-3">
                                 <span className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent-lavender)] block mb-2">{locale === "fr" ? "Pour toi" : "For you"}</span>
                                 <p className="text-[var(--color-text-primary)]">{interp || (locale === "en" ? `The ${aspect.type.toLowerCase()} between ${aspect.planet1} and ${aspect.planet2} creates a unique dialogue, shaping how these two energies interact in your life.` : `L'aspect ${aspect.type.toLowerCase()} entre ${aspect.planet1} et ${aspect.planet2} crée un dialogue unique, colorant la manière dont ces deux énergies interagissent dans ta vie.`)}</p>
                               </div>

@@ -64,7 +64,7 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
               className={`rounded-xl border transition-colors ${
                 hasOccupants
                   ? "border-[var(--color-accent-lavender)]/30 bg-[var(--color-accent-lavender)]/5"
-                  : "border-[var(--color-glass-border)] bg-white/[0.02]"
+                  : "border-[var(--color-glass-border)] bg-white/[0.02] opacity-60"
               }`}
               style={
                 hasOccupants
@@ -106,7 +106,7 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
                   )}
                 </button>
 
-                {hasOccupants && (
+                {hasOccupants ? (
                   <span className="flex gap-1.5 flex-shrink-0 mr-1">
                     {occupants.map((p) => {
                       const interp = planetInHouse[p.name]?.[h];
@@ -119,6 +119,10 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
                         </Tooltip>
                       );
                     })}
+                  </span>
+                ) : (
+                  <span className="text-[11px] italic text-[var(--color-text-muted)] flex-shrink-0 mr-1 whitespace-nowrap">
+                    {locale === "en" ? "No planet" : "Aucune planète"}
                   </span>
                 )}
 
@@ -142,18 +146,11 @@ export default function HousesMap({ planets, locale = "fr", genre = "femme", isP
                 style={{ maxHeight: isOpen ? "2000px" : "0px" }}
               >
                 <div className="px-3 sm:px-4 pb-4 pt-0 space-y-3">
-                  {/* ── Step 1: EXPLAIN the house concept ── */}
+                  {/* ── Step 1: the house concept — light italic subtitle ── */}
                   {desc && (
-                    <div className="rounded-lg bg-white/[0.04] border border-white/5 p-3 sm:p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-secondary)]">
-                          {locale === "en" ? "What is this house?" : "Qu'est-ce que cette maison ?"}
-                        </span>
-                      </div>
-                      <p className="text-sm leading-relaxed text-[var(--color-text-primary)] opacity-85">
-                        {genderize(desc.description, genre)}
-                      </p>
-                    </div>
+                    <p className="pt-4 text-sm italic leading-relaxed text-[var(--color-text-secondary)] opacity-70">
+                      {genderize(desc.description, genre)}
+                    </p>
                   )}
 
                   {/* ── Step 2: INTERPRET — personal planet placements ── */}
