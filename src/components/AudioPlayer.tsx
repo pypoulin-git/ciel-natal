@@ -12,6 +12,18 @@ import { useLocale } from "@/lib/i18n";
  */
 export type AudioSection = "portrait" | "houses" | "aspects" | "transits";
 
+/**
+ * NatAI — the brand name of our audio narration (the "AI" tinted to stand out).
+ * Replaces any user-facing mention of the underlying provider.
+ */
+function NatAI() {
+  return (
+    <span className="font-medium text-[var(--color-text-primary)]">
+      Nat<span className="text-[var(--color-accent-lavender)]">AI</span>
+    </span>
+  );
+}
+
 interface Props {
   /** The narrative text to convert to speech */
   narrativeText: string;
@@ -298,6 +310,9 @@ export default function AudioPlayer({
             <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
           </svg>
         </div>
+        <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1">
+          ✦ <NatAI /> · {locale === "fr" ? "narration" : "narration"}
+        </p>
         <p className="text-sm text-[var(--color-text-primary)] mb-1 font-medium">
           {locale === "fr" ? `Écoute ${copy.titleFr.toLowerCase()}` : `Listen — ${copy.titleEn.toLowerCase()}`}
         </p>
@@ -305,9 +320,9 @@ export default function AudioPlayer({
           {locale === "fr" ? copy.hintFr : copy.hintEn}
         </p>
         <p className="text-xs text-[var(--color-text-secondary)] opacity-60 mb-4">
-          {locale === "fr"
-            ? "Génération : jusqu'à une minute. C'est normal — Gemini tisse ta voix."
-            : "Generation: up to one minute. That's normal — Gemini is weaving your voice."}
+          {locale === "fr" ? "Génération : jusqu'à une minute. C'est normal — " : "Generation: up to one minute. That's normal — "}
+          <NatAI />
+          {locale === "fr" ? " tisse ta voix." : " is weaving your voice."}
         </p>
         <button
           onClick={generateAudio}
