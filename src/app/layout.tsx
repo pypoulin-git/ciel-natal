@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/lib/theme'
 import { AuthProvider } from '@/lib/auth-context'
 import TopNav from '@/components/TopNav'
 import MoonBanner from '@/components/MoonBanner'
+import SkyTicker from '@/components/SkyTicker'
 import CookieBanner from '@/components/CookieBanner'
 import ConsentedAnalytics from '@/components/ConsentedAnalytics'
 import MarketingPixels from '@/components/MarketingPixels'
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </a>
               <TopNav />
               <MoonBanner />
+              <SkyTicker />
               <ViewTransition>
                 <main id="main-content" role="main">
                   {children}
