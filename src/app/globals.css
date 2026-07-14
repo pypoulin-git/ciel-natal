@@ -492,6 +492,20 @@ input[type="range"]:active::-moz-range-thumb {
   animation: scaleIn 0.25s ease-out forwards;
 }
 
+/* Sky ticker — continuous horizontal scroll (two duplicated tapes → -50%). */
+@keyframes sky-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-sky-ticker {
+  animation: sky-ticker linear infinite;
+}
+
 /* Accordion height animation */
 @keyframes expandCollapse {
   from {

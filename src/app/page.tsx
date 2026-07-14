@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Starfield from "@/components/Starfield";
 import TitleSparkles from "@/components/TitleSparkles";
 import SiteFooter from "@/components/SiteFooter";
-import DailySign from "@/components/DailySign";
 import SkyToday from "@/components/SkyToday";
 import ExploreSections from "@/components/ExploreSections";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
@@ -894,10 +893,9 @@ export default function Home() {
               </div>
             </section>
 
-            {/* ═══ LE CIEL AUJOURD'HUI — énergie du jour + cartes ═══ */}
-            <div className="max-w-6xl mx-auto px-4 pt-10">
-              <DailySign />
-            </div>
+            {/* ═══ LE CIEL AUJOURD'HUI — cartes interprétées ═══
+                 (La carte « Énergie du jour » à faible valeur a été retirée ;
+                  ses infos vivent désormais dans le bandeau roulant sous le menu.) */}
             <SkyToday />
 
             {/* ═══ EXPLORE NATALUNE — les sections du site ═══ */}
