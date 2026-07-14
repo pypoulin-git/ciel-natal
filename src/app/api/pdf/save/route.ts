@@ -239,7 +239,7 @@ function emailTemplate({
     </div>
     <p style="color:#6b6b78;font-size:12px;line-height:1.6;margin:32px 0 0;text-align:center">
       Ce lien est valide 7 jours. Tu retrouveras toujours cette lecture dans
-      <a href="https://natalune.com/mon-compte/lectures" style="color:#b8a6ff">Mes lectures</a>
+      <a href="https://natalune.com/mon-compte/lectures" style="color:#b8a6ff">Mes cartes natales</a>
       sur ton compte.
     </p>
     <hr style="border:none;border-top:1px solid #2a2a35;margin:32px 0 16px" />

@@ -109,7 +109,7 @@ export default function LecturesPage() {
 
   const handleDelete = async (chart: SavedChart) => {
     if (!user?.id) return;
-    if (!confirm(locale === "fr" ? "Supprimer cette lecture ?" : "Delete this reading?")) return;
+    if (!confirm(locale === "fr" ? "Supprimer cette carte natale ?" : "Delete this natal chart?")) return;
     setBusyId(chart.id);
     try {
       const token = await getAccessToken();
@@ -147,7 +147,7 @@ export default function LecturesPage() {
         <Starfield />
         <div className="relative z-10 max-w-md mx-auto px-4 pt-24 text-center">
           <h1 className="font-cinzel text-2xl text-[var(--color-text-primary)] mb-4">
-            {locale === "fr" ? "Mes lectures" : "My readings"}
+            {locale === "fr" ? "Mes cartes natales" : "My natal charts"}
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mb-6">
             {locale === "fr" ? "Connecte-toi pour retrouver ton historique." : "Sign in to see your history."}
@@ -170,12 +170,18 @@ export default function LecturesPage() {
         <AccountTabs current="lectures" locale={locale} />
 
         <h1 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)] mb-2">
-          {locale === "fr" ? "Mes lectures" : "My readings"}
+          {locale === "fr" ? "Mes cartes natales" : "My natal charts"}
         </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+        <p className="text-sm text-[var(--color-text-secondary)] mb-2">
           {isPremium
-            ? locale === "fr" ? "Historique illimité. Tu peux re-télécharger tes PDFs à tout moment." : "Unlimited history. Re-download your PDFs anytime."
-            : locale === "fr" ? `${charts.length}/3 lectures (compte gratuit). Passe Premium pour l'historique illimité.` : `${charts.length}/3 readings (free tier). Go Premium for unlimited history.`}
+            ? locale === "fr" ? "Historique illimité. Rouvre une carte ou re-télécharge son PDF à tout moment." : "Unlimited history. Reopen a chart or re-download its PDF anytime."
+            : locale === "fr" ? `${charts.length}/3 cartes natales (compte gratuit). Passe Premium pour l'historique illimité.` : `${charts.length}/3 natal charts (free tier). Go Premium for unlimited history.`}
+        </p>
+        {/* Chaque carte est figée avec son interprétation d'origine. */}
+        <p className="text-xs text-[var(--color-text-muted)] italic mb-6 leading-relaxed">
+          {locale === "fr"
+            ? "Chaque carte conserve l'interprétation telle qu'elle a été générée — selon tes paramètres de lecture (voix, ton) et le contexte du moment. Clique pour la rouvrir à l'identique."
+            : "Each chart keeps the interpretation as it was generated — shaped by your reading preferences (voice, tone) and the context at the time. Click to reopen it exactly as it was."}
         </p>
 
         {toast && (
@@ -198,8 +204,8 @@ export default function LecturesPage() {
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] mb-3">
               {locale === "fr"
-                ? "Passe Premium pour sauvegarder un nombre illimité de lectures, débloquer la synastrie et les transits quotidiens."
-                : "Go Premium for unlimited readings, synastry, and daily transits."}
+                ? "Passe Premium pour sauvegarder un nombre illimité de cartes natales, débloquer la synastrie et les transits quotidiens."
+                : "Go Premium for unlimited natal charts, synastry, and daily transits."}
             </p>
             <a href="/premium" className="inline-block btn-primary px-4 py-2 rounded-lg text-xs">
               {locale === "fr" ? "Passer Premium — 9,99 $" : "Go Premium — $9.99"}
@@ -215,11 +221,11 @@ export default function LecturesPage() {
           <div className="glass p-8 text-center">
             <p className="text-sm text-[var(--color-text-secondary)] italic mb-4">
               {locale === "fr"
-                ? "Aucune lecture encore. Calcule ta première carte et reçois-la par email."
-                : "No readings yet. Calculate your first chart and get it by email."}
+                ? "Aucune carte natale encore. Calcule ta première carte et reçois-la par email."
+                : "No natal charts yet. Calculate your first chart and get it by email."}
             </p>
             <a href="/" className="btn-primary px-5 py-2.5 rounded-lg text-xs inline-block">
-              {locale === "fr" ? "Calculer ma carte" : "Calculate my chart"}
+              {locale === "fr" ? "Calculer ma carte natale" : "Calculate my natal chart"}
             </a>
           </div>
         ) : (

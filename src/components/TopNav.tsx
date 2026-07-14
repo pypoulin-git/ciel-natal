@@ -185,13 +185,10 @@ export default function TopNav() {
                     {label('Mon compte', 'My account')}
                   </MenuLink>
                   <MenuLink href="/mon-compte/lectures" icon="file">
-                    {label('Mes lectures', 'My readings')}
+                    {label('Mes cartes natales', 'My natal charts')}
                   </MenuLink>
                   <MenuLink href="/mon-compte/preferences" icon="sliders" premiumOnly={!isPremium}>
                     {label("Préférences d'interprétation", 'Reading preferences')}
-                  </MenuLink>
-                  <MenuLink href="/mon-compte/settings" icon="cog">
-                    {label('Paramètres', 'Settings')}
                   </MenuLink>
 
                   {!isPremium && (
