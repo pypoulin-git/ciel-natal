@@ -4,11 +4,11 @@ import Link from "next/link";
 
 export type AccountTab = "home" | "lectures" | "preferences" | "settings";
 
+// "Paramètres" a été fusionné dans "Mon compte" — plus d'onglet dédié.
 const TABS: { key: AccountTab; fr: string; en: string; href: string }[] = [
-  { key: "home", fr: "Aperçu", en: "Overview", href: "/mon-compte" },
-  { key: "lectures", fr: "Mes lectures", en: "My readings", href: "/mon-compte/lectures" },
+  { key: "home", fr: "Mon compte", en: "My account", href: "/mon-compte" },
+  { key: "lectures", fr: "Mes cartes natales", en: "My natal charts", href: "/mon-compte/lectures" },
   { key: "preferences", fr: "Préférences", en: "Preferences", href: "/mon-compte/preferences" },
-  { key: "settings", fr: "Paramètres", en: "Settings", href: "/mon-compte/settings" },
 ];
 
 export default function AccountTabs({

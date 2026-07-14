@@ -149,6 +149,10 @@ export default function Home() {
   const [planetFocus, setPlanetFocus] = useState<string | null>(null);
   const [expandedAspects, setExpandedAspects] = useState<Set<number>>(new Set());
   const [interpretations, setInterpretations] = useState<Record<string, unknown> | null>(null);
+  // Number of charts the logged-in user has already saved — drives the
+  // "returning visitor" hero (offer to open their charts instead of starting
+  // from scratch). null = unknown/not fetched yet.
+  const [savedCount, setSavedCount] = useState<number | null>(null);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const [copied, setCopied] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
@@ -223,6 +227,27 @@ export default function Home() {
       setInterpretations(mod as unknown as Record<string, unknown>);
     });
   }, [locale]);
+
+  // How many charts has this signed-in visitor already saved? If ≥1, the hero
+  // greets them as a returning user (open my charts) rather than pushing a new
+  // calculation. Anonymous visitors keep the classic "read my chart" CTA.
+  useEffect(() => {
+    if (!user?.id) { setSavedCount(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(`/api/charts?userId=${user.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setSavedCount(Array.isArray(data.charts) ? data.charts.length : 0);
+        }
+      } catch { /* ignore — hero falls back to the default CTA */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, getAccessToken]);
 
   // Silently request geolocation for city search bias (no UI impact if denied)
   useEffect(() => {
@@ -399,8 +424,8 @@ export default function Home() {
             kind: "ok",
             msg:
               locale === "fr"
-                ? "Carte sauvegardée dans Mes lectures."
-                : "Chart saved to My readings.",
+                ? "Carte sauvegardée dans Mes cartes natales."
+                : "Chart saved to My natal charts.",
           });
           // Auto-dismiss after 5s — non-blocking confirmation.
           setTimeout(() => setAutoSaveToast(null), 5000);
@@ -830,15 +855,35 @@ export default function Home() {
                 <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-8 font-light">
                   {t("hero.subtitle2")}
                 </p>
-                <button onClick={() => setStep(1)}
-                  className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender">
-                  <span aria-hidden="true">&#10022;</span>
-                  {t("hero.cta")}
-                </button>
-                {/* Reassurance microline — lowers friction before the CTA commitment. */}
-                <p className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] opacity-70 tracking-wide">
-                  {locale === "fr" ? "Gratuit · Aucun compte requis · 3 minutes" : "Free · No account needed · 3 minutes"}
-                </p>
+                {user && savedCount && savedCount > 0 ? (
+                  // ── Returning, signed-in visitor with saved charts ──
+                  <>
+                    <a href="/mon-compte/lectures"
+                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender">
+                      <span aria-hidden="true">&#10022;</span>
+                      {locale === "fr" ? "Accéder à mes cartes natales" : "Open my natal charts"}
+                    </a>
+                    <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
+                      {locale === "fr" ? "ou " : "or "}
+                      <button onClick={() => setStep(1)} className="text-[var(--color-accent-lavender)] hover:underline">
+                        {locale === "fr" ? "calcule une nouvelle carte" : "calculate a new chart"}
+                      </button>
+                    </p>
+                  </>
+                ) : (
+                  // ── Anonymous / first-time visitor ──
+                  <>
+                    <button onClick={() => setStep(1)}
+                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender">
+                      <span aria-hidden="true">&#10022;</span>
+                      {t("hero.cta")}
+                    </button>
+                    {/* Reassurance microline — lowers friction before the CTA commitment. */}
+                    <p className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] opacity-70 tracking-wide">
+                      {locale === "fr" ? "Gratuit · Aucun compte requis · 3 minutes" : "Free · No account needed · 3 minutes"}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Scroll cue — invites exploring the sections below. */}

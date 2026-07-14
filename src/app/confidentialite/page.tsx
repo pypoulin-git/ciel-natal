@@ -58,8 +58,8 @@ export default function Confidentialite() {
         </ul>
         <p className="mt-3">
           {fr
-            ? <><strong className="text-[var(--color-text-primary)]">Base légale :</strong> exécution du contrat (Loi 25 art. 12, RGPD art. 6.1.b). Tu peux supprimer ton compte à tout moment dans <a href="/mon-compte/settings" className="text-[var(--color-accent-lavender)] hover:underline">Paramètres</a> — toutes tes données sont alors effacées sous 30 jours (sauf obligation comptable Stripe : 7 ans).</>
-            : <><strong className="text-[var(--color-text-primary)]">Legal basis:</strong> contract performance (Quebec Law 25 art. 12, GDPR art. 6.1.b). You can delete your account at any time in <a href="/mon-compte/settings" className="text-[var(--color-accent-lavender)] hover:underline">Settings</a> — all your data is then erased within 30 days (except Stripe accounting records: 7 years).</>}
+            ? <><strong className="text-[var(--color-text-primary)]">Base légale :</strong> exécution du contrat (Loi 25 art. 12, RGPD art. 6.1.b). Tu peux supprimer ton compte à tout moment dans <a href="/mon-compte" className="text-[var(--color-accent-lavender)] hover:underline">Mon compte</a> — toutes tes données sont alors effacées sous 30 jours (sauf obligation comptable Stripe : 7 ans).</>
+            : <><strong className="text-[var(--color-text-primary)]">Legal basis:</strong> contract performance (Quebec Law 25 art. 12, GDPR art. 6.1.b). You can delete your account at any time in <a href="/mon-compte" className="text-[var(--color-accent-lavender)] hover:underline">My account</a> — all your data is then erased within 30 days (except Stripe accounting records: 7 years).</>}
         </p>
       </section>
 
