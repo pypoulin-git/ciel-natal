@@ -137,7 +137,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'revolution-solaire-guide': {
     hero: 'sun',
     references: [
-      { fr: 'Calcule ta révolution solaire', en: 'Calculate your solar return', url: '/revolution-solaire' },
+      { fr: 'Calcule ta carte du ciel', en: 'Calculate your birth chart', url: '/' },
       { fr: 'Le retour de Saturne', en: 'The Saturn return', url: '/blog/retour-de-saturne' },
       { fr: 'Calendrier céleste', en: 'Celestial calendar', url: '/calendrier' },
     ],
