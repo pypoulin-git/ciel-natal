@@ -21,6 +21,7 @@ import SectionTransition from "@/components/results/SectionTransition";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
 import { stashPendingPdf } from "@/lib/pending-pdf";
+import { MOON_PHASES } from "@/data/skyInterpretations";
 import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 import { signMetaLine } from "@/lib/signMeta";
 
@@ -499,17 +500,35 @@ export default function Home() {
       11: locale === "fr" ? "Réseaux, futur" : "Networks, future",
       12: locale === "fr" ? "Retrait, inconscient" : "Retreat, unconscious",
     };
+    // First N sentences of a reading — keeps the PDF rich but bounded.
+    const firstSentences = (txt: string, n: number): string => {
+      const m = txt.match(new RegExp(`^\\s*(?:[^.!?]*[.!?]\\s*){1,${n}}`));
+      return (m ? m[0] : txt).trim();
+    };
+    const interpMod = interpretations as unknown as {
+      planetInHouse?: Record<string, Record<number, string>>;
+    } | null;
+
     const byHouse = new Map<number, string[]>();
+    const readingsByHouse = new Map<number, string[]>();
     for (const p of chart.planets) {
       if (typeof p.house === "number") {
         if (!byHouse.has(p.house)) byHouse.set(p.house, []);
         byHouse.get(p.house)!.push(`${translatePlanet(p.name, locale)} (${translateSign(p.sign, locale)})`);
+        // Same "Pour toi" planet-in-house reading the site shows.
+        const pih = interpMod?.planetInHouse?.[p.name]?.[p.house];
+        if (pih) {
+          if (!readingsByHouse.has(p.house)) readingsByHouse.set(p.house, []);
+          readingsByHouse.get(p.house)!.push(
+            `${translatePlanet(p.name, locale)} — ${firstSentences(genderize(pih, form.genre), 2)}`
+          );
+        }
       }
     }
-    const houses: { n: number; name: string; occupants: string[] }[] = [];
+    const houses: { n: number; name: string; occupants: string[]; readings?: string[] }[] = [];
     for (let h = 1; h <= 12; h++) {
       const occ = byHouse.get(h);
-      if (occ && occ.length) houses.push({ n: h, name: houseNames[h], occupants: occ });
+      if (occ && occ.length) houses.push({ n: h, name: houseNames[h], occupants: occ, readings: readingsByHouse.get(h) });
     }
 
     const aspectLabel = (t: string) =>
@@ -540,11 +559,40 @@ export default function Home() {
         ascSign: chart.ascendant ? translateSign(chart.ascendant.sign, locale) : null,
       },
       portrait,
-      planets: chart.planets.map((p) => ({ name: translatePlanet(p.name, locale), sign: translateSign(p.sign, locale), degree: p.degree, house: p.house })),
+      // Natal Moon phase (Sun→Moon elongation) — echoes the site's Moon-first
+      // branding right on the cover.
+      moonPhase: (() => {
+        const gap = ((moon.longitude - sun.longitude) % 360 + 360) % 360;
+        const idx = Math.floor((gap + 22.5) / 45) % 8;
+        const phase = MOON_PHASES[idx];
+        return {
+          label: locale === "fr" ? phase.name.fr : phase.name.en,
+          illum: Math.round(((1 - Math.cos((gap * Math.PI) / 180)) / 2) * 100),
+        };
+      })(),
+      // Personal planets carry their full in-sign reading (same voice/genre as
+      // on-screen); Sun/Moon are already covered by the portrait panels.
+      planets: chart.planets.map((p) => ({
+        name: translatePlanet(p.name, locale),
+        sign: translateSign(p.sign, locale),
+        degree: p.degree,
+        house: p.house,
+        retro: p.retrograde === true,
+        text: !["Soleil", "Lune", "Uranus", "Neptune", "Pluton", "Noeud Nord"].includes(p.name)
+          ? getInterp(p.name, p.sign, p.house) || undefined
+          : undefined,
+      })),
       elements,
       modalities,
       houses,
-      aspects: (chart.aspects || []).slice(0, 14).map((a) => ({ p1: translatePlanet(a.planet1, locale), p2: translatePlanet(a.planet2, locale), type: a.type, orb: a.orb, label: aspectLabel(a.type) })),
+      aspects: (chart.aspects || []).slice(0, 10).map((a) => ({
+        p1: translatePlanet(a.planet1, locale),
+        p2: translatePlanet(a.planet2, locale),
+        type: a.type,
+        orb: a.orb,
+        label: aspectLabel(a.type),
+        text: firstSentences(getAspectInterp(a.type, a.planet1, a.planet2) || "", 2) || undefined,
+      })),
       wheel: {
         ascendantLongitude: chart.ascendant ? chart.ascendant.longitude : null,
         planets: chart.planets.map((p) => ({ name: p.name, longitude: p.longitude })),
@@ -565,7 +613,10 @@ export default function Home() {
     };
     const { blob, dataUrl, filename } = mod.generateChartPdf(data);
     return { blob, dataUrl, filename };
-  }, [chart, form, locale, MONTHS]);
+    // `interpretations` matters: without it the memoized closure would keep
+    // the initial null module and every reading in the PDF would come out empty.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chart, form, locale, MONTHS, interpretations]);
 
   const handleGetPdf = useCallback(async () => {
     try {

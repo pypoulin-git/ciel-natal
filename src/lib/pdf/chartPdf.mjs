@@ -18,11 +18,12 @@ import { FRAUNCES_B64 } from "./fonts.mjs";
  * @property {{ prenom:string, dateLabel:string, timeLabel:string|null, place:string }} meta
  * @property {{ sunSign:string, moonSign:string, ascSign:string|null }} bigThree
  * @property {{ name:string, sign:string, degree:number, house?:number, text:string }[]} portrait  // sun, moon, asc
- * @property {{ name:string, sign:string, degree:number, house?:number }[]} planets
+ * @property {{ label:string, illum:number }|null} [moonPhase]  // natal Moon phase (cover)
+ * @property {{ name:string, sign:string, degree:number, house?:number, retro?:boolean, text?:string }[]} planets
  * @property {{ Feu:number, Terre:number, Air:number, Eau:number }} elements
  * @property {{ Cardinal:number, Fixe:number, Mutable:number }} modalities
- * @property {{ n:number, name:string, occupants:string[] }[]} houses
- * @property {{ p1:string, p2:string, type:string, orb:number, label:string }[]} aspects
+ * @property {{ n:number, name:string, occupants:string[], readings?:string[] }[]} houses
+ * @property {{ p1:string, p2:string, type:string, orb:number, label:string, text?:string }[]} aspects
  * @property {{ planets:{ name:string, longitude:number }[], ascendantLongitude:number|null }} wheel
  * @property {string[]} closing  // closing paragraphs
  */
@@ -272,6 +273,18 @@ export function generateChartPdf(data) {
   body(8.5); setText(PALETTE.mutedInk);
   pdf.text(fr ? "Soleil   ·   Lune   ·   Ascendant" : "Sun   ·   Moon   ·   Ascendant", PW / 2, 195, { align: "center" });
 
+  // natal Moon phase — the Moon is central to the brand, so the cover names
+  // the exact lunar light the person was born under.
+  if (data.moonPhase) {
+    italic(10); setText(PALETTE.rose);
+    pdf.text(
+      fr
+        ? `Lune à ta naissance : ${data.moonPhase.label} · ${data.moonPhase.illum} % éclairée`
+        : `Moon at your birth: ${data.moonPhase.label} · ${data.moonPhase.illum}% lit`,
+      PW / 2, 203, { align: "center" }
+    );
+  }
+
   // bottom quote
   setDraw(PALETTE.hairline); pdf.setLineWidth(0.3);
   pdf.line(MX, PH - 34, PW - MX, PH - 34);
@@ -328,11 +341,26 @@ export function generateChartPdf(data) {
     setFill(PALETTE.lavenderSoft); pdf.circle(MX + 1.2, y - 1.3, 1, "F");
     body(10.5, true); setText(PALETTE.ink);
     pdf.text(p.name, MX + 5.5, y);
+    // Retrograde marker — the natal ℞ flag, same as on the site.
+    if (p.retro) {
+      const nw = pdf.getTextWidth(p.name);
+      body(8.5, true); setText(PALETTE.rose);
+      pdf.text("Rx", MX + 7 + nw, y - 0.4);
+    }
     body(10); setText(PALETTE.mutedInk);
     pdf.text(`${p.sign} ${p.degree}°${typeof p.house === "number" ? ` · M${p.house}` : ""}`, PW - MX, y, { align: "right" });
     setDraw(PALETTE.hairline); pdf.setLineWidth(0.15);
     pdf.line(MX + 5.5, y + 2.2, PW - MX, y + 2.2);
     y += 7.5;
+    // Personalised reading for this placement (planet-in-sign, same voice as
+    // the site) — the part that makes the PDF a real premium keepsake.
+    if (p.text) {
+      body(9.5); setText(PALETTE.ink);
+      const lines = pdf.splitTextToSize(p.text, CW - 5.5);
+      const lh = 9.5 * 0.352778 * 1.4;
+      for (const ln of lines) { ensure(lh); pdf.text(ln, MX + 5.5, y); y += lh; }
+      y += 4;
+    }
   }
 
   // ═══════════════════════════════════════════ ÉLÉMENTS & MODALITÉS ═══
@@ -384,6 +412,18 @@ export function generateChartPdf(data) {
       body(10); setText(PALETTE.ink);
       const lines = pdf.splitTextToSize(h.occupants.join("   ·   "), CW);
       for (const ln of lines) { ensure(5); pdf.text(ln, MX, y); y += 5; }
+      // Per-placement readings (planet-in-house), mirroring the site's
+      // "Pour toi" content instead of a bare occupant list.
+      if (h.readings && h.readings.length) {
+        y += 1;
+        for (const rd of h.readings) {
+          body(9.5); setText(PALETTE.mutedInk);
+          const rl = pdf.splitTextToSize(rd, CW - 4);
+          const lh = 9.5 * 0.352778 * 1.4;
+          for (const ln of rl) { ensure(lh); pdf.text(ln, MX + 4, y); y += lh; }
+          y += 2;
+        }
+      }
       y += 3.5;
     }
   }
@@ -420,6 +460,14 @@ export function generateChartPdf(data) {
       setDraw(PALETTE.hairline); pdf.setLineWidth(0.15);
       pdf.line(MX + 7, y + 2.2, PW - MX, y + 2.2);
       y += 7;
+      // Interpreted dialogue — what this aspect means for the person.
+      if (a.text) {
+        body(9.5); setText(PALETTE.mutedInk);
+        const tl = pdf.splitTextToSize(a.text, CW - 7);
+        const lh = 9.5 * 0.352778 * 1.4;
+        for (const ln of tl) { ensure(lh); pdf.text(ln, MX + 7, y); y += lh; }
+        y += 3.5;
+      }
     }
   }
 
