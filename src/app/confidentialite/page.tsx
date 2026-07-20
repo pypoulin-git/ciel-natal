@@ -10,7 +10,7 @@ export default function Confidentialite() {
   return (
     <PageShell title={fr ? "Politique de confidentialité" : "Privacy Policy"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 10 juin 2026" : "Last updated: June 10, 2026"}
+        {fr ? "Dernière mise à jour : 20 juillet 2026" : "Last updated: July 20, 2026"}
       </p>
 
       <section>
@@ -132,8 +132,22 @@ export default function Confidentialite() {
           <li>
             <strong className="text-[var(--color-text-primary)]">Vercel Analytics + Speed Insights</strong> —{" "}
             {fr
-              ? "Statistiques anonymes (pages visitées, performance). Désactivé par défaut : ne s'active que si tu cliques « Tout accepter » dans la bannière de consentement. Aucune donnée personnelle, aucun cookie publicitaire."
-              : "Anonymous statistics (visited pages, performance). Off by default: only loads if you click \"Accept all\" in the consent banner. No personal data, no advertising cookies."}
+              ? "Statistiques anonymes (pages visitées, performance). Désactivé par défaut : ne s'active que si tu actives la catégorie « Analyse anonyme » dans la bannière de consentement. Aucune donnée personnelle, aucun cookie publicitaire."
+              : "Anonymous statistics (visited pages, performance). Off by default: only loads if you enable the \"Anonymous analytics\" category in the consent banner. No personal data, no advertising cookies."}
+          </li>
+          <li>
+            <strong className="text-[var(--color-text-primary)]">Google Analytics 4 + Google Tag Manager</strong> —{" "}
+            {fr
+              ? "Mesure d'audience publicitaire. Chargés UNIQUEMENT si tu actives la catégorie « Marketing » dans la bannière de consentement — jamais avant ton choix, et rien après un refus. Hébergement États-Unis. Reçoit alors : pages visitées, événements de navigation, identifiants techniques de mesure. Lien : "
+              : "Advertising audience measurement. Loaded ONLY if you enable the \"Marketing\" category in the consent banner — never before your choice, and nothing after a refusal. Hosted in USA. Then receives: visited pages, navigation events, technical measurement identifiers. Link: "}
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">policies.google.com/privacy</a>
+          </li>
+          <li>
+            <strong className="text-[var(--color-text-primary)]">Meta Pixel (Facebook)</strong> —{" "}
+            {fr
+              ? "Pixel de conversion publicitaire, lui aussi derrière le consentement « Marketing ». Activé seulement lorsqu'un identifiant de pixel est configuré ; à défaut il ne se charge pas du tout. Hébergement États-Unis. Reçoit alors : événements de conversion, identifiants techniques. Lien : "
+              : "Advertising conversion pixel, also behind the \"Marketing\" consent. Enabled only when a pixel ID is configured; otherwise it does not load at all. Hosted in USA. Then receives: conversion events, technical identifiers. Link: "}
+            <a href="https://www.facebook.com/privacy/policy" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">facebook.com/privacy/policy</a>
           </li>
           <li>
             <strong className="text-[var(--color-text-primary)]">Nominatim (OpenStreetMap)</strong> —{" "}
@@ -166,8 +180,8 @@ export default function Confidentialite() {
         </ul>
         <p className="mt-3">
           {fr
-            ? "Aucun cookie publicitaire, aucun tracker tiers, aucun pixel Meta/Google/TikTok."
-            : "No advertising cookies, no third-party trackers, no Meta/Google/TikTok pixels."}
+            ? "Les cookies et pixels publicitaires (Google Analytics 4, et Meta Pixel s'il est configuré) ne se chargent QUE si tu actives la catégorie « Marketing » dans la bannière de consentement : rien n'est déposé avant ton choix, et rien après un refus. Tu peux revenir sur ce choix à tout moment via la bannière. Aucun autre tracker tiers, aucun pixel TikTok."
+            : "Advertising cookies and pixels (Google Analytics 4, and Meta Pixel if configured) load ONLY if you enable the \"Marketing\" category in the consent banner: nothing is set before your choice, and nothing after a refusal. You can change this choice at any time via the banner. No other third-party tracker, no TikTok pixel."}
         </p>
       </section>
 
