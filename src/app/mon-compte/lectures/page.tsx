@@ -7,6 +7,7 @@ import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 import AccountTabs from "@/components/AccountTabs";
 import { readPendingPdf, clearPendingPdf } from "@/lib/pending-pdf";
+import { chartLinksFromFormData } from "@/lib/chartLink";
 
 interface SavedChart {
   id: string;
@@ -97,7 +98,21 @@ export default function LecturesPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
-        setToast({ kind: "err", msg: locale === "fr" ? "Lien expiré." : "Link expired." });
+        // Stored file gone or link expired — fall back to regenerating the PDF
+        // from the saved birth data (always possible, and the regenerated
+        // document picks up the latest reading content).
+        const links = chartLinksFromFormData(chart.form_data);
+        if (links) {
+          setToast({
+            kind: "ok",
+            msg: locale === "fr"
+              ? "Ancien PDF indisponible — on rouvre ta carte pour le régénérer."
+              : "Old PDF unavailable — reopening your chart to regenerate it.",
+          });
+          setTimeout(() => { window.location.href = links.pdf; }, 900);
+        } else {
+          setToast({ kind: "err", msg: locale === "fr" ? "Lien expiré." : "Link expired." });
+        }
         return;
       }
       const { url } = await res.json();
@@ -236,30 +251,13 @@ export default function LecturesPage() {
                 { year: "numeric", month: "short", day: "numeric" }
               );
               const hasPdf = !!chart.pdf_url;
-              // Build the re-open URL using the same ?c=base64 format the home
-              // page already parses (page.tsx ~line 540). Reuses the user's
-              // stored form_data so the saved chart re-renders identically.
-              const f = chart.form_data as Record<string, unknown>;
-              let openUrl: string | null = null;
-              // Same URL as openUrl but with a trailing `#pdf` hash. The
-              // home page listens for that hash on mount and auto-scrolls
-              // straight to the "Obtenir mon PDF" button, saving the user
-              // from hunting through the entire reading.
-              let pdfUrl: string | null = null;
-              if (f && typeof f === "object" && f.jour && f.mois && f.annee && f.latitude && f.longitude) {
-                try {
-                  const payload = {
-                    n: f.prenom, g: f.genre, j: f.jour, m: f.mois, a: f.annee,
-                    h: f.heure, mn: f.minute, ht: f.hasTime ? 1 : 0,
-                    l: f.lieu, la: f.latitude, lo: f.longitude, v: f.voice,
-                  };
-                  const c = encodeURIComponent(btoa(JSON.stringify(payload)));
-                  openUrl = `/?c=${c}`;
-                  pdfUrl = `/?c=${c}#pdf`;
-                } catch {
-                  /* malformed form_data — fall back to label-only row */
-                }
-              }
+              // Re-open + regenerate links built by the shared, defensive
+              // helper (fills missing legacy fields, transliterates non-Latin-1
+              // chars that used to make btoa throw). null only if the birth
+              // data itself is unusable.
+              const links = chartLinksFromFormData(chart.form_data);
+              const openUrl = links?.open ?? null;
+              const pdfUrl = links?.pdf ?? null;
               return (
                 <div key={chart.id} className="glass p-4 flex items-center justify-between gap-4 transition hover:border-[var(--color-accent-lavender)]/30">
                   {/* Make the whole text block a link — opens the chart again */}
@@ -288,17 +286,34 @@ export default function LecturesPage() {
                   )}
                   <div className="flex items-center gap-2 shrink-0">
                     {hasPdf ? (
-                      <button
-                        onClick={() => handleDownload(chart)}
-                        disabled={busyId === chart.id}
-                        aria-label={locale === "fr" ? "Télécharger le PDF" : "Download PDF"}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-[var(--color-glass-border)] bg-white/5 hover:bg-white/10 hover:border-[var(--color-accent-lavender)]/30 text-[var(--color-text-primary)] disabled:opacity-50"
-                      >
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        <span className="hidden sm:inline">{locale === "fr" ? "PDF" : "PDF"}</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleDownload(chart)}
+                          disabled={busyId === chart.id}
+                          aria-label={locale === "fr" ? "Télécharger le PDF" : "Download PDF"}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-[var(--color-glass-border)] bg-white/5 hover:bg-white/10 hover:border-[var(--color-accent-lavender)]/30 text-[var(--color-text-primary)] disabled:opacity-50"
+                        >
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                          </svg>
+                          <span className="hidden sm:inline">{locale === "fr" ? "PDF" : "PDF"}</span>
+                        </button>
+                        {/* Régénérer : rouvre la carte et saute au bouton PDF —
+                            utile pour profiter des dernières évolutions du
+                            document (interprétations, phase de Lune…). */}
+                        {pdfUrl && (
+                          <a
+                            href={pdfUrl}
+                            title={locale === "fr" ? "Régénérer le PDF (contenu à jour)" : "Regenerate the PDF (fresh content)"}
+                            aria-label={locale === "fr" ? "Régénérer le PDF" : "Regenerate the PDF"}
+                            className="inline-flex items-center p-2 text-xs rounded-lg border border-[var(--color-glass-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent-lavender)] hover:border-[var(--color-accent-lavender)]/40"
+                          >
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6" />
+                            </svg>
+                          </a>
+                        )}
+                      </>
                     ) : pdfUrl ? (
                       // No PDF yet → land on the chart with #pdf hash so the
                       // page auto-scrolls straight to the "Obtenir mon PDF"
