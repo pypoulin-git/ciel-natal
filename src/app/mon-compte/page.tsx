@@ -8,6 +8,7 @@ import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 import AccountTabs from "@/components/AccountTabs";
 import ThemeToggle from "@/components/ThemeToggle";
+import { chartLinksFromFormData } from "@/lib/chartLink";
 
 interface SavedChart {
   id: string;
@@ -16,23 +17,10 @@ interface SavedChart {
   created_at: string;
 }
 
-// Rebuild the ?c=base64 URL the home page understands, so a saved chart
-// re-opens exactly as it was calculated.
+// Rebuild the ?c= URL the home page understands, via the shared defensive
+// helper (legacy fields defaulted, non-Latin-1 chars transliterated).
 function openUrlFor(chart: SavedChart): string | null {
-  const f = chart.form_data as Record<string, unknown>;
-  if (!f || typeof f !== "object" || !f.jour || !f.mois || !f.annee || !f.latitude || !f.longitude) {
-    return null;
-  }
-  try {
-    const payload = {
-      n: f.prenom, g: f.genre, j: f.jour, m: f.mois, a: f.annee,
-      h: f.heure, mn: f.minute, ht: f.hasTime ? 1 : 0,
-      l: f.lieu, la: f.latitude, lo: f.longitude, v: f.voice,
-    };
-    return `/?c=${encodeURIComponent(btoa(JSON.stringify(payload)))}`;
-  } catch {
-    return null;
-  }
+  return chartLinksFromFormData(chart.form_data)?.open ?? null;
 }
 
 export default function MonComptePage() {

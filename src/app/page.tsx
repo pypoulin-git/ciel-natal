@@ -22,6 +22,7 @@ import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
 import { stashPendingPdf } from "@/lib/pending-pdf";
 import { MOON_PHASES } from "@/data/skyInterpretations";
+import { encodeChartPayload } from "@/lib/chartLink";
 import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 import { signMetaLine } from "@/lib/signMeta";
 
@@ -505,6 +506,12 @@ export default function Home() {
       const m = txt.match(new RegExp(`^\\s*(?:[^.!?]*[.!?]\\s*){1,${n}}`));
       return (m ? m[0] : txt).trim();
     };
+    // Never let one broken reading sink the whole PDF: data shapes evolve
+    // (old saved charts, missing fields) — a failed lookup just means the
+    // section renders without its text.
+    const safe = <T,>(fn: () => T): T | undefined => {
+      try { return fn() ?? undefined; } catch { return undefined; }
+    };
     const interpMod = interpretations as unknown as {
       planetInHouse?: Record<string, Record<number, string>>;
     } | null;
@@ -516,12 +523,14 @@ export default function Home() {
         if (!byHouse.has(p.house)) byHouse.set(p.house, []);
         byHouse.get(p.house)!.push(`${translatePlanet(p.name, locale)} (${translateSign(p.sign, locale)})`);
         // Same "Pour toi" planet-in-house reading the site shows.
-        const pih = interpMod?.planetInHouse?.[p.name]?.[p.house];
-        if (pih) {
-          if (!readingsByHouse.has(p.house)) readingsByHouse.set(p.house, []);
-          readingsByHouse.get(p.house)!.push(
-            `${translatePlanet(p.name, locale)} — ${firstSentences(genderize(pih, form.genre), 2)}`
-          );
+        const h = p.house;
+        const reading = safe(() => {
+          const pih = interpMod?.planetInHouse?.[p.name]?.[h];
+          return pih ? `${translatePlanet(p.name, locale)} — ${firstSentences(genderize(pih, form.genre), 2)}` : undefined;
+        });
+        if (reading) {
+          if (!readingsByHouse.has(h)) readingsByHouse.set(h, []);
+          readingsByHouse.get(h)!.push(reading);
         }
       }
     }
@@ -561,7 +570,7 @@ export default function Home() {
       portrait,
       // Natal Moon phase (Sun→Moon elongation) — echoes the site's Moon-first
       // branding right on the cover.
-      moonPhase: (() => {
+      moonPhase: safe(() => {
         const gap = ((moon.longitude - sun.longitude) % 360 + 360) % 360;
         const idx = Math.floor((gap + 22.5) / 45) % 8;
         const phase = MOON_PHASES[idx];
@@ -569,7 +578,7 @@ export default function Home() {
           label: locale === "fr" ? phase.name.fr : phase.name.en,
           illum: Math.round(((1 - Math.cos((gap * Math.PI) / 180)) / 2) * 100),
         };
-      })(),
+      }) ?? null,
       // Personal planets carry their full in-sign reading (same voice/genre as
       // on-screen); Sun/Moon are already covered by the portrait panels.
       planets: chart.planets.map((p) => ({
@@ -579,7 +588,7 @@ export default function Home() {
         house: p.house,
         retro: p.retrograde === true,
         text: !["Soleil", "Lune", "Uranus", "Neptune", "Pluton", "Noeud Nord"].includes(p.name)
-          ? getInterp(p.name, p.sign, p.house) || undefined
+          ? safe(() => getInterp(p.name, p.sign, p.house) || undefined)
           : undefined,
       })),
       elements,
@@ -591,7 +600,7 @@ export default function Home() {
         type: a.type,
         orb: a.orb,
         label: aspectLabel(a.type),
-        text: firstSentences(getAspectInterp(a.type, a.planet1, a.planet2) || "", 2) || undefined,
+        text: safe(() => firstSentences(getAspectInterp(a.type, a.planet1, a.planet2) || "", 2) || undefined),
       })),
       wheel: {
         ascendantLongitude: chart.ascendant ? chart.ascendant.longitude : null,
@@ -757,7 +766,8 @@ export default function Home() {
     // New format: ?c=base64encoded
     if (p.has("c")) {
       const decoded = decodeChartParams(decodeURIComponent(p.get("c") || ""));
-      if (decoded && decoded.j && decoded.m && decoded.a && decoded.la && decoded.lo) {
+      // != null (not truthiness): latitude/longitude 0 are valid coordinates.
+      if (decoded && decoded.j && decoded.m && decoded.a && decoded.la != null && decoded.lo != null) {
         loaded = {
           prenom: (decoded.n as string) || defaultName,
           genre: (decoded.g as Genre) || "femme",
@@ -807,9 +817,10 @@ export default function Home() {
   }, []);
 
   // ─── Encode/decode chart params as opaque base64 ───
-  const encodeChartParams = (payload: Record<string, unknown>): string => {
-    try { return btoa(JSON.stringify(payload)); } catch { return ""; }
-  };
+  // encodeChartPayload transliterates non-Latin-1 chars (œ, ’, …) instead of
+  // letting btoa throw — old saved charts with exotic place names keep working.
+  const encodeChartParams = (payload: Record<string, unknown>): string =>
+    encodeChartPayload(payload);
   const decodeChartParams = (encoded: string): Record<string, unknown> | null => {
     try { return JSON.parse(atob(encoded)); } catch { return null; }
   };
@@ -1980,8 +1991,28 @@ export default function Home() {
                 <div className="flex justify-center mb-6">
                   <SavedCharts
                     onLoadChart={(formData) => {
-                      const fd = formData as unknown as typeof form;
-                      setForm(fd);
+                      // Old saved charts may predate fields added since (voice,
+                      // genre, hasTime…) — normalize with defaults so nothing
+                      // downstream ever sees undefined. Schemas will keep
+                      // evolving; this is the safety net.
+                      const fd = formData as Record<string, unknown>;
+                      setForm({
+                        prenom: typeof fd.prenom === "string" ? fd.prenom : "",
+                        genre: (fd.genre as Genre) || "femme",
+                        jour: Number(fd.jour) || 15,
+                        mois: Number(fd.mois) || 6,
+                        annee: Number(fd.annee) || 1990,
+                        heure: fd.heure != null ? Number(fd.heure) : 12,
+                        minute: fd.minute != null ? Number(fd.minute) : 0,
+                        hasTime: fd.hasTime !== false,
+                        lieu: typeof fd.lieu === "string" ? fd.lieu : "",
+                        latitude: Number(fd.latitude) || 45.5,
+                        longitude: fd.longitude != null ? Number(fd.longitude) : -73.6,
+                        voice: (fd.voice as VoiceKey) || "sensible",
+                        tone: Number(fd.tone) || 5,
+                        depth: Number(fd.depth) || 5,
+                        focus: Number(fd.focus) || 5,
+                      });
                       setStep(0);
                       setChart(null);
                     }}
