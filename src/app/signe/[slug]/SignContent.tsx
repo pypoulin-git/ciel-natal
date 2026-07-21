@@ -254,7 +254,7 @@ export default function SignContent({ sign }: { sign: SignDataBilingual }) {
       {/* CTA */}
       <div className="mt-6 text-center">
         <Link
-          href="/"
+          href="/carte-natale"
           className="inline-block px-6 py-3 min-h-[48px] rounded-lg bg-[var(--color-accent-lavender)] text-white font-cinzel text-sm hover:opacity-90 transition"
         >
           {fr ? `Calcule ton thème natal complet` : `Calculate your full birth chart`}

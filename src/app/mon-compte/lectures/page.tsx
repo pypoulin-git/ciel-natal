@@ -239,7 +239,7 @@ export default function LecturesPage() {
                 ? "Aucune carte natale encore. Calcule ta première carte et reçois-la par email."
                 : "No natal charts yet. Calculate your first chart and get it by email."}
             </p>
-            <a href="/" className="btn-primary px-5 py-2.5 rounded-lg text-xs inline-block">
+            <a href="/carte-natale" className="btn-primary px-5 py-2.5 rounded-lg text-xs inline-block">
               {locale === "fr" ? "Calculer ma carte natale" : "Calculate my natal chart"}
             </a>
           </div>

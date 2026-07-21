@@ -100,7 +100,7 @@ export default function SignesContent() {
 
       <div className="mt-8 text-center">
         <Link
-          href="/"
+          href="/carte-natale"
           className="inline-block px-6 py-3 rounded-lg bg-[var(--color-accent-lavender)] text-white font-cinzel text-sm hover:opacity-90 transition"
         >
           {fr ? "Calcule ta carte du ciel gratuitement" : "Calculate your natal chart for free"}

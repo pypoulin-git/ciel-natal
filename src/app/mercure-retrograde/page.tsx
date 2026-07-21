@@ -220,7 +220,7 @@ export default function MercureRetrogradePage() {
                 : "About one person in five. If that's you, your natal Mercury carries the ℞ badge: a more inward mind that ripens ideas before sharing them — often a gift for writing or listening. Check in two minutes:"}
             </p>
             <Link
-              href="/"
+              href="/carte-natale"
               className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium glow-lavender"
             >
               <span aria-hidden="true">✦</span>

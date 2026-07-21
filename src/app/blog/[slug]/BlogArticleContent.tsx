@@ -140,7 +140,7 @@ export default function BlogArticleContent({ article }: { article: BlogArticle }
             : "Calculate your birth chart for free and discover your Sun, Moon, Ascendant and houses."}
         </p>
         <Link
-          href="/"
+          href="/carte-natale"
           className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white text-sm font-medium"
         >
           <span aria-hidden="true">✦</span>

@@ -46,7 +46,7 @@ function BlogIcon() {
   )
 }
 
-export default function ExploreSections({ onStart }: { onStart: () => void }) {
+export default function ExploreSections({ onStart }: { onStart?: () => void }) {
   const { locale } = useLocale()
   const fr = locale === 'fr'
 
@@ -127,13 +127,23 @@ export default function ExploreSections({ onStart }: { onStart: () => void }) {
               : 'The heart of Natalune: your complete birth chart — Sun, Moon, Ascendant, houses, aspects — calculated and interpreted to help you understand yourself.'}
           </p>
         </div>
-        <button
-          onClick={onStart}
-          className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium shrink-0 glow-lavender"
-        >
-          <span aria-hidden="true">✦</span>
-          {fr ? 'Lire ma carte natale' : 'Read my natal chart'}
-        </button>
+        {onStart ? (
+          <button
+            onClick={onStart}
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium shrink-0 glow-lavender"
+          >
+            <span aria-hidden="true">✦</span>
+            {fr ? 'Lire ma carte natale' : 'Read my natal chart'}
+          </button>
+        ) : (
+          <Link
+            href="/carte-natale"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium shrink-0 glow-lavender"
+          >
+            <span aria-hidden="true">✦</span>
+            {fr ? 'Lire ma carte natale' : 'Read my natal chart'}
+          </Link>
+        )}
       </div>
 
       {/* Secondary sections */}

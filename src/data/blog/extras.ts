@@ -29,7 +29,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'comprendre-ton-ascendant': {
     hero: 'wheel',
     references: [
-      { fr: 'Calcule ta carte du ciel et ton Ascendant', en: 'Calculate your chart and Ascendant', url: '/' },
+      { fr: 'Calcule ta carte du ciel et ton Ascendant', en: 'Calculate your chart and Ascendant', url: '/carte-natale' },
       { fr: 'Les 12 maisons astrologiques', en: 'The 12 astrological houses', url: '/blog/les-maisons-astrologiques' },
       wiki('Ascendant (astrologie) — Wikipédia', 'Ascendant (astrology) — Wikipedia', 'Ascendant_(astrologie)'),
     ],
@@ -47,7 +47,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'lire-tes-aspects': {
     hero: 'aspects',
     references: [
-      { fr: 'Vois les aspects de ta propre carte', en: 'See the aspects in your own chart', url: '/' },
+      { fr: 'Vois les aspects de ta propre carte', en: 'See the aspects in your own chart', url: '/carte-natale' },
       { fr: 'Les 4 éléments en astrologie', en: 'The 4 elements in astrology', url: '/blog/les-4-elements' },
       wiki('Aspect (astrologie) — Wikipédia', 'Astrological aspect — Wikipedia', 'Aspect_(astrologie)'),
     ],
@@ -56,7 +56,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'les-maisons-astrologiques': {
     hero: 'wheel',
     references: [
-      { fr: 'Découvre tes maisons dans ta carte', en: 'Discover your houses in your chart', url: '/' },
+      { fr: 'Découvre tes maisons dans ta carte', en: 'Discover your houses in your chart', url: '/carte-natale' },
       { fr: 'Comprendre ton Ascendant', en: 'Understanding your Ascendant', url: '/blog/comprendre-ton-ascendant' },
       wiki('Maison astrologique — Wikipédia', 'House (astrology) — Wikipedia', 'Maison_astrologique'),
     ],
@@ -65,7 +65,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'retour-de-saturne': {
     hero: 'saturn',
     references: [
-      { fr: 'Calcule où se trouve ton Saturne natal', en: 'Find your natal Saturn', url: '/' },
+      { fr: 'Calcule où se trouve ton Saturne natal', en: 'Find your natal Saturn', url: '/carte-natale' },
       { fr: 'La révolution solaire, ton année à venir', en: 'Solar return: your year ahead', url: '/blog/revolution-solaire-guide' },
       wiki('Saturne (planète) — Wikipédia', 'Saturn — Wikipedia', 'Saturne_(planète)'),
     ],
@@ -83,7 +83,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'comment-lire-son-theme-natal': {
     hero: 'wheel',
     references: [
-      { fr: 'Génère ton thème natal gratuitement', en: 'Generate your birth chart for free', url: '/' },
+      { fr: 'Génère ton thème natal gratuitement', en: 'Generate your birth chart for free', url: '/carte-natale' },
       { fr: 'Comprendre ton Ascendant', en: 'Understanding your Ascendant', url: '/blog/comprendre-ton-ascendant' },
       { fr: 'Les 4 éléments en astrologie', en: 'The 4 elements in astrology', url: '/blog/les-4-elements' },
     ],
@@ -101,7 +101,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'lune-noire-lilith': {
     hero: 'moon',
     references: [
-      { fr: 'Découvre les points sensibles de ta carte', en: 'Discover the sensitive points in your chart', url: '/' },
+      { fr: 'Découvre les points sensibles de ta carte', en: 'Discover the sensitive points in your chart', url: '/carte-natale' },
       { fr: 'Les nœuds lunaires, ton axe de vie', en: 'The lunar nodes: your life axis', url: '/blog/noeuds-lunaires' },
       wiki('Lune noire (astrologie) — Wikipédia', 'Black Moon Lilith — Wikipedia', 'Lune_noire_(astrologie)'),
     ],
@@ -110,7 +110,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'pluton-en-verseau-2024-2044': {
     hero: 'orbits',
     references: [
-      { fr: 'Vois où le Verseau tombe dans ta carte', en: 'See where Aquarius falls in your chart', url: '/' },
+      { fr: 'Vois où le Verseau tombe dans ta carte', en: 'See where Aquarius falls in your chart', url: '/carte-natale' },
       { fr: 'Calendrier céleste des prochains mois', en: 'Celestial calendar of the coming months', url: '/calendrier' },
       wiki('Pluton (planète naine) — Wikipédia', 'Pluto — Wikipedia', 'Pluton_(planète_naine)'),
     ],
@@ -128,7 +128,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'noeuds-lunaires': {
     hero: 'moon',
     references: [
-      { fr: 'Calcule tes nœuds lunaires', en: 'Calculate your lunar nodes', url: '/' },
+      { fr: 'Calcule tes nœuds lunaires', en: 'Calculate your lunar nodes', url: '/carte-natale' },
       { fr: 'La Lune noire Lilith', en: 'Black Moon Lilith', url: '/blog/lune-noire-lilith' },
       wiki('Nœud lunaire — Wikipédia', 'Lunar node — Wikipedia', 'Nœud_lunaire'),
     ],
@@ -137,7 +137,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'revolution-solaire-guide': {
     hero: 'sun',
     references: [
-      { fr: 'Calcule ta carte du ciel', en: 'Calculate your birth chart', url: '/' },
+      { fr: 'Calcule ta carte du ciel', en: 'Calculate your birth chart', url: '/carte-natale' },
       { fr: 'Le retour de Saturne', en: 'The Saturn return', url: '/blog/retour-de-saturne' },
       { fr: 'Calendrier céleste', en: 'Celestial calendar', url: '/calendrier' },
     ],
@@ -146,7 +146,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
   'astrologie-et-jung': {
     hero: 'constellation',
     references: [
-      { fr: 'Lis ta carte en astrologie psychologique', en: 'Read your chart in psychological astrology', url: '/' },
+      { fr: 'Lis ta carte en astrologie psychologique', en: 'Read your chart in psychological astrology', url: '/carte-natale' },
       { fr: 'Comment lire son thème natal', en: 'How to read your birth chart', url: '/blog/comment-lire-son-theme-natal' },
       wiki('Carl Gustav Jung — Wikipédia', 'Carl Jung — Wikipedia', 'Carl_Gustav_Jung'),
     ],
@@ -157,7 +157,7 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
 // Safe fallback for any slug missing an entry.
 export const DEFAULT_EXTRA: BlogExtra = {
   hero: 'constellation',
-  references: [{ fr: 'Découvre ta carte du ciel', en: 'Discover your birth chart', url: '/' }],
+  references: [{ fr: 'Découvre ta carte du ciel', en: 'Discover your birth chart', url: '/carte-natale' }],
   related: [],
 }
 

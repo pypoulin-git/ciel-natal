@@ -35,9 +35,9 @@ describe('chartLinksFromFormData', () => {
   it('builds open + pdf links from a complete form_data', () => {
     const links = chartLinksFromFormData(full)
     expect(links).not.toBeNull()
-    expect(links!.open).toMatch(/^\/\?c=/)
+    expect(links!.open).toMatch(/^\/carte-natale\?c=/)
     expect(links!.pdf).toBe(links!.open + '#pdf')
-    const c = decodeURIComponent(links!.open.replace('/?c=', ''))
+    const c = decodeURIComponent(links!.open.replace('/carte-natale?c=', ''))
     const payload = JSON.parse(atob(c))
     expect(payload.j).toBe(15)
     expect(payload.la).toBeCloseTo(46.8)
@@ -48,7 +48,7 @@ describe('chartLinksFromFormData', () => {
     const legacy = { jour: 2, mois: 7, annee: 1985, latitude: 45.5, longitude: -73.6 }
     const links = chartLinksFromFormData(legacy)
     expect(links).not.toBeNull()
-    const payload = JSON.parse(atob(decodeURIComponent(links!.open.replace('/?c=', ''))))
+    const payload = JSON.parse(atob(decodeURIComponent(links!.open.replace('/carte-natale?c=', ''))))
     expect(payload.v).toBe('sensible')
     expect(payload.g).toBe('femme')
     expect(payload.h).toBe(12)
@@ -60,7 +60,7 @@ describe('chartLinksFromFormData', () => {
   it('accepts a 0 longitude (Greenwich) — no truthiness trap', () => {
     const links = chartLinksFromFormData({ jour: 1, mois: 1, annee: 2000, latitude: 51.5, longitude: 0 })
     expect(links).not.toBeNull()
-    const payload = JSON.parse(atob(decodeURIComponent(links!.open.replace('/?c=', ''))))
+    const payload = JSON.parse(atob(decodeURIComponent(links!.open.replace('/carte-natale?c=', ''))))
     expect(payload.lo).toBe(0)
   })
 
@@ -74,7 +74,7 @@ describe('chartLinksFromFormData', () => {
   it('coerces stringly-typed numbers from old rows', () => {
     const links = chartLinksFromFormData({ jour: '15', mois: '3', annee: '1990', latitude: '46.8', longitude: '-71.2' })
     expect(links).not.toBeNull()
-    const payload = JSON.parse(atob(decodeURIComponent(links!.open.replace('/?c=', ''))))
+    const payload = JSON.parse(atob(decodeURIComponent(links!.open.replace('/carte-natale?c=', ''))))
     expect(payload.j).toBe(15)
     expect(payload.la).toBeCloseTo(46.8)
   })
