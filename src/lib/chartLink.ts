@@ -68,5 +68,5 @@ export function chartLinksFromFormData(raw: unknown): ChartLinks | null {
   const c = encodeChartPayload(payload);
   if (!c) return null;
   const enc = encodeURIComponent(c);
-  return { open: `/?c=${enc}`, pdf: `/?c=${enc}#pdf` };
+  return { open: `/carte-natale?c=${enc}`, pdf: `/carte-natale?c=${enc}#pdf` };
 }

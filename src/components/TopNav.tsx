@@ -11,7 +11,7 @@ import ThemeToggle from './ThemeToggle'
 type NavLink = { href: string; labelFr: string; labelEn: string }
 
 const NAV_LINKS: NavLink[] = [
-  { href: '/', labelFr: 'Carte natale', labelEn: 'Natal chart' },
+  { href: '/carte-natale', labelFr: 'Carte natale', labelEn: 'Natal chart' },
   { href: '/calendrier', labelFr: 'Calendrier', labelEn: 'Calendar' },
   { href: '/signe', labelFr: 'Signes', labelEn: 'Signs' },
   { href: '/synastrie', labelFr: 'Synastrie', labelEn: 'Synastry' },

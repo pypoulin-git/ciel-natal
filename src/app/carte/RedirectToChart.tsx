@@ -7,7 +7,7 @@ import { useEffect } from 'react'
 // and read the per-chart metadata from the server-rendered page.
 export default function RedirectToChart({ c }: { c: string | null }) {
   useEffect(() => {
-    window.location.replace(c ? `/?c=${encodeURIComponent(c)}` : '/')
+    window.location.replace(c ? `/carte-natale?c=${encodeURIComponent(c)}` : '/carte-natale')
   }, [c])
 
   return (

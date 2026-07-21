@@ -35,6 +35,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: { languages: langs },
     },
     {
+      url: `${BASE_URL}/carte-natale`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+      alternates: { languages: langs },
+    },
+    {
       url: `${BASE_URL}/calendrier`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
