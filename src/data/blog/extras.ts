@@ -152,6 +152,15 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
     ],
     related: ['comment-lire-son-theme-natal', 'lune-noire-lilith', 'retour-de-saturne'],
   },
+  'pluies-etoiles-filantes': {
+    hero: 'constellation',
+    references: [
+      { fr: 'Le calendrier céleste — pics des prochaines pluies', en: 'The celestial calendar — upcoming shower peaks', url: '/calendrier' },
+      { fr: 'Mercure rétrograde : mythe vs réalité', en: 'Mercury retrograde: myth vs reality', url: '/blog/mercure-retrograde' },
+      wiki('Pluie de météores — Wikipédia', 'Meteor shower — Wikipedia', 'Pluie_de_météores'),
+    ],
+    related: ['pluton-en-verseau-2024-2044', 'mercure-retrograde', 'noeuds-lunaires'],
+  },
 }
 
 // Safe fallback for any slug missing an entry.

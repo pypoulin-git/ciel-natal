@@ -6,6 +6,7 @@ import { SIGNS, translateSign } from '@/lib/astro'
 import { geocentricLongitudes, daysSince2000At } from '@/lib/ephemeris'
 import { computeSkyToday } from '@/lib/skyToday'
 import { computeCalendar } from '@/lib/skyCalendar'
+import { METEOR_BY_KEY } from '@/data/meteorShowers'
 import {
   MOON_PHASES,
   MOON_IN_SIGN,
@@ -167,6 +168,13 @@ function buildItems(now: Date, fr: boolean, locale: string): TickItem[] {
         label = fr ? `Le Soleil entre en ${sign}` : `Sun enters ${sign}`
         effect = fr ? `nouvelle saison — ${th}` : `a new season — ${th}`
         break
+      case 'meteor-shower': {
+        const s = e.meteorKey ? METEOR_BY_KEY[e.meteorKey] : undefined
+        glyph = '☄'; color = GOLD
+        label = s ? (fr ? s.fr : s.en) : (fr ? 'Étoiles filantes' : 'Meteor shower')
+        effect = s ? (fr ? `pic ~${s.zhr}/h · ${s.whenFr}` : `peak ~${s.zhr}/h · ${s.whenEn}`) : ''
+        break
+      }
     }
     items.push({ glyph, color, label, effect })
   }

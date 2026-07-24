@@ -6,6 +6,7 @@
 
 import { calculateNatalChart, SIGNS } from './astro'
 import { geocentricChart, EPHEM_PLANETS } from './ephemeris'
+import { METEOR_SHOWERS } from '@/data/meteorShowers'
 
 const DAY_MS = 86400000
 
@@ -26,13 +27,23 @@ function isoOf(d: Date): string {
   ).padStart(2, '0')}`
 }
 
-export type CalEventType = 'new-moon' | 'full-moon' | 'retro-begin' | 'retro-end' | 'sun-ingress'
+export type CalEventType =
+  | 'new-moon'
+  | 'full-moon'
+  | 'retro-begin'
+  | 'retro-end'
+  | 'sun-ingress'
+  | 'meteor-shower'
 
 export interface CalEvent {
   dateISO: string
   type: CalEventType
   planetKey?: string // for retro-*
-  signKey: string // moon sign / planet sign / new Sun sign
+  signKey: string // moon sign / planet sign / new Sun sign ('' for meteor showers)
+  // meteor-shower only: which shower, and how bright the Moon is at the peak
+  // (moonPct 0–100 — a full Moon washes out faint meteors).
+  meteorKey?: string
+  moonPct?: number
 }
 
 export interface CalMonth {
@@ -115,6 +126,26 @@ export function computeCalendar(now: Date, monthsCount = 12): CalMonth[] {
     prevElong = elong
     prevSunSign = sunSign
     for (const name of EPHEM_PLANETS) prevLon[name] = geo[name]
+  }
+
+  // ── Meteor showers ── curated annual peaks projected into the window, each
+  // flagged with the Moon's illumination that year (moonlight is the main
+  // spoiler for faint meteors).
+  for (let y = start.getUTCFullYear(); y <= end.getUTCFullYear(); y++) {
+    for (const s of METEOR_SHOWERS) {
+      const peak = new Date(Date.UTC(y, s.peak.month - 1, s.peak.day, 12, 0, 0))
+      if (peak.getTime() < start.getTime() || peak.getTime() > end.getTime()) continue
+      const { sun, moon } = sunMoon(peak)
+      const gap = norm(moon - sun)
+      const moonPct = Math.round(((1 - Math.cos((gap * Math.PI) / 180)) / 2) * 100)
+      events.push({
+        dateISO: isoOf(peak),
+        type: 'meteor-shower',
+        signKey: '',
+        meteorKey: s.key,
+        moonPct,
+      })
+    }
   }
 
   // Group into months covering [current month, +11].
