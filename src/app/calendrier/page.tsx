@@ -12,6 +12,7 @@ import { translateSign } from '@/lib/astro'
 import { computeCalendar, type CalEvent, type CalMonth } from '@/lib/skyCalendar'
 import { computeSkyToday, type SkyToday } from '@/lib/skyToday'
 import { MONTHLY_MOON, MOON_PHASES, PLANET_LABEL } from '@/data/skyInterpretations'
+import { METEOR_BY_KEY } from '@/data/meteorShowers'
 
 const TYPE_COLOR: Record<CalEvent['type'], string> = {
   'new-moon': 'var(--color-text-muted)',
@@ -19,6 +20,7 @@ const TYPE_COLOR: Record<CalEvent['type'], string> = {
   'retro-begin': 'var(--color-accent-lavender)',
   'retro-end': '#86d9b9',
   'sun-ingress': '#9fc8e8',
+  'meteor-shower': '#e8b06a',
 }
 
 const PLANET_GLYPH: Record<string, string> = {
@@ -110,11 +112,33 @@ export default function CalendrierPage() {
         return fr ? `${planet} redevient direct` : `${planet} turns direct`
       case 'sun-ingress':
         return fr ? `Saison ${SEASON_ART[e.signKey] ?? 'du'} ${sign}` : `${sign} season begins`
+      case 'meteor-shower': {
+        const s = e.meteorKey ? METEOR_BY_KEY[e.meteorKey] : undefined
+        if (!s) return fr ? 'Pluie d’étoiles filantes' : 'Meteor shower'
+        const name = fr ? s.fr : s.en
+        const when = fr ? s.whenFr : s.whenEn
+        // A bright Moon near the peak drowns out faint meteors — flag it.
+        const moonSpoil = (e.moonPct ?? 0) >= 65
+        const moonNote = moonSpoil
+          ? fr ? ' · Lune gênante cette année' : ' · bright Moon this year'
+          : ''
+        return fr
+          ? `${name} — pic (~${s.zhr}/h), ${when}${moonNote}`
+          : `${name} — peak (~${s.zhr}/h), ${when}${moonNote}`
+      }
     }
   }
 
   const EventIcon = ({ e }: { e: CalEvent }) =>
-    e.planetKey ? (
+    e.type === 'meteor-shower' ? (
+      <span
+        aria-hidden="true"
+        className="w-4 text-center text-sm shrink-0"
+        style={{ color: TYPE_COLOR[e.type] }}
+      >
+        ☄
+      </span>
+    ) : e.planetKey ? (
       <span
         aria-hidden="true"
         className="w-4 text-center text-sm shrink-0"
@@ -182,8 +206,8 @@ export default function CalendrierPage() {
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mt-3 max-w-xl mx-auto">
             {fr
-              ? 'Nouvelles et pleines lunes, rétrogrades et passages du Soleil — sur les douze prochains mois.'
-              : "New and full moons, retrogrades and the Sun's ingresses — over the next twelve months."}
+              ? 'Nouvelles et pleines lunes, rétrogrades, passages du Soleil et pluies d’étoiles filantes — sur les douze prochains mois.'
+              : "New and full moons, retrogrades, the Sun's ingresses and meteor showers — over the next twelve months."}
           </p>
         </div>
 
