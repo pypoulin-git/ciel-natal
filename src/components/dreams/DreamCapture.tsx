@@ -40,10 +40,11 @@ export default function DreamCapture({ onSaved }: { onSaved: (dreamId: string) =
   const handleError = (err: unknown) => {
     if (err instanceof DreamApiError) {
       if (err.code === 'PREMIUM_REQUIRED') {
+        // Noter un rêve reste gratuit : seule l'analyse par l'IA est Premium.
         setError(
           label(
-            'Le journal de rêves fait partie de Natalune Premium.',
-            'The dream journal is part of Natalune Premium.',
+            "L'analyse par l'IA fait partie de Natalune Premium — mais tu peux noter ce rêve à la main dès maintenant.",
+            'AI analysis is part of Natalune Premium — but you can note this dream by hand right now.',
           ),
         )
         return
