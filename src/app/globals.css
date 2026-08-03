@@ -25,6 +25,18 @@
   --color-element-earth: #c2a25e;
   --color-element-air: #9ec3f0;
   --color-element-water: #6fa8d4;
+
+  /* Dream journal emotions — the Reverie palette re-tinted onto Natalune's
+     cosmos (its originals were saturated web colours that fought the site).
+     Always paired with an icon in the UI, never colour alone. */
+  --color-emotion-joy: #e0a94e;
+  --color-emotion-anxiety: #d97066;
+  --color-emotion-wonder: #b3a7e0;
+  --color-emotion-sadness: #7fa8d4;
+  --color-emotion-fear: #a678c4;
+  --color-emotion-peace: #7fc2a6;
+  --color-emotion-love: #dba3b8;
+  --color-emotion-anger: #e8804f;
 }
 
 /* Non-color tokens + theme-switchable runtime vars.
@@ -97,6 +109,17 @@
   --color-element-earth: #8a6f32;
   --color-element-air: #4f7fb0;
   --color-element-water: #3c7ba8;
+
+  /* Emotions, darkened so the calendar dots and chips stay legible on the
+     pale sky background. */
+  --color-emotion-joy: #a8761f;
+  --color-emotion-anxiety: #b04236;
+  --color-emotion-wonder: #6a5cae;
+  --color-emotion-sadness: #3c6f9e;
+  --color-emotion-fear: #7a3f96;
+  --color-emotion-peace: #2f7d5f;
+  --color-emotion-love: #b05f7c;
+  --color-emotion-anger: #c0522a;
 
   --starfield-star: 40, 38, 78;          /* dark stars on pale sky */
   --starfield-opacity: 0.55;

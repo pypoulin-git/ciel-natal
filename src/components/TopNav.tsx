@@ -15,6 +15,7 @@ const NAV_LINKS: NavLink[] = [
   { href: '/calendrier', labelFr: 'Calendrier', labelEn: 'Calendar' },
   { href: '/signe', labelFr: 'Signes', labelEn: 'Signs' },
   { href: '/synastrie', labelFr: 'Synastrie', labelEn: 'Synastry' },
+  { href: '/reves', labelFr: 'Rêves', labelEn: 'Dreams' },
   { href: '/blog', labelFr: 'Blog', labelEn: 'Blog' },
 ]
 

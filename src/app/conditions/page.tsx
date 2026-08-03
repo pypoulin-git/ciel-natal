@@ -33,6 +33,11 @@ export default function Conditions() {
             ? "Natalune est un outil gratuit de calcul et d'interprétation de thèmes astraux. Les calculs sont basés sur des algorithmes astronomiques (VSOP87 simplifiée) et les interprétations s'inspirent de l'astrologie psychologique."
             : "Natalune is a free natal chart calculator and interpretation tool. Calculations are based on astronomical algorithms (simplified VSOP87) and interpretations draw from psychological astrology."}
         </p>
+        <p className="mt-3">
+          {fr
+            ? "L'abonnement Premium donne aussi accès à un journal de rêves : tu y consignes tes rêves, et une IA en propose une structuration puis trois lectures — une factuelle inspirée des neurosciences du sommeil, une symbolique inspirée de la psychologie analytique, et une synthèse des deux. Ces lectures relèvent de la même logique de réflexion personnelle que le reste du site."
+            : "Premium also gives access to a dream journal: you record your dreams, and an AI proposes a structured version plus three readings — a factual one drawing on sleep neuroscience, a symbolic one drawing on analytical psychology, and a synthesis of the two. These readings fall under the same personal-reflection framing as the rest of the site."}
+        </p>
       </section>
 
       <section>
@@ -52,8 +57,8 @@ export default function Conditions() {
         </ul>
         <p className="mt-3">
           {fr
-            ? "Les interprétations fournies ne constituent pas un diagnostic, un traitement ni un conseil psychologique, et ne remplacent pas l'accompagnement d'un professionnel de santé. Si vous traversez une période de détresse, consultez un professionnel qualifié ou une ligne d'écoute."
-            : "The interpretations provided are not a diagnosis, treatment or psychological advice, and are no substitute for the support of a health professional. If you are going through a period of distress, please consult a qualified professional or a helpline."}
+            ? "Les interprétations fournies — y compris celles du journal de rêves — ne constituent pas un diagnostic, un traitement ni un conseil psychologique, et ne remplacent pas l'accompagnement d'un professionnel de santé. Un rêve difficile ou récurrent n'est pas un symptôme à interpréter seul : si vous traversez une période de détresse, consultez un professionnel qualifié ou une ligne d'écoute."
+            : "The interpretations provided — including those in the dream journal — are not a diagnosis, treatment or psychological advice, and are no substitute for the support of a health professional. A difficult or recurring dream is not a symptom to interpret alone: if you are going through a period of distress, please consult a qualified professional or a helpline."}
         </p>
         <p className="mt-3">
           {fr

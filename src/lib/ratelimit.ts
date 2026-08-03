@@ -33,6 +33,24 @@ export function getPremiumRateLimit(): Ratelimit | null {
   return _premiumLimit;
 }
 
+// Dream journal: 30 AI generations per 30 days (by userId). This is a burst
+// guard layered on top of the Supabase counters in dreamGuard.ts — Upstash is
+// not provisioned in prod, so those counters, not this, are the enforcement.
+let _dreamLimit: Ratelimit | null = null;
+export function getDreamRateLimit(): Ratelimit | null {
+  if (_dreamLimit) return _dreamLimit;
+  const redis = getRedis();
+  if (!redis) return null;
+
+  _dreamLimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.fixedWindow(30, "30 d"),
+    prefix: "rl:dream",
+    analytics: false,
+  });
+  return _dreamLimit;
+}
+
 // Contact form: 3 messages per hour (by IP). Serverless-safe via Upstash.
 let _contactLimit: Ratelimit | null = null;
 export function getContactRateLimit(): Ratelimit | null {

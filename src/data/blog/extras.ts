@@ -161,6 +161,42 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
     ],
     related: ['pluton-en-verseau-2024-2044', 'mercure-retrograde', 'noeuds-lunaires'],
   },
+  'pourquoi-on-oublie-ses-reves': {
+    hero: 'moon',
+    references: [
+      { fr: 'Ouvre ton journal de rêves', en: 'Open your dream journal', url: '/reves' },
+      { fr: 'Ta Lune natale et tes rêves', en: 'Your natal Moon and your dreams', url: '/blog/lune-natale-influence-reves' },
+      wiki('Sommeil paradoxal — Wikipédia', 'REM sleep — Wikipedia', 'Sommeil_paradoxal'),
+    ],
+    related: ['reves-les-plus-courants', 'jung-freud-deux-lectures-reve', 'lune-natale-influence-reves'],
+  },
+  'reves-les-plus-courants': {
+    hero: 'constellation',
+    references: [
+      { fr: 'Consigne et interprète tes rêves', en: 'Record and interpret your dreams', url: '/reves' },
+      { fr: 'Jung et Freud : deux lectures', en: 'Jung and Freud: two readings', url: '/blog/jung-freud-deux-lectures-reve' },
+      wiki('Rêve — Wikipédia', 'Dream — Wikipedia', 'Rêve'),
+    ],
+    related: ['pourquoi-on-oublie-ses-reves', 'jung-freud-deux-lectures-reve', 'astrologie-et-jung'],
+  },
+  'jung-freud-deux-lectures-reve': {
+    hero: 'orbits',
+    references: [
+      { fr: 'Les trois lectures de chaque rêve', en: 'The three readings of every dream', url: '/reves' },
+      { fr: "Astrologie et Jung : l'inconscient cartographié", en: 'Astrology and Jung: mapping the unconscious', url: '/blog/astrologie-et-jung' },
+      wiki("L'Interprétation des rêves — Wikipédia", 'The Interpretation of Dreams — Wikipedia', "L'Interprétation_des_rêves"),
+    ],
+    related: ['astrologie-et-jung', 'pourquoi-on-oublie-ses-reves', 'reves-les-plus-courants'],
+  },
+  'lune-natale-influence-reves': {
+    hero: 'moon',
+    references: [
+      { fr: 'Calcule ta Lune natale', en: 'Calculate your natal Moon', url: '/carte-natale' },
+      { fr: 'Croise ta carte et tes rêves', en: 'Cross your chart with your dreams', url: '/reves' },
+      wiki('Lune — Wikipédia', 'Moon — Wikipedia', 'Lune'),
+    ],
+    related: ['pourquoi-on-oublie-ses-reves', 'les-maisons-astrologiques', 'les-4-elements'],
+  },
 }
 
 // Safe fallback for any slug missing an entry.
