@@ -85,7 +85,7 @@ export function updateDream(
   id: string,
   payload: Record<string, unknown>,
   getToken: TokenGetter,
-): Promise<{ dream: Pick<Dream, 'id' | 'gauge_value' | 'title'> }> {
+): Promise<{ dream: Dream }> {
   return request(`/api/dreams/${id}`, getToken, { method: 'PATCH', body: JSON.stringify(payload) })
 }
 

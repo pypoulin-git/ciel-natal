@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Journal de rêves — tes rêves lus à la lumière de ta carte natale · Natalune',
+  title: 'Journal de rêves gratuit — interprétation par ta Lune natale · Natalune',
   description:
-    "Consigne tes rêves, laisse l'IA les structurer et les interpréter selon trois lectures — neurosciences, archétypes jungiens, ou l'équilibre des deux — enrichies par ta Lune natale.",
+    "Note tes rêves gratuitement : récit, émotions, calendrier du mois. Avec Premium, l'IA les structure et en donne trois lectures — neurosciences, archétypes jungiens, ou l'équilibre des deux — colorées par ta Lune natale.",
   alternates: { canonical: 'https://natalune.com/reves' },
   openGraph: {
     title: 'Journal de rêves · Natalune',
     description:
-      'Trois lectures du même rêve — factuelle, spirituelle, mixte — colorées par ta Lune natale.',
+      'Noter tes rêves est gratuit. Premium en donne trois lectures, colorées par ta Lune natale.',
     url: 'https://natalune.com/reves',
   },
 }

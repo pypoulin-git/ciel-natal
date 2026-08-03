@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin, requireUser } from '@/lib/dreamGuard'
+import { clampInt, cleanStringArray, getSupabaseAdmin, requireUser } from '@/lib/dreamGuard'
+import { sanitizeEmotions } from '@/lib/dreams'
 
 // A single dream, with whatever has already been generated for it. The detail
 // page calls this ONCE on mount and only asks for generation if these come
@@ -57,8 +58,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   })
 }
 
-// PATCH — update the gauge position or the metadata sliders. Deliberately
-// narrow: raw_text is the record and is never rewritten after the fact.
+// PATCH — edit a dream. Free members keep a hand-written journal, so the text
+// and its metadata have to stay correctable: you remember a detail at noon
+// that you missed at 6am. Only the fields explicitly listed here can change.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -74,6 +76,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.title === 'string') {
       update.title = body.title.trim().slice(0, 120) || null
     }
+    if (typeof body.rawText === 'string') {
+      const rawText = body.rawText.trim().slice(0, 5000)
+      if (!rawText) {
+        return NextResponse.json({ error: 'rawText cannot be emptied' }, { status: 400 })
+      }
+      update.raw_text = rawText
+    }
+    if (typeof body.dreamDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.dreamDate)) {
+      update.dream_date = body.dreamDate
+    }
+    if (body.emotions !== undefined) update.emotions = sanitizeEmotions(body.emotions)
+    if (body.tags !== undefined) update.tags = cleanStringArray(body.tags, 12)
+    if (body.characters !== undefined) update.characters = cleanStringArray(body.characters, 12)
+    if (body.places !== undefined) update.places = cleanStringArray(body.places, 12)
+
+    for (const [key, column, hi] of [
+      ['emotionalIntensity', 'emotional_intensity', 10],
+      ['lucidityLevel', 'lucidity_level', 5],
+      ['sleepQuality', 'sleep_quality', 5],
+    ] as const) {
+      if (body[key] !== undefined) update[column] = clampInt(body[key], 1, hi)
+    }
+
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
@@ -84,7 +109,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .update(update)
       .eq('id', id)
       .eq('user_id', guard.userId) // ownership enforced
-      .select('id, gauge_value, title')
+      .select(SELECT_COLUMNS)
       .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

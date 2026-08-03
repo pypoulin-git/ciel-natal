@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import {
+  clampInt,
+  cleanStringArray,
   getSupabaseAdmin,
-  requirePremium,
   requireUser,
   DREAM_MONTHLY_LIMIT,
   DREAM_IMAGE_MONTHLY_LIMIT,
@@ -10,29 +11,17 @@ import { sanitizeEmotions } from '@/lib/dreams'
 
 // Dream journal CRUD. Same shape as /api/calendar-events: Bearer verified
 // first, admin client for the query, ownership enforced on every operation.
-// Reads are open to any signed-in user (a lapsed Premium keeps their journal);
-// writes are Premium-gated.
+//
+// Recording a dream is FREE — any signed-in member keeps a manual journal, and
+// a lapsed Premium never loses theirs. What Premium buys is the AI on top:
+// structuring, the three readings, the watercolour. Those live in their own
+// routes and are gated there.
 
 export const runtime = 'nodejs'
 
 const MAX_DREAMS = 2000
 const SELECT_COLUMNS =
   'id, title, raw_text, structured_text, dream_date, emotional_intensity, lucidity_level, sleep_quality, tags, emotions, characters, places, gauge_value, created_at, updated_at'
-
-function cleanStringArray(input: unknown, max: number, maxLength = 60): string[] {
-  if (!Array.isArray(input)) return []
-  return input
-    .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.trim().slice(0, maxLength))
-    .filter(Boolean)
-    .slice(0, max)
-}
-
-function clampInt(value: unknown, lo: number, hi: number): number | null {
-  const n = typeof value === 'number' ? value : Number(value)
-  if (!Number.isFinite(n)) return null
-  return Math.min(hi, Math.max(lo, Math.round(n)))
-}
 
 // GET — the caller's dreams. `?month=YYYY-MM` narrows to one month for the
 // calendar view; otherwise the most recent 50 for the dashboard.
@@ -66,11 +55,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ dreams: data })
 }
 
-// POST — record a dream (Premium only)
+// POST — record a dream. Free: any signed-in member, typed by hand.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const guard = await requirePremium(req)
+    const guard = await requireUser(req)
     if (!guard.ok) return guard.response
 
     const rawText = typeof body.rawText === 'string' ? body.rawText.trim().slice(0, 5000) : ''

@@ -16,7 +16,8 @@
 CREATE TABLE IF NOT EXISTS public.dreams (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id             UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  -- The untouched account, as typed by the dreamer. Never overwritten.
+  -- The account as typed by the dreamer. Editable by them (a free journal has
+  -- to be correctable), never rewritten by the model — that goes below.
   raw_text            TEXT NOT NULL CHECK (char_length(raw_text) BETWEEN 1 AND 5000),
   title               TEXT CHECK (title IS NULL OR char_length(title) <= 120),
   -- Gemini's cleaned-up narration. NULL until structuring has run.

@@ -98,6 +98,7 @@ export default function HomePortal() {
                 <li>✦ {fr ? "Portrait Soleil · Lune · Ascendant" : "Sun · Moon · Ascendant portrait"}</li>
                 <li>✦ {fr ? "Maisons, aspects et éléments" : "Houses, aspects and elements"}</li>
                 <li>✦ {fr ? "Le ciel du jour, le calendrier et les signes" : "The daily sky, the calendar and the signs"}</li>
+                <li>✦ {fr ? "Ton journal de rêves, noté à la main" : "Your dream journal, written by hand"}</li>
               </ul>
             </div>
             <div
@@ -112,6 +113,7 @@ export default function HomePortal() {
                 <li>✦ {fr ? "Chat avec un astrologue IA bienveillant" : "Chat with a caring AI astrologer"}</li>
                 <li>✦ {fr ? "Synastrie — l'alchimie de deux âmes" : "Synastry — the alchemy of two souls"}</li>
                 <li>✦ {fr ? "Tes anniversaires et dates perso dans le calendrier céleste" : "Your birthdays and personal dates in the celestial calendar"}</li>
+                <li>✦ {fr ? "Tes rêves interprétés par l'IA, colorés par ta Lune natale" : "Your dreams interpreted by AI, coloured by your natal Moon"}</li>
                 <li>✦ {fr ? "Narration audio de ta lecture" : "Audio narration of your reading"}</li>
                 <li>✦ {fr ? "Sauvegarde de tes cartes + PDF par courriel" : "Save your charts + PDF by email"}</li>
               </ul>
@@ -157,6 +159,10 @@ export default function HomePortal() {
               {
                 fr: { q: "Comment passer à Premium et puis-je annuler ?", a: "9,99 $ CAD une seule fois, paiement sécurisé via Stripe. C'est un achat unique, pas un abonnement — il n'y a donc rien à annuler. Et si tu changes d'avis dans les 14 jours, on te rembourse simplement." },
                 en: { q: "How do I go Premium and can I cancel?", a: "$9.99 CAD once, secure payment through Stripe. It's a one-time purchase, not a subscription — so there's nothing to cancel. If you change your mind within 14 days, we'll refund you simply." },
+              },
+              {
+                fr: { q: "Le journal de rêves, c'est gratuit ?", a: "Noter tes rêves l'est, oui — il suffit d'un compte. Tu écris ton récit, tu choisis les émotions qui restent au réveil, et le calendrier du mois se colore nuit après nuit. Le Premium ajoute l'IA par-dessus : elle met ton récit au clair et en donne trois lectures, une factuelle appuyée sur les neurosciences du sommeil, une symbolique inspirée de Jung, et la synthèse des deux. C'est là que ta Lune natale entre en jeu — elle colore la lecture symbolique, ce qu'aucun autre journal de rêves ne peut faire." },
+                en: { q: "Is the dream journal free?", a: "Recording your dreams is, yes — you just need an account. You write your account, pick the emotions that linger on waking, and the month calendar colours in night after night. Premium adds the AI on top: it tidies your account and gives three readings of it — a factual one grounded in sleep neuroscience, a symbolic one inspired by Jung, and the synthesis of both. That's where your natal Moon comes in — it colours the symbolic reading, which no other dream journal can do." },
               },
             ].map((item, i) => (
               <details key={i} className="glass p-4 group">

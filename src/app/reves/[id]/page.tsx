@@ -10,6 +10,7 @@ import Starfield from '@/components/Starfield'
 import SiteFooter from '@/components/SiteFooter'
 import Skeleton from '@/components/ui/Skeleton'
 import DreamGauge from '@/components/dreams/DreamGauge'
+import DreamManualForm from '@/components/dreams/DreamManualForm'
 import EmotionChip from '@/components/dreams/EmotionChip'
 import {
   DreamApiError,
@@ -74,6 +75,7 @@ export default function DreamDetailPage() {
   const [imaging, setImaging] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [editing, setEditing] = useState(false)
 
   // Generation is attempted at most once per mount. Without this guard the
   // effect could re-fire on a re-render and pay for the same dream twice —
@@ -221,6 +223,19 @@ export default function DreamDetailPage() {
           {label('← Journal', '← Journal')}
         </Link>
 
+        {editing && (
+          <div className="mb-6">
+            <DreamManualForm
+              initial={dream}
+              onSaved={(updated) => {
+                setDetail((prev) => (prev ? { ...prev, dream: updated } : prev))
+                setEditing(false)
+              }}
+              onCancel={() => setEditing(false)}
+            />
+          </div>
+        )}
+
         {/* Imagery */}
         {image?.url ? (
           <div className="relative mb-6 aspect-[3/4] w-full overflow-hidden rounded-2xl">
@@ -284,13 +299,31 @@ export default function DreamDetailPage() {
           <MetaChip label={label('Sommeil', 'Sleep')} value={dream.sleep_quality} max={5} />
         </div>
 
-        {/* Interpretation */}
+        {/* Interpretation — Premium. Free members see what it would give them. */}
         <section className="glass mb-6 rounded-2xl p-5">
           <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
             {label('Interprétation', 'Interpretation')}
           </h2>
 
-          {interpreting ? (
+          {!isPremium ? (
+            <div>
+              <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                {label(
+                  'Ton rêve est bien consigné — ça, c’est gratuit et ça le restera. Le Premium ajoute trois lectures du même rêve : une factuelle appuyée sur les neurosciences du sommeil, une symbolique nourrie des archétypes jungiens, et la synthèse des deux. Ta Lune natale colore la symbolique.',
+                  'Your dream is recorded — that part is free and stays free. Premium adds three readings of the same dream: a factual one grounded in sleep neuroscience, a symbolic one drawing on Jungian archetypes, and the synthesis of both. Your natal Moon colours the symbolic one.',
+                )}
+              </p>
+              <Link
+                href="/premium"
+                className="btn-primary inline-block rounded-xl px-5 py-2.5 text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, var(--color-accent-gold), #b8863f)',
+                }}
+              >
+                {label('Débloquer Premium — 9,99 $ ✦', 'Unlock Premium — $9.99 ✦')}
+              </Link>
+            </div>
+          ) : interpreting ? (
             <Skeleton lines={4} />
           ) : interpretation ? (
             <>
@@ -355,13 +388,24 @@ export default function DreamDetailPage() {
           )}
         </p>
 
-        <button
-          type="button"
-          onClick={remove}
-          className="btn-ghost rounded-xl px-4 py-2 text-xs text-[var(--color-accent-rose)]"
-        >
-          {label('Supprimer ce rêve', 'Delete this dream')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {!editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="btn-ghost rounded-xl px-4 py-2 text-xs"
+            >
+              {label('Corriger ce rêve', 'Correct this dream')}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={remove}
+            className="btn-ghost rounded-xl px-4 py-2 text-xs text-[var(--color-accent-rose)]"
+          >
+            {label('Supprimer ce rêve', 'Delete this dream')}
+          </button>
+        </div>
       </main>
       <SiteFooter />
     </>

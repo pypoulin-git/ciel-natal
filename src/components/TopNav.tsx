@@ -188,6 +188,9 @@ export default function TopNav() {
                   <MenuLink href="/mon-compte/lectures" icon="file">
                     {label('Mes cartes natales', 'My natal charts')}
                   </MenuLink>
+                  <MenuLink href="/reves" icon="moon">
+                    {label('Mon journal de rêves', 'My dream journal')}
+                  </MenuLink>
                   <MenuLink href="/mon-compte/preferences" icon="sliders" premiumOnly={!isPremium}>
                     {label("Préférences d'interprétation", 'Reading preferences')}
                   </MenuLink>
@@ -301,7 +304,7 @@ function MenuLink({
   premiumOnly,
 }: {
   href: string
-  icon: 'user' | 'file' | 'sliders' | 'cog'
+  icon: 'user' | 'file' | 'sliders' | 'cog' | 'moon'
   children: React.ReactNode
   premiumOnly?: boolean
 }) {
@@ -320,7 +323,7 @@ function MenuLink({
   )
 }
 
-function Icon({ name }: { name: 'user' | 'file' | 'sliders' | 'cog' }) {
+function Icon({ name }: { name: 'user' | 'file' | 'sliders' | 'cog' | 'moon' }) {
   const base = {
     width: 14,
     height: 14,
@@ -342,6 +345,12 @@ function Icon({ name }: { name: 'user' | 'file' | 'sliders' | 'cog' }) {
         <svg {...base}>
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
           <polyline points="14 2 14 8 20 8" />
+        </svg>
+      )
+    case 'moon':
+      return (
+        <svg {...base}>
+          <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
         </svg>
       )
     case 'sliders':

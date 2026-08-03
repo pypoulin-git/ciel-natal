@@ -175,6 +175,25 @@ export function quotaExceededResponse(result: QuotaResult, locale: 'fr' | 'en'):
   )
 }
 
+// ── Input sanitizers, shared by the CRUD routes ──
+
+/** Trim, cap length, drop empties, cap count. Tolerates a non-array. */
+export function cleanStringArray(input: unknown, max: number, maxLength = 60): string[] {
+  if (!Array.isArray(input)) return []
+  return input
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim().slice(0, maxLength))
+    .filter(Boolean)
+    .slice(0, max)
+}
+
+/** Coerce to an integer inside [lo, hi], or null when it isn't a number. */
+export function clampInt(value: unknown, lo: number, hi: number): number | null {
+  const n = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(n)) return null
+  return Math.min(hi, Math.max(lo, Math.round(n)))
+}
+
 /** Confirm this dream belongs to this user before doing anything with it. */
 export async function loadOwnedDream(dreamId: string, userId: string) {
   const supabase = getSupabaseAdmin()

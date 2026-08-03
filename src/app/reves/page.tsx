@@ -6,10 +6,10 @@ import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
 import Starfield from '@/components/Starfield'
 import SiteFooter from '@/components/SiteFooter'
-import PremiumGate from '@/components/PremiumGate'
 import Skeleton from '@/components/ui/Skeleton'
 import DreamCalendar from '@/components/dreams/DreamCalendar'
 import DreamCapture from '@/components/dreams/DreamCapture'
+import DreamManualForm from '@/components/dreams/DreamManualForm'
 import DreamCard from '@/components/dreams/DreamCard'
 import EmotionChip from '@/components/dreams/EmotionChip'
 import { listDreams } from '@/lib/dreamClient'
@@ -35,8 +35,9 @@ export default function RevesPage() {
 
   const monthKey = `${year}-${String(month).padStart(2, '0')}`
 
+  // The journal itself is free — this runs for every signed-in member.
   const load = useCallback(async () => {
-    if (!user || !isPremium) {
+    if (!user) {
       setDreamsLoading(false)
       return
     }
@@ -53,7 +54,7 @@ export default function RevesPage() {
     } finally {
       setDreamsLoading(false)
     }
-  }, [user, isPremium, getAccessToken, monthKey])
+  }, [user, getAccessToken, monthKey])
 
   useEffect(() => {
     load()
@@ -73,8 +74,8 @@ export default function RevesPage() {
           </h1>
           <p className="mx-auto max-w-xl text-sm text-[var(--color-text-secondary)]">
             {label(
-              'Consigne ce dont tu te souviens au réveil. On le met au clair, puis on te le rend en trois lectures — et ta carte natale colore la plus symbolique des trois.',
-              'Write down whatever you remember on waking. We tidy it up, then hand it back as three readings — and your natal chart colours the most symbolic of the three.',
+              'Consigner tes rêves est gratuit. Avec Premium, ils sont mis au clair puis rendus en trois lectures — et ta carte natale colore la plus symbolique des trois.',
+              'Recording your dreams is free. With Premium they get tidied up and handed back as three readings — and your natal chart colours the most symbolic of the three.',
             )}
           </p>
         </header>
@@ -83,13 +84,16 @@ export default function RevesPage() {
           <Skeleton lines={4} />
         ) : !user ? (
           <SignedOutTeaser locale={locale} />
-        ) : !isPremium ? (
-          <PremiumGate>
-            <SampleDream locale={locale} />
-          </PremiumGate>
         ) : (
           <div className="space-y-8">
-            <DreamCapture onSaved={() => load()} />
+            {isPremium ? (
+              <DreamCapture onSaved={() => load()} />
+            ) : (
+              <>
+                <DreamManualForm onSaved={() => load()} />
+                <PremiumUpsell locale={locale} />
+              </>
+            )}
 
             <section>
               <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
@@ -155,96 +159,161 @@ export default function RevesPage() {
   )
 }
 
+/** Shown to a free member under their form: what the AI would add. */
+function PremiumUpsell({ locale }: { locale: string }) {
+  const fr = locale !== 'en'
+  const label = (frText: string, enText: string) => (fr ? frText : enText)
+
+  const perks = fr
+    ? [
+        [
+          '✍️',
+          "L'IA met ton récit au clair — titre, thèmes, émotions, personnages et lieux, extraits tout seuls.",
+        ],
+        [
+          '🔬',
+          'Trois lectures du même rêve, et un curseur pour doser entre neurosciences et archétypes.',
+        ],
+        ['🌙', 'Ta Lune natale colore la lecture symbolique. Personne d’autre ne peut faire ça.'],
+        ['🎨', 'Une aquarelle onirique par rêve.'],
+      ]
+    : [
+        [
+          '✍️',
+          'The AI tidies your account — title, themes, emotions, characters and places, pulled out on their own.',
+        ],
+        [
+          '🔬',
+          'Three readings of the same dream, and a slider to set the dose between neuroscience and archetypes.',
+        ],
+        ['🌙', 'Your natal Moon colours the symbolic reading. Nobody else can do that.'],
+        ['🎨', 'One dreamlike watercolour per dream.'],
+      ]
+
+  return (
+    <div
+      className="glass rounded-2xl p-5 sm:p-6"
+      style={{
+        borderColor: 'rgba(224,169,78,0.3)',
+        background:
+          'linear-gradient(135deg, color-mix(in srgb, var(--color-accent-gold) 8%, transparent), transparent)',
+      }}
+    >
+      <p className="mb-2 text-xs tracking-widest text-[var(--color-accent-gold)]/85 uppercase">
+        ✦ {label('Avec Premium', 'With Premium')}
+      </p>
+      <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
+        {label('Ce que l’IA ajoute à ton journal', 'What the AI adds to your journal')}
+      </h2>
+      <ul className="mb-4 space-y-2">
+        {perks.map(([icon, text]) => (
+          <li key={text} className="flex gap-2.5 text-sm text-[var(--color-text-secondary)]">
+            <span aria-hidden="true" className="shrink-0">
+              {icon}
+            </span>
+            <span className="leading-relaxed">{text}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mb-4 text-xs text-[var(--color-text-muted)]">
+        {label(
+          'Ton registre reste gratuit, quoi qu’il arrive. Le Premium est un paiement unique de 9,99 $ qui débloque aussi tout le reste du site.',
+          'Your registry stays free, whatever happens. Premium is a one-time 9.99 CAD that also unlocks everything else on the site.',
+        )}
+      </p>
+      <Link
+        href="/premium"
+        className="btn-primary inline-block rounded-xl px-6 py-2.5 text-sm"
+        style={{ background: 'linear-gradient(135deg, var(--color-accent-gold), #b8863f)' }}
+      >
+        {label('Débloquer Premium — 9,99 $ ✦', 'Unlock Premium — $9.99 ✦')}
+      </Link>
+    </div>
+  )
+}
+
 /** What a visitor sees before signing in — the pitch, not a login wall. */
 function SignedOutTeaser({ locale }: { locale: string }) {
   const fr = locale !== 'en'
   const label = (frText: string, enText: string) => (fr ? frText : enText)
 
-  const features = fr
+  const free = fr
     ? [
-        [
-          '✍️',
-          'Capture au réveil',
-          "Tu écris en vrac. L'IA en tire un titre, un récit clair, les thèmes, les émotions, les personnages et les lieux.",
-        ],
-        [
-          '🔬',
-          'Trois lectures, un curseur',
-          'Neurosciences du sommeil, archétypes jungiens, ou le mélange des deux. Tu doses.',
-        ],
-        [
-          '🌙',
-          'Ta Lune natale, dedans',
-          "C'est ce que personne d'autre ne peut faire : Natalune connaît déjà ta carte, et elle colore la lecture symbolique.",
-        ],
-        [
-          '🎨',
-          'Une aquarelle par rêve',
-          'Palette de nuit, contours flous. Ton journal devient une galerie.',
-        ],
-        [
-          '📅',
-          'Le calendrier des émotions',
-          'Une pastille colorée par nuit. Les motifs apparaissent tout seuls.',
-        ],
+        'Note tes rêves à la main, autant que tu veux',
+        'Choisis tes émotions parmi huit, ajoute tes propres thèmes',
+        'Le calendrier du mois avec une pastille colorée par nuit',
+        'Relis, corrige et supprime quand tu veux',
       ]
     : [
-        [
-          '✍️',
-          'Capture on waking',
-          'You write it messy. The AI pulls out a title, a clear account, themes, emotions, characters and places.',
-        ],
-        [
-          '🔬',
-          'Three readings, one slider',
-          'Sleep neuroscience, Jungian archetypes, or the blend. You set the dose.',
-        ],
-        [
-          '🌙',
-          'Your natal Moon, inside',
-          'This is what nobody else can do: Natalune already knows your chart, and it colours the symbolic reading.',
-        ],
-        [
-          '🎨',
-          'A watercolour per dream',
-          'Night palette, soft edges. Your journal becomes a gallery.',
-        ],
-        [
-          '📅',
-          'The emotion calendar',
-          'One coloured dot per night. The patterns surface on their own.',
-        ],
+        'Write your dreams by hand, as many as you like',
+        'Pick your emotions from eight, add your own themes',
+        'The month calendar with one coloured dot per night',
+        'Reread, correct and delete whenever you want',
+      ]
+
+  const premium = fr
+    ? [
+        "L'IA structure ton récit : titre, thèmes, émotions, personnages, lieux",
+        'Trois lectures du même rêve — factuelle, spirituelle, mixte — avec un curseur',
+        'Ta Lune natale, ton Soleil et ton Ascendant colorent la lecture symbolique',
+        'Une aquarelle onirique générée pour chaque rêve',
+      ]
+    : [
+        'The AI structures your account: title, themes, emotions, characters, places',
+        'Three readings of the same dream — factual, spiritual, blended — with a slider',
+        'Your natal Moon, Sun and Ascendant colour the symbolic reading',
+        'A dreamlike watercolour generated for each dream',
       ]
 
   return (
     <div className="space-y-6">
       <SampleDream locale={locale} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {features.map(([icon, title, desc]) => (
-          <div key={title} className="glass rounded-2xl p-4">
-            <div className="mb-1.5 text-xl opacity-80">{icon}</div>
-            <h3 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">{title}</h3>
-            <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">{desc}</p>
-          </div>
-        ))}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="glass rounded-2xl p-5">
+          <p className="mb-3 text-xs tracking-widest text-[var(--color-accent-lavender)]/70 uppercase">
+            {label('Gratuit · avec un compte', 'Free · with an account')}
+          </p>
+          <ul className="space-y-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+            {free.map((item) => (
+              <li key={item}>✦ {item}</li>
+            ))}
+          </ul>
+        </div>
+        <div
+          className="glass rounded-2xl p-5"
+          style={{
+            borderColor: 'rgba(224,169,78,0.32)',
+            background:
+              'linear-gradient(135deg, color-mix(in srgb, var(--color-accent-gold) 8%, transparent), transparent)',
+          }}
+        >
+          <p className="mb-3 text-xs tracking-widest text-[var(--color-accent-gold)]/85 uppercase">
+            {label('✦ Passe Premium · 9,99 $ une fois', '✦ Premium pass · $9.99 one-time')}
+          </p>
+          <ul className="space-y-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+            {premium.map((item) => (
+              <li key={item}>✦ {item}</li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <div className="glass glow-rose rounded-2xl p-6 text-center">
         <p className="mb-1 text-sm text-[var(--color-text-primary)]">
           {label(
-            'Le journal de rêves fait partie de Natalune Premium.',
-            'The dream journal is part of Natalune Premium.',
+            'Crée ton compte : le registre de rêves est gratuit.',
+            'Create your account: the dream registry is free.',
           )}
         </p>
         <p className="mb-4 text-xs text-[var(--color-text-secondary)]">
           {label(
-            'Paiement unique de 9,99 $ — accès à vie, avec tout le reste du Premium.',
-            'One-time 9.99 CAD — lifetime access, together with everything else in Premium.',
+            'Tu passeras Premium quand tu voudras que l’IA les interprète.',
+            'Go Premium whenever you want the AI to interpret them.',
           )}
         </p>
         <Link
-          href="/inscription?intent=premium"
+          href="/inscription"
           className="btn-primary inline-block rounded-xl px-6 py-2.5 text-sm"
         >
           {label('Créer mon compte ✦', 'Create my account ✦')}
@@ -261,7 +330,7 @@ function SampleDream({ locale }: { locale: string }) {
     return (
       <div className="glass rounded-2xl p-5 sm:p-6">
         <div className="mb-2 text-xs tracking-wide text-[var(--color-text-muted)] uppercase">
-          Example
+          Example of a Premium reading
         </div>
         <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
           The tide that never arrives
@@ -289,7 +358,7 @@ function SampleDream({ locale }: { locale: string }) {
   return (
     <div className="glass rounded-2xl p-5 sm:p-6">
       <div className="mb-2 text-xs tracking-wide text-[var(--color-text-muted)] uppercase">
-        Exemple
+        Exemple d&apos;une lecture Premium
       </div>
       <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
         La marée qui n&apos;arrive jamais
