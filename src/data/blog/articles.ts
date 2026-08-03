@@ -390,4 +390,104 @@ export const articles: BlogArticle[] = [
     date: "2026-07-28",
     readingTime: "6 min",
   },
+  {
+    slug: "pourquoi-on-oublie-ses-reves",
+    titleFr: "Pourquoi tu oublies presque tous tes rêves",
+    titleEn: "Why you forget almost all your dreams",
+    excerptFr:
+      "Tu rêves chaque nuit, plusieurs fois. Au réveil, il ne reste presque rien — et ce n'est pas un défaut de mémoire. C'est de la chimie, et elle se contourne.",
+    excerptEn:
+      "You dream every night, several times over. On waking, almost nothing remains — and that is not a memory failure. It is chemistry, and it can be worked around.",
+    contentFr: [
+      "Tu rêves entre quatre et six fois par nuit, à chaque cycle de sommeil paradoxal. Pourtant, la plupart des matins, tu te lèves les mains vides. Ce n'est pas que tes rêves étaient insignifiants : c'est que ton cerveau, pendant qu'il rêvait, n'était pas équipé pour les archiver.",
+      "La raison tient largement à une molécule, la noradrénaline. Elle joue un rôle central dans l'encodage des souvenirs, et pendant le sommeil paradoxal, son niveau tombe pratiquement à zéro. Ton cerveau produit alors des images d'une richesse folle dans un état chimique qui ne sait pas les inscrire. Ce n'est pas un défaut de conception : cette mise en veille fait partie du travail nocturne, celui de trier, consolider et désamorcer la charge émotionnelle de la journée écoulée.",
+      "S'y ajoute une fenêtre très courte. Les quelques minutes qui suivent le réveil sont le seul moment où le rêve est encore accessible. Passé ce délai, il ne s'efface pas vraiment — il devient simplement introuvable, faute d'avoir jamais été rangé quelque part. C'est pour ça qu'un rêve « revient » parfois en milieu de journée, déclenché par une odeur ou une phrase : il était là, sans adresse.",
+      "Quatre gestes changent radicalement la donne. Réveille-toi sans alarme brutale quand tu le peux — un réveil arraché balaie la fenêtre. Reste immobile trente secondes les yeux fermés avant de bouger : le rêve tient souvent à la position du corps qui le rêvait. Écris immédiatement, même en désordre, même trois mots. Et note d'abord les émotions plutôt que l'intrigue : elles sont plus stables et servent de fil pour ramener le reste.",
+      "L'effet le plus intéressant apparaît après une ou deux semaines de pratique. Tenir un journal ne fait pas que conserver les rêves : il augmente leur rappel. En donnant à ton cerveau une raison d'y prêter attention, tu déplaces le rêve du statut de bruit nocturne à celui d'information à retenir. Les gens qui écrivent leurs rêves n'en font pas davantage — ils s'en souviennent, et c'est là que le matériau devient exploitable.",
+    ],
+    contentEn: [
+      "You dream between four and six times a night, once per REM cycle. Yet most mornings you get up empty-handed. It is not that your dreams were insignificant: it is that your brain, while dreaming, was not equipped to file them.",
+      "The reason largely comes down to one molecule, norepinephrine. It plays a central role in encoding memories, and during REM sleep its level drops to virtually zero. Your brain produces wildly rich imagery in a chemical state that cannot inscribe it. This is not a design flaw: that shutdown is part of the night's work — sorting, consolidating and defusing the emotional charge of the day just past.",
+      "On top of that comes a very short window. The few minutes after waking are the only moment when the dream is still reachable. After that it does not really erase — it simply becomes unfindable, having never been filed anywhere. That is why a dream sometimes 'comes back' mid-afternoon, triggered by a smell or a sentence: it was there, without an address.",
+      "Four habits change everything. Wake without a jarring alarm when you can — a wrenched awakening sweeps the window away. Stay still for thirty seconds with your eyes closed before moving: a dream often clings to the posture of the body that dreamt it. Write immediately, even messily, even three words. And note the emotions before the plot: they are more stable, and they serve as a thread to pull the rest back.",
+      "The most interesting effect shows up after a week or two of practice. Keeping a journal does not merely preserve dreams: it increases recall. By giving your brain a reason to pay attention, you move dreaming from the status of nocturnal noise to that of information worth keeping. People who write their dreams down do not dream more — they remember, and that is where the material becomes usable.",
+    ],
+    date: "2026-08-03",
+    readingTime: "5 min",
+  },
+  {
+    slug: "reves-les-plus-courants",
+    titleFr: "Les cinq rêves que presque tout le monde fait",
+    titleEn: "The five dreams almost everyone has",
+    excerptFr:
+      "Tomber, être poursuivi, perdre ses dents, voler, se retrouver nu en public. Cinq scénarios qui traversent les cultures — et ce qu'ils disent vraiment.",
+    excerptEn:
+      "Falling, being chased, losing teeth, flying, being naked in public. Five scenarios that cross cultures — and what they actually say.",
+    contentFr: [
+      "Certains rêves reviennent chez presque tout le monde, sur tous les continents et à toutes les époques. Cette universalité est précisément ce qui doit rendre prudent : un scénario partagé par des milliards de personnes ne peut pas avoir une signification unique. Ce qu'il a, en revanche, c'est un terrain commun — une situation type que chacun remplit avec sa propre matière.",
+      "Tomber est souvent le premier de la liste, et le plus bref. Il survient volontiers à l'endormissement, accompagné d'une secousse musculaire. Sur le plan psychologique, la chute accompagne fréquemment les périodes où quelque chose se dérobe : un statut, une relation, un cadre. Le rêve ne prédit pas la chute — il donne une image au fait de ne plus sentir le sol.",
+      "Être poursuivi est le plus chargé émotionnellement. La question utile n'est presque jamais « qui me poursuit ? » mais « qu'est-ce que je fuis ? ». Dans une lecture jungienne, le poursuivant représente souvent une part de soi tenue à distance — une colère, un désir, une ambition qu'on n'a pas voulu regarder. Perdre ses dents, lui, se rattache d'ordinaire à l'image de soi et à la parole : les périodes où l'on se sent diminué, ou incapable de dire ce qu'il faudrait dire.",
+      "Voler et se retrouver nu forment un couple intéressant, parce qu'ils sont l'envers l'un de l'autre. Le vol accompagne les phases d'expansion, de libération, parfois de fuite euphorique. La nudité en public met en scène l'exposition : être vu sans protection, dans un contexte où l'on tient à son image. Les deux tournent autour de la même question — jusqu'où puis-je me montrer.",
+      "Le point important est celui-ci : ces cinq scénarios ne sont pas des symboles à décoder dans un dictionnaire. Ce sont des formes vides que ta vie remplit. Le même rêve de chute ne dit pas la même chose chez quelqu'un qui vient de quitter un emploi et chez quelqu'un qui vient d'avoir un enfant. C'est pourquoi le contexte compte plus que le catalogue — et pourquoi noter ce qui s'est passé la veille vaut souvent mieux que consulter une liste de significations.",
+    ],
+    contentEn: [
+      "Some dreams recur in almost everyone, across every continent and every era. That universality is precisely what should make us careful: a scenario shared by billions of people cannot carry a single meaning. What it does carry is common ground — a template situation that each person fills with their own material.",
+      "Falling is often first on the list, and the briefest. It tends to strike as you drop off, accompanied by a muscular jolt. Psychologically, falling frequently accompanies periods when something is giving way: a status, a relationship, a structure. The dream does not predict the fall — it gives an image to no longer feeling the ground.",
+      "Being chased is the most emotionally charged. The useful question is almost never 'who is chasing me?' but 'what am I running from?'. In a Jungian reading, the pursuer often represents a part of oneself held at a distance — an anger, a desire, an ambition one did not want to look at. Losing teeth usually attaches to self-image and to speech: the periods when you feel diminished, or unable to say what needs saying.",
+      "Flying and being naked make an interesting pair, because they are each other's reverse. Flight accompanies phases of expansion, release, sometimes euphoric escape. Public nakedness stages exposure: being seen unprotected, in a setting where your image matters to you. Both circle the same question — how far can I let myself be seen.",
+      "The important point is this: these five scenarios are not symbols to look up in a dictionary. They are empty forms that your life fills. The same falling dream does not say the same thing for someone who has just left a job and someone who has just had a child. This is why context matters more than the catalogue — and why noting what happened the day before is usually worth more than consulting a list of meanings.",
+    ],
+    date: "2026-08-03",
+    readingTime: "5 min",
+  },
+  {
+    slug: "jung-freud-deux-lectures-reve",
+    titleFr: "Jung et Freud : deux lectures d'un même rêve",
+    titleEn: "Jung and Freud: two readings of one dream",
+    excerptFr:
+      "Le même rêve, passé par deux grilles opposées, ne raconte pas la même histoire. Comprendre cet écart, c'est comprendre pourquoi on t'en propose plusieurs.",
+    excerptEn:
+      "The same dream, run through two opposing frameworks, does not tell the same story. Understanding that gap explains why we offer you more than one.",
+    contentFr: [
+      "Freud et Jung ont travaillé ensemble avant de se séparer, et leur rupture porte en grande partie sur les rêves. Pour Freud, le rêve est un compromis : un désir refoulé qui cherche à s'exprimer, déguisé par la censure. Interpréter, c'est donc remonter du contenu manifeste — ce que tu as vu — au contenu latent, ce que le rêve cachait. La lecture est archéologique et tournée vers le passé.",
+      "Pour Jung, le rêve ne déguise rien. Il dit exactement ce qu'il a à dire, dans le seul langage dont il dispose : l'image. Le rêve n'est pas un texte crypté mais une compensation — il montre à la conscience ce qu'elle néglige, pour rétablir un équilibre. La lecture devient prospective : non plus « d'où vient ce symptôme ? » mais « vers quoi cette psyché essaie-t-elle d'aller ? ».",
+      "Prends un rêve d'escalier sans fin. La lecture freudienne cherchera derrière l'escalier un désir ancien, souvent infantile, et lira la répétition comme le signe d'un conflit non résolu. La lecture jungienne verra une image de l'effort et de la progression, et demandera ce que ta vie éveillée refuse de reconnaître comme un travail en cours. Ni l'une ni l'autre n'est fausse. Elles n'interrogent simplement pas la même chose.",
+      "À côté de ces deux traditions, une troisième lecture s'est imposée depuis les années soixante : celle des neurosciences. Le rêve y apparaît comme un sous-produit du travail de consolidation mémorielle et de régulation émotionnelle. Rien de symbolique : le cerveau rejoue, trie, atténue. Cette approche explique remarquablement bien le comment, et refuse par principe de se prononcer sur le pourquoi.",
+      "C'est précisément pour ça que le journal de rêves de Natalune ne tranche pas. Chaque rêve reçoit trois lectures — une factuelle, adossée aux neurosciences du sommeil, une symbolique, nourrie des archétypes jungiens, et une troisième qui tient les deux ensemble. Le curseur te laisse choisir le dosage, parce que la bonne grille dépend de ce que tu es venu chercher ce matin-là, pas d'une doctrine.",
+    ],
+    contentEn: [
+      "Freud and Jung worked together before they parted, and their break turns largely on dreams. For Freud, a dream is a compromise: a repressed wish seeking expression, disguised by censorship. Interpreting therefore means working back from the manifest content — what you saw — to the latent content, what the dream was hiding. The reading is archaeological, turned toward the past.",
+      "For Jung, the dream disguises nothing. It says exactly what it has to say, in the only language available to it: image. The dream is not an encrypted text but a compensation — it shows consciousness what it is neglecting, to restore a balance. The reading becomes prospective: no longer 'where does this symptom come from?' but 'what is this psyche trying to move toward?'.",
+      "Take a dream of an endless staircase. The Freudian reading will look behind the staircase for an old, often infantile wish, and read the repetition as the mark of an unresolved conflict. The Jungian reading will see an image of effort and progression, and ask what your waking life refuses to acknowledge as work in progress. Neither is wrong. They simply are not asking the same question.",
+      "Alongside these two traditions, a third reading has taken hold since the 1960s: neuroscience. There, dreaming appears as a by-product of memory consolidation and emotional regulation. Nothing symbolic: the brain replays, sorts, dampens. This approach explains the how remarkably well, and declines on principle to pronounce on the why.",
+      "That is exactly why Natalune's dream journal does not pick a side. Each dream gets three readings — a factual one grounded in sleep neuroscience, a symbolic one drawing on Jungian archetypes, and a third that holds both together. The slider lets you set the dose, because the right framework depends on what you came looking for that morning, not on a doctrine.",
+    ],
+    date: "2026-08-03",
+    readingTime: "6 min",
+  },
+  {
+    slug: "lune-natale-influence-reves",
+    titleFr: "Ta Lune natale et tes rêves",
+    titleEn: "Your natal Moon and your dreams",
+    excerptFr:
+      "La Lune décrit ton paysage émotionnel intérieur — exactement le territoire où le rêve se déroule. C'est le pont le plus naturel entre une carte natale et un journal de rêves.",
+    excerptEn:
+      "The Moon describes your inner emotional landscape — exactly the territory where dreaming happens. It is the most natural bridge between a birth chart and a dream journal.",
+    contentFr: [
+      "De toutes les positions d'une carte natale, la Lune est celle qui parle le plus directement du rêve. Là où le Soleil décrit l'identité que tu construis et l'Ascendant la façade que tu présentes, la Lune décrit ce qui se passe quand personne ne regarde : ta vie émotionnelle, tes besoins de sécurité, tes réflexes de repli. C'est précisément le territoire que le sommeil met en scène.",
+      "Ce que la Lune natale colore, ce n'est pas le contenu de tes rêves — aucune position planétaire ne fait apparaître un escalier plutôt qu'une plage. C'est leur climat, et la façon dont tu les vis. Une Lune en Scorpion tend vers des nuits denses, chargées, où l'émotion arrive entière et sans amortisseur. Une Lune en Gémeaux produit plutôt des rêves rapides, bavards, qui se fragmentent au réveil. Une Lune en Taureau ancre des rêves sensoriels, où reviennent des textures, des odeurs, des lieux familiers.",
+      "L'élément de ta Lune donne déjà une bonne première grille. En Feu, l'onirisme est actif, mouvementé, souvent traversé de conflits et d'élans. En Terre, il est concret et répétitif, et travaille volontiers des situations de la vie réelle. En Air, il est narratif, verbal, plein de dialogues et de scènes sociales. En Eau, il est immersif et diffus, et laisse au réveil une émotion plus nette que l'intrigue.",
+      "La maison de ta Lune ajoute une seconde couche, plus fine : elle indique le domaine de vie où ton besoin de sécurité se joue. Une Lune en maison IV ramènera souvent le rêve vers la maison, la famille, l'enfance. Une Lune en maison X le tirera vers le travail, le regard des autres, la position sociale. C'est là que les motifs récurrents d'un journal commencent à faire sens : ils tournent rarement au hasard.",
+      "C'est le croisement que Natalune peut faire et qu'un journal de rêves isolé ne peut pas. Ta carte natale est déjà calculée ici ; l'interprétation spirituelle de chaque rêve s'en sert pour situer l'image dans ton paysage émotionnel plutôt que dans un dictionnaire générique. La lecture factuelle, elle, reste volontairement à l'écart de l'astrologie — les neurosciences n'ont pas besoin de la Lune pour expliquer la consolidation mémorielle.",
+    ],
+    contentEn: [
+      "Of all the positions in a birth chart, the Moon speaks most directly to dreaming. Where the Sun describes the identity you build and the Ascendant the facade you present, the Moon describes what happens when nobody is watching: your emotional life, your need for safety, your instincts to withdraw. That is precisely the territory sleep stages.",
+      "What the natal Moon colours is not the content of your dreams — no planetary position makes a staircase appear rather than a beach. It is their climate, and the way you experience them. A Scorpio Moon tends toward dense, loaded nights where emotion arrives whole and unbuffered. A Gemini Moon produces quicker, chattier dreams that fragment on waking. A Taurus Moon anchors sensory dreams, full of returning textures, smells and familiar places.",
+      "Your Moon's element already gives a useful first framework. In Fire, dreaming is active and eventful, often shot through with conflict and drive. In Earth, it is concrete and repetitive, and willingly works over real-life situations. In Air, it is narrative and verbal, full of dialogue and social scenes. In Water, it is immersive and diffuse, leaving behind an emotion sharper than the plot.",
+      "Your Moon's house adds a second, finer layer: it points to the life domain where your need for security plays out. A Moon in the fourth house will often pull dreams back toward home, family, childhood. A Moon in the tenth will drag them toward work, other people's regard, social standing. This is where the recurring motifs in a journal begin to make sense: they rarely circle at random.",
+      "This is the crossing Natalune can make and a standalone dream journal cannot. Your chart is already calculated here; each dream's spiritual reading uses it to place the image inside your own emotional landscape rather than a generic dictionary. The factual reading, meanwhile, deliberately stays clear of astrology — neuroscience does not need the Moon to explain memory consolidation.",
+    ],
+    date: "2026-08-03",
+    readingTime: "6 min",
+  },
 ];

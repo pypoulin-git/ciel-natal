@@ -55,6 +55,7 @@ export default function Confidentialite() {
           <li>{fr ? "Tes préférences de lecture (ton, profondeur, voix narrative)." : "Your reading preferences (tone, depth, narrator voice)."}</li>
           <li>{fr ? "Si tu passes Premium : la confirmation de paiement Stripe (pas le numéro de carte — voir section 3)." : "If you go Premium: the Stripe payment confirmation (no card number — see section 3)."}</li>
           <li>{fr ? "Des compteurs anonymisés : nombre de messages utilisés avec l'IA, date du dernier accès." : "Anonymized counters: number of AI messages used, last login date."}</li>
+          <li>{fr ? "Les rêves que tu consignes dans le journal de rêves : le récit que tu écris, sa version structurée, la date de la nuit, les tags et émotions extraits, les interprétations générées et l'image associée. Ce sont des données sensibles au sens de la Loi 25 : elles ne sont visibles que par toi, jamais partagées, jamais publiées." : "The dreams you record in the dream journal: the account you write, its structured version, the date of the night, the extracted tags and emotions, the generated interpretations and the associated image. These are sensitive data under Quebec's Law 25: visible to you alone, never shared, never published."}</li>
         </ul>
         <p className="mt-3">
           {fr
@@ -97,8 +98,8 @@ export default function Confidentialite() {
           <li>
             <strong className="text-[var(--color-text-primary)]">Google (Gemini)</strong> —{" "}
             {fr
-              ? "Génère les interprétations astrologiques personnalisées, le chat IA, et la narration audio. Hébergement États-Unis. Reçoit : ta carte natale (positions planétaires, prénom, genre, préférences de lecture) et tes messages dans le chat. Google s'engage à ne pas utiliser ces données API pour entraîner ses modèles (politique « no training on API data »). Lien : "
-              : "Generates personalized astrological interpretations, AI chat, and audio narration. Hosted in USA. Receives: your natal chart (planet positions, first name, gender, reading preferences) and your chat messages. Google commits not to use API data for training (\"no training on API data\" policy). Link: "}
+              ? "Génère les interprétations astrologiques personnalisées, le chat IA, la narration audio, ainsi que la structuration, l'interprétation et l'illustration de tes rêves. Hébergement États-Unis. Reçoit : ta carte natale (positions planétaires, prénom, genre, préférences de lecture), tes messages dans le chat, et le texte des rêves que tu consignes. Google s'engage à ne pas utiliser ces données API pour entraîner ses modèles (politique « no training on API data »). Lien : "
+              : "Generates personalized astrological interpretations, AI chat, audio narration, and the structuring, interpretation and illustration of your dreams. Hosted in USA. Receives: your natal chart (planet positions, first name, gender, reading preferences), your chat messages, and the text of the dreams you record. Google commits not to use API data for training (\"no training on API data\" policy). Link: "}
             <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">ai.google.dev/gemini-api/terms</a>
           </li>
           <li>

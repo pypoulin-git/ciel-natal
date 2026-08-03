@@ -45,6 +45,15 @@ function BlogIcon() {
     </svg>
   )
 }
+function DreamsIcon() {
+  // A crescent with a few stars — the night side of the site.
+  return (
+    <svg {...ico}>
+      <path d="M16.5 3.5A8 8 0 1 0 20.5 14 6.5 6.5 0 0 1 16.5 3.5z" />
+      <path d="M6 4.5v2M5 5.5h2M9.5 8.5v1.5M8.75 9.25h1.5" />
+    </svg>
+  )
+}
 
 export default function ExploreSections({ onStart }: { onStart?: () => void }) {
   const { locale } = useLocale()
@@ -77,6 +86,15 @@ export default function ExploreSections({ onStart }: { onStart?: () => void }) {
         ? 'Deux cartes du ciel superposées : l’alchimie de vos âmes, là où elles s’attirent et grandissent ensemble.'
         : 'Two birth charts overlaid: the alchemy of your souls — where they attract and grow together.',
       cta: fr ? 'Révéler votre lien' : 'Reveal your bond',
+    },
+    {
+      href: '/reves',
+      icon: <DreamsIcon />,
+      title: fr ? 'Journal de rêves' : 'Dream journal',
+      desc: fr
+        ? 'Note tes rêves gratuitement. Avec Premium, ta Lune natale les interprète.'
+        : 'Record your dreams for free. With Premium, your natal Moon interprets them.',
+      cta: fr ? 'Ouvrir mon journal' : 'Open my journal',
     },
     {
       href: '/blog',
@@ -147,7 +165,8 @@ export default function ExploreSections({ onStart }: { onStart?: () => void }) {
       </div>
 
       {/* Secondary sections */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 cards since the dream journal joined — 3 + 2 reads better than 4 + 1. */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {secondary.map((s) => (
           <Link
             key={s.href}

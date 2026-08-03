@@ -87,6 +87,12 @@ export default function SiteFooter() {
               {locale === 'fr' ? 'Synastrie' : 'Synastry'}
             </Link>
             <Link
+              href="/reves"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1"
+            >
+              {locale === 'fr' ? 'Journal de rêves' : 'Dream journal'}
+            </Link>
+            <Link
               href="/blog"
               className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition py-1"
             >

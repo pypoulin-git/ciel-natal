@@ -28,6 +28,7 @@ const FEATURES_FR = [
   { icon: "💾", title: "Sauvegarde de cartes", desc: "Enregistre jusqu'à 10 cartes (amis, famille, partenaire)." },
   { icon: "🎧", title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
   { icon: "💞", title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
+  { icon: "🌙", title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium les structure et en donne trois lectures, colorées par ta Lune natale." },
   // Révolution solaire désactivée — refonte planifiée (voir BACKLOG.md).
   { icon: "🔮", title: "Transits personnalisés", desc: "Les mouvements planétaires actuels croisés avec ta carte." },
 ];
@@ -39,6 +40,7 @@ const FEATURES_EN = [
   { icon: "💾", title: "Save charts", desc: "Save up to 10 charts (friends, family, partner)." },
   { icon: "🎧", title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
   { icon: "💞", title: "Synastry", desc: "Explore compatibility between two birth charts." },
+  { icon: "🌙", title: "AI-read dreams", desc: "Recording dreams is free. Premium structures them and gives three readings, coloured by your natal Moon." },
   // Solar return disabled — redesign planned (see BACKLOG.md).
   { icon: "🔮", title: "Personalized transits", desc: "Current planetary movements crossed with your chart." },
 ];

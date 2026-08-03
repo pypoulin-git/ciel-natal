@@ -56,6 +56,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: { languages: langs },
     },
     {
+      // The landing side of the dream journal. Individual dreams live at
+      // /reves/<id> and are noindex — they are nobody else's business.
+      url: `${BASE_URL}/reves`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+      alternates: { languages: langs },
+    },
+    {
       url: `${BASE_URL}/a-propos`,
       lastModified: now,
       changeFrequency: 'monthly' as const,
