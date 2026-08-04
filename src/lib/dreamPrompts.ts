@@ -251,14 +251,24 @@ MÉTADONNÉES :
 }
 
 // ── 3. Image prompt ───────────────────────────────────────────────────────
-// Watercolour night imagery. English on purpose — image models are trained
-// predominantly on English captions.
+//
+// The imagery is built in TWO steps, and the reason matters.
+//
+// The first version inherited Reverie's SDXL-era approach: glue a fixed style
+// string, a few emotion keywords and the first 150 characters of the dream
+// into one comma-separated bag, then truncate the whole thing to 500 chars.
+// Three things went wrong with that. The scene came LAST, so the cap ate the
+// actual dream before it ate the boilerplate. 150 characters is one sentence
+// of a dream that runs ten. And a keyword soup throws away what a modern image
+// model is best at — reading a described scene.
+//
+// So now a cheap text pass (Flash-Lite) reads the WHOLE dream plus its
+// symbolic reading and writes one vivid English scene. The style is appended
+// after, never before, and nothing is truncated.
 
-const STYLE_PREFIX =
-  'dreamy watercolor painting, soft blurry edges, ethereal atmosphere, night palette with deep blues violets and warm gold accents, vignette effect, depth of field, delicate brushstrokes, luminous highlights'
-
-const NEGATIVE_PROMPT =
-  'text, watermark, signature, logo, ugly, deformed, disfigured, blurry face, realistic photo, sharp edges, neon colors, bright daylight, cartoon, anime, 3d render'
+/** The house look. Appended after the scene so it can never crowd it out. */
+const IMAGE_STYLE =
+  'Painted as a dreamy watercolour: soft blurry edges, delicate brushstrokes, luminous highlights, a night palette of deep blues and violets with warm gold accents, gentle vignette, shallow depth of field.'
 
 const EMOTION_TO_MOOD: Record<string, string> = {
   joy: 'warm golden light, radiant',
@@ -271,25 +281,102 @@ const EMOTION_TO_MOOD: Record<string, string> = {
   anger: 'stormy skies, intense warm tones',
 }
 
-export function buildImagePrompt(
-  structuredText: string,
-  tags: string[],
-  emotions: string[],
-  places: string[],
-): { prompt: string; negativePrompt: string } {
-  const visualElements: string[] = []
+export interface ImageBriefOptions {
+  structuredText: string
+  title?: string | null
+  tags: string[]
+  emotions: string[]
+  characters: string[]
+  places: string[]
+  /** The spiritual reading, when one exists — the source of the fantastical. */
+  spiritualReading?: string
+  /** Free-text adjustment typed by the dreamer ("plus sombre", "sans la mer"). */
+  instruction?: string
+  /** The brief that produced the current image, when adjusting rather than starting over. */
+  previousPrompt?: string
+}
 
-  if (places.length > 0) visualElements.push(places.slice(0, 2).join(' and '))
-  for (const emotion of emotions) {
-    const mood = EMOTION_TO_MOOD[emotion]
-    if (mood) visualElements.push(mood)
+/**
+ * Instructions for the text pass that writes the image brief. Its whole job is
+ * to stay FAITHFUL to what the dreamer actually wrote, then let the symbolic
+ * reading tilt the atmosphere — not invent a different dream.
+ */
+export function imageBriefSystem(): string {
+  return `You write image briefs for a dream journal. You receive a dream and, when it exists, its symbolic reading. You return ONE English paragraph describing a single still image.
+
+WHAT TO DO
+- Anchor the image in what the dreamer ACTUALLY described: the specific place, the specific objects, the specific action. If they wrote about a staircase in a flooded house, the image is that staircase in that flooded house.
+- Choose ONE moment. A still image cannot narrate a sequence — pick the instant that carries the most weight.
+- Let the symbolic reading tilt the ATMOSPHERE — the light, the scale, the strangeness — without adding objects the dreamer never mentioned. That's the fantastical touch: the dreamer's own scene, seen at an angle.
+- Be concrete and visual. Nouns, materials, light, position, distance.
+- People are seen from behind, at a distance, or partly out of frame. Never a recognisable face.
+
+WHAT NOT TO DO
+- Do not invent a new setting, and do not fall back on generic dream imagery (floating clocks, endless staircases, spiral galaxies) unless the dreamer wrote them.
+- Do not describe emotions as words. Show them as light, weather, distance and colour.
+- Do not mention art movements, artist names, cameras, lenses, or the words "dream" and "surreal".
+- No text, letters, numbers, logos or watermarks in the image.
+- Do not write a title, a preamble, or quotation marks. Return the paragraph only.
+
+LENGTH: 60 to 110 words. One paragraph. English.`
+}
+
+/** The user-side message for that same text pass. */
+export function buildImageBriefPrompt(opts: ImageBriefOptions): string {
+  const { structuredText, title, tags, emotions, characters, places } = opts
+
+  const moods = emotions.map((e) => EMOTION_TO_MOOD[e]).filter(Boolean)
+  const list = (items: string[]) => (items.length > 0 ? items.join(', ') : 'none stated')
+
+  let prompt = `DREAM${title ? ` — "${title}"` : ''}:
+${structuredText}
+
+WHAT THE DREAMER TAGGED
+- Places: ${list(places)}
+- Characters: ${list(characters)}
+- Themes: ${list(tags)}
+- Emotional register to render as light and weather: ${list(moods)}`
+
+  if (opts.spiritualReading) {
+    prompt += `\n\nSYMBOLIC READING (use it to tilt the atmosphere only — add no objects it names that the dream itself did not):\n${opts.spiritualReading}`
   }
-  if (tags.length > 0) visualElements.push(tags.slice(0, 3).join(', '))
 
-  const sceneSnippet = structuredText.replace(/['"]/g, '').slice(0, 150).trim()
-  const prompt = `${STYLE_PREFIX}, ${visualElements.join(', ')}, ${sceneSnippet}`
+  if (opts.instruction) {
+    prompt += `\n\nTHE DREAMER ASKS FOR THIS CHANGE:\n"${opts.instruction}"\nHonour it precisely. Keep everything else about the scene as it was.`
+    if (opts.previousPrompt) {
+      prompt += `\n\nTHE BRIEF THAT PRODUCED THE CURRENT IMAGE:\n${opts.previousPrompt}`
+    }
+  }
 
-  return { prompt: prompt.slice(0, 500), negativePrompt: NEGATIVE_PROMPT }
+  prompt += '\n\nWrite the image brief now.'
+  return prompt
+}
+
+/**
+ * Exclusions. Gemini's image models take no separate negative-prompt field
+ * (unlike the SDXL endpoint this replaces), so they ride along in prose.
+ */
+const IMAGE_EXCLUSIONS =
+  'No text, letters, numbers, captions, logos, signatures or watermarks. No recognisable faces, no photorealism, no 3D render, no collage.'
+
+/** Style goes AFTER the scene, and the result is never truncated. */
+export function composeImagePrompt(brief: string): string {
+  return `${brief.trim()} ${IMAGE_STYLE} ${IMAGE_EXCLUSIONS}`
+}
+
+/**
+ * Deterministic fallback, used only when the brief pass fails. Still puts the
+ * scene first — the old ordering was the bug.
+ */
+export function buildFallbackImagePrompt(opts: ImageBriefOptions): string {
+  const { structuredText, emotions, places } = opts
+  const moods = emotions.map((e) => EMOTION_TO_MOOD[e]).filter(Boolean)
+
+  const scene = structuredText.replace(/["']/g, '').trim().slice(0, 900)
+  const setting = places.length > 0 ? ` The setting: ${places.slice(0, 2).join(' and ')}.` : ''
+  const mood = moods.length > 0 ? ` Atmosphere: ${moods.join(', ')}.` : ''
+
+  return composeImagePrompt(`A single still scene from this dream: ${scene}${setting}${mood}`)
 }
 
 // ── Shared: tolerant JSON parsing ─────────────────────────────────────────

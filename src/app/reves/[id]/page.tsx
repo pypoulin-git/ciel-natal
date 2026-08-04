@@ -60,6 +60,13 @@ function longDate(iso: string, locale: string): string {
     : `${day} ${MONTHS_FR[month - 1]} ${year}`
 }
 
+/** Written in the last few minutes — i.e. the dreamer is still in the flow. */
+function isFresh(createdAt: string | null | undefined): boolean {
+  if (!createdAt) return false
+  const age = Date.now() - new Date(createdAt).getTime()
+  return Number.isFinite(age) && age >= 0 && age < 10 * 60 * 1000
+}
+
 export default function DreamDetailPage() {
   const params = useParams<{ id: string }>()
   const dreamId = params?.id
@@ -76,6 +83,9 @@ export default function DreamDetailPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [editing, setEditing] = useState(false)
+  const [adjustOpen, setAdjustOpen] = useState(false)
+  const [instruction, setInstruction] = useState('')
+  const [imageNotice, setImageNotice] = useState('')
 
   // Generation is attempted at most once per mount. Without this guard the
   // effect could re-fire on a re-render and pay for the same dream twice —
@@ -125,7 +135,11 @@ export default function DreamDetailPage() {
         }
       }
 
-      if (!detail.image) {
+      // The painting happens by itself on a freshly written dream — that's the
+      // moment it delights. On an older dream that still has none, it failed or
+      // the quota ran out, and retrying silently on every visit would keep
+      // spending images nobody asked for. There's a button for that below.
+      if (!detail.image && isFresh(detail.dream.created_at)) {
         setImaging(true)
         try {
           const image = await generateDreamImage(dreamId, locale, getAccessToken)
@@ -139,6 +153,32 @@ export default function DreamDetailPage() {
     }
     run()
   }, [detail, dreamId, isPremium, locale, getAccessToken]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-paint the dream, optionally following an adjustment typed by the
+  // dreamer. Costs one image from the monthly quota either way, so it is only
+  // ever triggered by an explicit click — never by the effect above.
+  const repaint = useCallback(
+    async (text: string) => {
+      if (!dreamId || imaging) return
+      setImaging(true)
+      setImageNotice('')
+      try {
+        const image = await generateDreamImage(dreamId, locale, getAccessToken, true, text)
+        setDetail((prev) => (prev ? { ...prev, image } : prev))
+        setInstruction('')
+        setAdjustOpen(false)
+      } catch (err) {
+        setImageNotice(
+          err instanceof DreamApiError && err.code === 'QUOTA_EXCEEDED'
+            ? err.message
+            : label('La nouvelle image a échoué. Réessaie.', 'The new image failed. Try again.'),
+        )
+      } finally {
+        setImaging(false)
+      }
+    },
+    [dreamId, imaging, locale, getAccessToken], // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   const commitGauge = useCallback(
     (value: number) => {
@@ -247,10 +287,21 @@ export default function DreamDetailPage() {
               }
               fill
               sizes="(max-width: 640px) 100vw, 640px"
-              className="object-cover"
+              className={`object-cover transition-opacity ${imaging ? 'opacity-30' : ''}`}
               unoptimized
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[var(--color-space-deep)] to-transparent" />
+            {imaging && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p
+                  className="text-sm text-[var(--color-text-secondary)]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {label('On repeint ton rêve…', 'Repainting your dream…')}
+                </p>
+              </div>
+            )}
           </div>
         ) : imaging ? (
           <div className="glass mb-6 flex aspect-[3/4] w-full items-center justify-center rounded-2xl">
@@ -259,6 +310,101 @@ export default function DreamDetailPage() {
             </p>
           </div>
         ) : null}
+
+        {/* Adjusting the image. An image is a reading too — and the first one
+            is rarely the one the dreamer saw. Also the way back in when the
+            first attempt failed silently, which it is allowed to do. */}
+        {isPremium && !imaging && (
+          <div className={image?.url ? '-mt-2 mb-6' : 'mb-6'}>
+            {!adjustOpen ? (
+              <button
+                type="button"
+                onClick={() => setAdjustOpen(true)}
+                className="btn-ghost rounded-xl px-4 py-2 text-xs"
+              >
+                {image?.url
+                  ? label("Ajuster l'image ✦", 'Adjust the image ✦')
+                  : label('Peindre ce rêve ✦', 'Paint this dream ✦')}
+              </button>
+            ) : (
+              <div className="glass rounded-2xl p-4">
+                <label
+                  htmlFor="image-instruction"
+                  className="mb-1 block text-xs text-[var(--color-text-muted)]"
+                >
+                  {image?.url
+                    ? label(
+                        "Qu'est-ce qui ne colle pas ? Dis-le dans tes mots.",
+                        "What isn't right? Say it in your own words.",
+                      )
+                    : label(
+                        'Une précision à donner au peintre ? (optionnel)',
+                        'Anything to tell the painter? (optional)',
+                      )}
+                </label>
+                <input
+                  id="image-instruction"
+                  type="text"
+                  value={instruction}
+                  maxLength={300}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return
+                    if (image?.url && instruction.trim().length < 3) return
+                    void repaint(instruction.trim())
+                  }}
+                  placeholder={label(
+                    'La maison devrait être en ruine, vue de loin…',
+                    'The house should be a ruin, seen from far away…',
+                  )}
+                  className="glass-input w-full rounded-xl px-3 py-2 text-sm"
+                />
+                <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+                  {label(
+                    'Chaque nouvelle image compte dans ton quota mensuel (10 par mois).',
+                    'Each new image counts against your monthly quota (10 per month).',
+                  )}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void repaint(instruction.trim())}
+                    disabled={Boolean(image?.url) && instruction.trim().length < 3}
+                    className="btn-primary rounded-xl px-4 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {image?.url
+                      ? label('Nouvelle version', 'New version')
+                      : label('Peindre ✦', 'Paint ✦')}
+                  </button>
+                  {image?.url && (
+                    <button
+                      type="button"
+                      onClick={() => void repaint('')}
+                      className="btn-ghost rounded-xl px-4 py-2 text-xs"
+                    >
+                      {label('Simplement réessayer', 'Just try again')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustOpen(false)
+                      setImageNotice('')
+                    }}
+                    className="btn-ghost rounded-xl px-4 py-2 text-xs"
+                  >
+                    {label('Annuler', 'Cancel')}
+                  </button>
+                </div>
+              </div>
+            )}
+            {imageNotice && (
+              <p className="mt-2 text-sm text-[var(--color-accent-rose)]" role="status">
+                {imageNotice}
+              </p>
+            )}
+          </div>
+        )}
 
         <h1 className="font-cinzel mb-1 text-2xl text-[var(--color-text-primary)] sm:text-3xl">
           {dream.title || label('Rêve sans titre', 'Untitled dream')}

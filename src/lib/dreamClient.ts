@@ -116,14 +116,20 @@ export function interpretDream(
   })
 }
 
+/**
+ * `instruction` is the dreamer's own words for what should change ("plus
+ * sombre", "sans la mer"). Sending one implies a regeneration, and spends one
+ * image from the monthly quota.
+ */
 export function generateDreamImage(
   dreamId: string,
   locale: string,
   getToken: TokenGetter,
   force = false,
+  instruction?: string,
 ): Promise<DreamImageInfo & { regenerated: boolean; remaining?: number }> {
   return request('/api/dream-image', getToken, {
     method: 'POST',
-    body: JSON.stringify({ dreamId, locale, force }),
+    body: JSON.stringify({ dreamId, locale, force, instruction }),
   })
 }
