@@ -60,6 +60,13 @@ function longDate(iso: string, locale: string): string {
     : `${day} ${MONTHS_FR[month - 1]} ${year}`
 }
 
+/** Written in the last few minutes — i.e. the dreamer is still in the flow. */
+function isFresh(createdAt: string | null | undefined): boolean {
+  if (!createdAt) return false
+  const age = Date.now() - new Date(createdAt).getTime()
+  return Number.isFinite(age) && age >= 0 && age < 10 * 60 * 1000
+}
+
 export default function DreamDetailPage() {
   const params = useParams<{ id: string }>()
   const dreamId = params?.id
@@ -128,7 +135,11 @@ export default function DreamDetailPage() {
         }
       }
 
-      if (!detail.image) {
+      // The painting happens by itself on a freshly written dream — that's the
+      // moment it delights. On an older dream that still has none, it failed or
+      // the quota ran out, and retrying silently on every visit would keep
+      // spending images nobody asked for. There's a button for that below.
+      if (!detail.image && isFresh(detail.dream.created_at)) {
         setImaging(true)
         try {
           const image = await generateDreamImage(dreamId, locale, getAccessToken)
@@ -301,17 +312,19 @@ export default function DreamDetailPage() {
         ) : null}
 
         {/* Adjusting the image. An image is a reading too — and the first one
-            is rarely the one the dreamer saw. */}
-        {isPremium && (image?.url || imageNotice) && (
-          <div className="-mt-2 mb-6">
+            is rarely the one the dreamer saw. Also the way back in when the
+            first attempt failed silently, which it is allowed to do. */}
+        {isPremium && !imaging && (
+          <div className={image?.url ? '-mt-2 mb-6' : 'mb-6'}>
             {!adjustOpen ? (
               <button
                 type="button"
                 onClick={() => setAdjustOpen(true)}
-                disabled={imaging}
-                className="btn-ghost rounded-xl px-4 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-ghost rounded-xl px-4 py-2 text-xs"
               >
-                {label("Ajuster l'image ✦", 'Adjust the image ✦')}
+                {image?.url
+                  ? label("Ajuster l'image ✦", 'Adjust the image ✦')
+                  : label('Peindre ce rêve ✦', 'Paint this dream ✦')}
               </button>
             ) : (
               <div className="glass rounded-2xl p-4">
@@ -319,10 +332,15 @@ export default function DreamDetailPage() {
                   htmlFor="image-instruction"
                   className="mb-1 block text-xs text-[var(--color-text-muted)]"
                 >
-                  {label(
-                    "Qu'est-ce qui ne colle pas ? Dis-le dans tes mots.",
-                    "What isn't right? Say it in your own words.",
-                  )}
+                  {image?.url
+                    ? label(
+                        "Qu'est-ce qui ne colle pas ? Dis-le dans tes mots.",
+                        "What isn't right? Say it in your own words.",
+                      )
+                    : label(
+                        'Une précision à donner au peintre ? (optionnel)',
+                        'Anything to tell the painter? (optional)',
+                      )}
                 </label>
                 <input
                   id="image-instruction"
@@ -331,7 +349,9 @@ export default function DreamDetailPage() {
                   maxLength={300}
                   onChange={(e) => setInstruction(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && instruction.trim()) void repaint(instruction.trim())
+                    if (e.key !== 'Enter') return
+                    if (image?.url && instruction.trim().length < 3) return
+                    void repaint(instruction.trim())
                   }}
                   placeholder={label(
                     'La maison devrait être en ruine, vue de loin…',
@@ -349,29 +369,29 @@ export default function DreamDetailPage() {
                   <button
                     type="button"
                     onClick={() => void repaint(instruction.trim())}
-                    disabled={imaging || instruction.trim().length < 3}
+                    disabled={Boolean(image?.url) && instruction.trim().length < 3}
                     className="btn-primary rounded-xl px-4 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    {imaging
-                      ? label('On repeint…', 'Repainting…')
-                      : label('Nouvelle version', 'New version')}
+                    {image?.url
+                      ? label('Nouvelle version', 'New version')
+                      : label('Peindre ✦', 'Paint ✦')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => void repaint('')}
-                    disabled={imaging}
-                    className="btn-ghost rounded-xl px-4 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {label('Simplement réessayer', 'Just try again')}
-                  </button>
+                  {image?.url && (
+                    <button
+                      type="button"
+                      onClick={() => void repaint('')}
+                      className="btn-ghost rounded-xl px-4 py-2 text-xs"
+                    >
+                      {label('Simplement réessayer', 'Just try again')}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       setAdjustOpen(false)
                       setImageNotice('')
                     }}
-                    disabled={imaging}
-                    className="btn-ghost rounded-xl px-4 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                    className="btn-ghost rounded-xl px-4 py-2 text-xs"
                   >
                     {label('Annuler', 'Cancel')}
                   </button>
