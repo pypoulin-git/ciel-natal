@@ -7,10 +7,14 @@ import {
   type Dream,
 } from '../dreams'
 import {
-  buildImagePrompt,
+  buildFallbackImagePrompt,
+  buildImageBriefPrompt,
   buildInterpretDreamPrompt,
+  composeImagePrompt,
+  imageBriefSystem,
   interpretDreamSystem,
   parseModelJson,
+  type ImageBriefOptions,
   type InterpretDreamOptions,
 } from '../dreamPrompts'
 
@@ -179,27 +183,110 @@ describe('interpretDreamSystem', () => {
   })
 })
 
-describe('buildImagePrompt', () => {
-  it('folds places, emotion moods and tags into the watercolour style', () => {
-    const { prompt, negativePrompt } = buildImagePrompt(
-      'Une plage la nuit',
-      ['eau'],
-      ['anxiety'],
-      ['plage'],
-    )
-    expect(prompt).toContain('dreamy watercolor painting')
-    expect(prompt).toContain('plage')
-    expect(prompt).toContain('swirling shadows, tension') // the anxiety mood
-    expect(negativePrompt).toContain('watermark')
+// ── Imagery ───────────────────────────────────────────────────────────────
+// These tests exist because of a real defect: the first version put the style
+// string first and the dream last, then truncated the whole thing to 500
+// characters — so the cap ate the dream and left the boilerplate. The scene
+// coming FIRST and surviving intact is the property worth guarding.
+
+const briefOptions: ImageBriefOptions = {
+  structuredText: "Je marchais dans une maison inondée, l'escalier disparaissait sous l'eau.",
+  title: 'La maison inondée',
+  tags: ['eau', 'maison'],
+  emotions: ['anxiety'],
+  characters: ['ma sœur'],
+  places: ['une maison inondée'],
+}
+
+describe('buildImageBriefPrompt', () => {
+  it('gives the model the whole dream, never a snippet', () => {
+    const long = 'Une phrase du rêve. '.repeat(200)
+    const prompt = buildImageBriefPrompt({ ...briefOptions, structuredText: long })
+    expect(prompt).toContain(long)
   })
 
-  it('stays within the 500-character prompt budget', () => {
-    const { prompt } = buildImagePrompt('x'.repeat(4000), ['a', 'b', 'c', 'd'], ['joy'], ['ici'])
-    expect(prompt.length).toBeLessThanOrEqual(500)
+  it('carries the dreamer’s own places, characters and tags', () => {
+    const prompt = buildImageBriefPrompt(briefOptions)
+    expect(prompt).toContain('une maison inondée')
+    expect(prompt).toContain('ma sœur')
+    expect(prompt).toContain('eau, maison')
+    expect(prompt).toContain('swirling shadows, tension') // the anxiety mood
+  })
+
+  it('adds the symbolic reading only when there is one', () => {
+    expect(buildImageBriefPrompt(briefOptions)).not.toContain('SYMBOLIC READING')
+    const withReading = buildImageBriefPrompt({
+      ...briefOptions,
+      spiritualReading: "L'eau qui monte est le seuil.",
+    })
+    expect(withReading).toContain('SYMBOLIC READING')
+    expect(withReading).toContain("L'eau qui monte est le seuil.")
+  })
+
+  it('passes an adjustment and the brief it replaces', () => {
+    const prompt = buildImageBriefPrompt({
+      ...briefOptions,
+      instruction: 'plus sombre, sans personnage',
+      previousPrompt: 'A flooded staircase at dusk.',
+    })
+    expect(prompt).toContain('plus sombre, sans personnage')
+    expect(prompt).toContain('A flooded staircase at dusk.')
+  })
+
+  it('omits the previous brief when nothing is being adjusted', () => {
+    const prompt = buildImageBriefPrompt({
+      ...briefOptions,
+      previousPrompt: 'A flooded staircase at dusk.',
+    })
+    expect(prompt).not.toContain('A flooded staircase at dusk.')
   })
 
   it('ignores emotions with no visual mapping', () => {
-    const { prompt } = buildImagePrompt('Un rêve', [], ['inventée'], [])
-    expect(prompt).toContain('dreamy watercolor painting')
+    const prompt = buildImageBriefPrompt({ ...briefOptions, emotions: ['inventée'] })
+    expect(prompt).toContain('none stated')
+  })
+})
+
+describe('imageBriefSystem', () => {
+  it('anchors the brief in what the dreamer actually described', () => {
+    const system = imageBriefSystem()
+    expect(system).toContain('ACTUALLY described')
+    expect(system).toContain('Choose ONE moment')
+    expect(system).toContain('Never a recognisable face')
+  })
+})
+
+describe('composeImagePrompt', () => {
+  it('puts the scene first and the style after it', () => {
+    const composed = composeImagePrompt('A flooded staircase at dusk.')
+    expect(composed.indexOf('A flooded staircase')).toBeLessThan(
+      composed.indexOf('dreamy watercolour'),
+    )
+  })
+
+  it('never truncates the scene', () => {
+    const scene = 'A very long described scene. '.repeat(60).trim()
+    expect(composeImagePrompt(scene)).toContain(scene)
+  })
+
+  it('carries the exclusions in prose, since Gemini takes no negative prompt', () => {
+    expect(composeImagePrompt('A scene.')).toContain('watermarks')
+  })
+})
+
+describe('buildFallbackImagePrompt', () => {
+  it('still leads with the dream, not the boilerplate', () => {
+    const prompt = buildFallbackImagePrompt(briefOptions)
+    expect(prompt.indexOf('maison inondée')).toBeLessThan(prompt.indexOf('dreamy watercolour'))
+    expect(prompt).toContain('swirling shadows, tension')
+  })
+
+  it('survives a dream with no places and no mapped emotions', () => {
+    const prompt = buildFallbackImagePrompt({
+      ...briefOptions,
+      places: [],
+      emotions: [],
+    })
+    expect(prompt).toContain('maison inondée')
   })
 })
