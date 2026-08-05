@@ -9,11 +9,13 @@ import SiteFooter from '@/components/SiteFooter'
 import Skeleton from '@/components/ui/Skeleton'
 import DreamCalendar from '@/components/dreams/DreamCalendar'
 import DreamCapture from '@/components/dreams/DreamCapture'
+import DreamDashboard from '@/components/dreams/DreamDashboard'
 import DreamManualForm from '@/components/dreams/DreamManualForm'
 import DreamCard from '@/components/dreams/DreamCard'
 import EmotionChip from '@/components/dreams/EmotionChip'
-import { listDreams } from '@/lib/dreamClient'
+import { listDreamStats, listDreams } from '@/lib/dreamClient'
 import { EMOTIONS, type Dream } from '@/lib/dreams'
+import { windowStart, type StatDream } from '@/lib/dreamStats'
 
 const SAMPLE_DREAM_FR = `Je marchais sur une plage la nuit, et l'eau montait sans jamais me toucher. Quelqu'un que je connaissais m'appelait depuis la dune, mais chaque fois que je me retournais, la voix venait d'ailleurs.`
 
@@ -31,9 +33,13 @@ export default function RevesPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [monthDreams, setMonthDreams] = useState<Dream[]>([])
   const [recent, setRecent] = useState<Dream[]>([])
+  const [statDreams, setStatDreams] = useState<StatDream[]>([])
   const [dreamsLoading, setDreamsLoading] = useState(true)
 
   const monthKey = `${year}-${String(month).padStart(2, '0')}`
+  // Two years: the widest dashboard window is 12 months, and it compares
+  // itself against the 12 before it.
+  const statsSince = useMemo(() => windowStart(new Date().toISOString().slice(0, 10), 760), [])
 
   // The journal itself is free — this runs for every signed-in member.
   const load = useCallback(async () => {
@@ -43,31 +49,34 @@ export default function RevesPage() {
     }
     setDreamsLoading(true)
     try {
-      const [monthResult, recentResult] = await Promise.all([
+      const [monthResult, recentResult, statsResult] = await Promise.all([
         listDreams(getAccessToken, monthKey),
         listDreams(getAccessToken),
+        listDreamStats(getAccessToken, statsSince),
       ])
       setMonthDreams(monthResult.dreams ?? [])
       setRecent(recentResult.dreams ?? [])
+      setStatDreams(statsResult.dreams ?? [])
     } catch {
       /* the page still works without the list */
     } finally {
       setDreamsLoading(false)
     }
-  }, [user, getAccessToken, monthKey])
+  }, [user, getAccessToken, monthKey, statsSince])
 
   useEffect(() => {
     load()
   }, [load])
 
-  const selectedDreams = selectedDate
+  // The list under the calendar: the selected night, or the whole month.
+  const listedDreams = selectedDate
     ? monthDreams.filter((dream) => dream.dream_date === selectedDate)
-    : []
+    : monthDreams
 
   return (
     <>
       <Starfield />
-      <main className="relative mx-auto max-w-4xl px-4 pt-10 pb-16 sm:px-6">
+      <main className="relative mx-auto max-w-5xl px-4 pt-10 pb-16 sm:px-6">
         <header className="mb-8 text-center">
           <h1 className="font-cinzel mb-2 text-3xl text-[var(--color-text-primary)] sm:text-4xl">
             {label('Journal de rêves', 'Dream journal')}
@@ -95,60 +104,97 @@ export default function RevesPage() {
               </>
             )}
 
+            {dreamsLoading ? (
+              <Skeleton lines={5} />
+            ) : (
+              <DreamDashboard dreams={statDreams} locale={locale} />
+            )}
+
             <section>
               <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
-                {label('Ton mois', 'Your month')}
+                {label('Ton mois, nuit par nuit', 'Your month, night by night')}
               </h2>
-              <DreamCalendar
-                year={year}
-                month={month}
-                dreams={monthDreams}
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-                onNavigate={(y, m) => {
-                  setYear(y)
-                  setMonth(m)
-                  setSelectedDate(null)
-                }}
-                locale={locale}
-              />
+              {/* Calendar and list side by side once there's room: pick a
+                  night on the left, read it on the right without scrolling. */}
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,26rem)_1fr] lg:items-start">
+                <DreamCalendar
+                  year={year}
+                  month={month}
+                  dreams={monthDreams}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                  onNavigate={(y, m) => {
+                    setYear(y)
+                    setMonth(m)
+                    setSelectedDate(null)
+                  }}
+                  locale={locale}
+                />
 
-              {selectedDate && (
-                <div className="mt-4 space-y-3">
-                  {selectedDreams.length > 0 ? (
-                    selectedDreams.map((dream) => (
-                      <DreamCard key={dream.id} dream={dream} locale={locale} />
-                    ))
+                {/* The month's dreams are listed whether or not a day is picked —
+                    the old page showed nothing until you clicked a cell, which
+                    made a full month look like an empty one. */}
+                <div>
+                  {selectedDate && (
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        {listedDreams.length > 0
+                          ? label(
+                              `${listedDreams.length} rêve${listedDreams.length > 1 ? 's' : ''} cette nuit-là`,
+                              `${listedDreams.length} dream${listedDreams.length > 1 ? 's' : ''} that night`,
+                            )
+                          : label('Aucun rêve consigné ce jour-là.', 'No dream recorded that day.')}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDate(null)}
+                        className="btn-ghost rounded-xl px-3 py-1.5 text-xs"
+                      >
+                        {label('Voir tout le mois', 'See the whole month')}
+                      </button>
+                    </div>
+                  )}
+
+                  {listedDreams.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                      {listedDreams.map((dream) => (
+                        <DreamCard key={dream.id} dream={dream} locale={locale} />
+                      ))}
+                    </div>
                   ) : (
-                    <p className="text-sm text-[var(--color-text-muted)]">
-                      {label('Aucun rêve consigné ce jour-là.', 'No dream recorded that day.')}
-                    </p>
+                    !selectedDate && (
+                      <p className="text-sm text-[var(--color-text-muted)]">
+                        {recent.length === 0
+                          ? label(
+                              "Ton journal est vide. Le premier rêve est toujours le plus difficile à attraper — écris-le avant d'ouvrir les yeux tout à fait.",
+                              'Your journal is empty. The first dream is always the hardest to catch — write it down before you fully open your eyes.',
+                            )
+                          : label(
+                              'Rien pour ce mois-ci. Navigue vers un autre mois, ou consigne le rêve de cette nuit.',
+                              'Nothing this month. Move to another month, or record last night’s dream.',
+                            )}
+                      </p>
+                    )
                   )}
                 </div>
-              )}
+              </div>
             </section>
 
-            <section>
-              <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
-                {label('Rêves récents', 'Recent dreams')}
-              </h2>
-              {dreamsLoading ? (
-                <Skeleton lines={3} />
-              ) : recent.length === 0 ? (
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  {label(
-                    "Ton journal est vide. Le premier rêve est toujours le plus difficile à attraper — écris-le avant d'ouvrir les yeux tout à fait.",
-                    'Your journal is empty. The first dream is always the hardest to catch — write it down before you fully open your eyes.',
-                  )}
+            {recent.length > 0 && (
+              <section>
+                <h2 className="font-cinzel mb-1 text-lg text-[var(--color-text-primary)]">
+                  {label('Tes derniers rêves', 'Your latest dreams')}
+                </h2>
+                <p className="mb-3 text-xs text-[var(--color-text-muted)]">
+                  {label('Tous mois confondus.', 'Across every month.')}
                 </p>
-              ) : (
-                <div className="space-y-3">
-                  {recent.slice(0, 8).map((dream) => (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {recent.slice(0, 6).map((dream) => (
                     <DreamCard key={dream.id} dream={dream} locale={locale} />
                   ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
             <EmotionLegend locale={locale} />
           </div>

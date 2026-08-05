@@ -7,6 +7,7 @@
  */
 
 import type { Dream, DreamInterpretationContent, DreamStructure } from './dreams'
+import type { StatDream } from './dreamStats'
 
 export interface DreamImageInfo {
   storage_path: string
@@ -65,9 +66,21 @@ async function request<T>(path: string, getToken: TokenGetter, init: RequestInit
   return (await res.json()) as T
 }
 
+/** `month` (YYYY-MM) narrows to the calendar's month; otherwise the 50 most recent. */
 export function listDreams(getToken: TokenGetter, month?: string): Promise<{ dreams: Dream[] }> {
   const query = month ? `?month=${encodeURIComponent(month)}` : ''
   return request(`/api/dreams${query}`, getToken)
+}
+
+/**
+ * The dashboard's window: every dream from `since` on, aggregate columns only.
+ * The account text is deliberately absent — nothing here renders a word of it.
+ */
+export function listDreamStats(
+  getToken: TokenGetter,
+  since: string,
+): Promise<{ dreams: StatDream[] }> {
+  return request(`/api/dreams?since=${encodeURIComponent(since)}`, getToken)
 }
 
 export function getDream(id: string, getToken: TokenGetter): Promise<DreamDetail> {
