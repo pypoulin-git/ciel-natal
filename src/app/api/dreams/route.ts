@@ -22,21 +22,30 @@ export const runtime = 'nodejs'
 const MAX_DREAMS = 2000
 const SELECT_COLUMNS =
   'id, title, raw_text, structured_text, dream_date, emotional_intensity, lucidity_level, sleep_quality, tags, emotions, characters, places, gauge_value, created_at, updated_at'
+// The dashboard aggregates; it never renders a word of the account. Sending
+// two years of raw_text so a radar chart can count emotions would be a
+// multi-megabyte response for a handful of integers.
+const STAT_COLUMNS =
+  'id, dream_date, emotional_intensity, lucidity_level, sleep_quality, tags, emotions, characters, places'
 
-// GET — the caller's dreams. `?month=YYYY-MM` narrows to one month for the
-// calendar view; otherwise the most recent 50 for the dashboard.
+// GET — the caller's dreams.
+//   ?month=YYYY-MM     one month, for the calendar
+//   ?since=YYYY-MM-DD  everything from that date on, aggregate columns only
+//   neither            the most recent 50
 export async function GET(req: NextRequest) {
   const guard = await requireUser(req)
   if (!guard.ok) return guard.response
 
+  const month = req.nextUrl.searchParams.get('month')
+  const since = req.nextUrl.searchParams.get('since')
+
   const supabase = getSupabaseAdmin()
   let query = supabase
     .from('dreams')
-    .select(SELECT_COLUMNS)
+    .select(since && !month ? STAT_COLUMNS : SELECT_COLUMNS)
     .eq('user_id', guard.userId)
     .order('dream_date', { ascending: false })
 
-  const month = req.nextUrl.searchParams.get('month')
   if (month) {
     if (!/^\d{4}-\d{2}$/.test(month)) {
       return NextResponse.json({ error: 'Invalid month' }, { status: 400 })
@@ -46,6 +55,14 @@ export async function GET(req: NextRequest) {
     // month lengths and gets February right in leap years.
     const lastDay = new Date(Date.UTC(year, mon, 0)).getUTCDate()
     query = query.gte('dream_date', `${month}-01`).lte('dream_date', `${month}-${lastDay}`)
+  } else if (since) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(since)) {
+      return NextResponse.json({ error: 'Invalid since' }, { status: 400 })
+    }
+    // Capped: the widest window is 12 months plus the 12 before it, for the
+    // period-over-period delta. Two dreams a night across two years is already
+    // an unusual journal.
+    query = query.gte('dream_date', since).limit(1500)
   } else {
     query = query.limit(50)
   }
