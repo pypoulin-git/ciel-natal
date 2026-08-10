@@ -86,6 +86,7 @@ export default function DreamDetailPage() {
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [instruction, setInstruction] = useState('')
   const [imageNotice, setImageNotice] = useState('')
+  const [zoom, setZoom] = useState(false)
 
   // Generation is attempted at most once per mount. Without this guard the
   // effect could re-fire on a re-render and pay for the same dream twice —
@@ -255,10 +256,10 @@ export default function DreamDetailPage() {
   return (
     <>
       <Starfield />
-      <main className="relative mx-auto max-w-2xl px-4 pt-8 pb-16 sm:px-6">
+      <main className="relative mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6">
         <Link
           href="/reves"
-          className="mb-5 inline-block text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text-secondary)]"
+          className="mb-4 inline-block text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text-secondary)]"
         >
           {label('← Journal', '← Journal')}
         </Link>
@@ -276,57 +277,141 @@ export default function DreamDetailPage() {
           </div>
         )}
 
-        {/* Imagery */}
-        {image?.url ? (
-          <div className="relative mb-6 aspect-[3/4] w-full overflow-hidden rounded-2xl">
-            <Image
-              src={image.url}
-              alt={
-                dream.title ??
-                label('Aquarelle générée pour ce rêve', 'Watercolour generated for this dream')
-              }
-              fill
-              sizes="(max-width: 640px) 100vw, 640px"
-              className={`object-cover transition-opacity ${imaging ? 'opacity-30' : ''}`}
-              unoptimized
-            />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[var(--color-space-deep)] to-transparent" />
-            {imaging && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p
-                  className="text-sm text-[var(--color-text-secondary)]"
-                  role="status"
-                  aria-live="polite"
+        {/* The watercolour, opened. A 3:4 image at full page width was taller
+            than a phone screen on its own, so the whole dream lived below the
+            fold. It is a thumbnail now, and this is the way to see it big. */}
+        {zoom && image?.url && (
+          <div className="mb-5">
+            <div className="relative mx-auto aspect-[3/4] h-[min(68vh,32rem)] overflow-hidden rounded-2xl">
+              <Image
+                src={image.url}
+                alt={
+                  dream.title ??
+                  label('Aquarelle générée pour ce rêve', 'Watercolour generated for this dream')
+                }
+                fill
+                sizes="384px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+            <div className="mt-2 text-center">
+              <button
+                type="button"
+                onClick={() => setZoom(false)}
+                className="btn-ghost rounded-xl px-4 py-2 text-xs"
+              >
+                {label("Réduire l'image", 'Shrink the image')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Identity: the picture beside the title, not above the whole page. */}
+        <header className="mb-5 flex items-start gap-4">
+          {((image?.url && !zoom) || imaging) && (
+            <div className="w-24 shrink-0 sm:w-32 lg:w-40">
+              {image?.url ? (
+                <button
+                  type="button"
+                  onClick={() => setZoom(true)}
+                  aria-label={label("Agrandir l'image", 'Enlarge the image')}
+                  className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl transition hover:opacity-90"
                 >
-                  {label('On repeint ton rêve…', 'Repainting your dream…')}
-                </p>
+                  <Image
+                    src={image.url}
+                    alt={
+                      dream.title ??
+                      label(
+                        'Aquarelle générée pour ce rêve',
+                        'Watercolour generated for this dream',
+                      )
+                    }
+                    fill
+                    sizes="160px"
+                    className={`object-cover transition-opacity ${imaging ? 'opacity-25' : ''}`}
+                    unoptimized
+                  />
+                  {imaging && (
+                    <span
+                      className="absolute inset-0 flex items-center justify-center px-1 text-center text-[11px] leading-tight text-[var(--color-text-secondary)]"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {label('On repeint…', 'Repainting…')}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <div className="glass flex aspect-[3/4] w-full items-center justify-center rounded-xl">
+                  <p
+                    className="px-2 text-center text-[11px] leading-tight text-[var(--color-text-muted)]"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {label('On peint ton rêve…', 'Painting your dream…')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <h1 className="font-cinzel mb-1 text-2xl text-[var(--color-text-primary)] sm:text-3xl">
+              {dream.title || label('Rêve sans titre', 'Untitled dream')}
+            </h1>
+            <p className="mb-3 text-sm text-[var(--color-text-muted)]">
+              {longDate(dream.dream_date, locale)}
+            </p>
+
+            {(emotions.length > 0 || (dream.tags ?? []).length > 0) && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {emotions.map((emotion) => (
+                  <EmotionChip key={emotion} emotion={emotion} locale={locale} compact />
+                ))}
+                {(dream.tags ?? []).map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[var(--color-glass-border)] px-2 py-0.5 text-[11px] text-[var(--color-text-muted)]"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
-          </div>
-        ) : imaging ? (
-          <div className="glass mb-6 flex aspect-[3/4] w-full items-center justify-center rounded-2xl">
-            <p className="text-sm text-[var(--color-text-muted)]" role="status" aria-live="polite">
-              {label('On peint ton rêve…', 'Painting your dream…')}
-            </p>
-          </div>
-        ) : null}
 
-        {/* Adjusting the image. An image is a reading too — and the first one
-            is rarely the one the dreamer saw. Also the way back in when the
-            first attempt failed silently, which it is allowed to do. */}
-        {isPremium && !imaging && (
-          <div className={image?.url ? '-mt-2 mb-6' : 'mb-6'}>
-            {!adjustOpen ? (
+            {/* Three numbers on one line rather than three cards on three —
+                they are context, not headlines. */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--color-text-muted)]">
+              <Meta
+                label={label('Intensité', 'Intensity')}
+                value={dream.emotional_intensity}
+                max={10}
+              />
+              <Meta label={label('Lucidité', 'Lucidity')} value={dream.lucidity_level} max={5} />
+              <Meta label={label('Sommeil', 'Sleep')} value={dream.sleep_quality} max={5} />
+            </div>
+
+            {isPremium && !imaging && !adjustOpen && (
               <button
                 type="button"
                 onClick={() => setAdjustOpen(true)}
-                className="btn-ghost rounded-xl px-4 py-2 text-xs"
+                className="btn-ghost mt-3 rounded-xl px-3 py-1.5 text-xs"
               >
                 {image?.url
                   ? label("Ajuster l'image ✦", 'Adjust the image ✦')
                   : label('Peindre ce rêve ✦', 'Paint this dream ✦')}
               </button>
-            ) : (
+            )}
+          </div>
+        </header>
+
+        {/* Adjusting the image. An image is a reading too — and the first one
+            is rarely the one the dreamer saw. Also the way back in when the
+            first attempt failed silently, which it is allowed to do. */}
+        {isPremium && !imaging && (adjustOpen || imageNotice) && (
+          <div className="mb-5">
+            {adjustOpen && (
               <div className="glass rounded-2xl p-4">
                 <label
                   htmlFor="image-instruction"
@@ -406,135 +491,101 @@ export default function DreamDetailPage() {
           </div>
         )}
 
-        <h1 className="font-cinzel mb-1 text-2xl text-[var(--color-text-primary)] sm:text-3xl">
-          {dream.title || label('Rêve sans titre', 'Untitled dream')}
-        </h1>
-        <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-          {longDate(dream.dream_date, locale)}
-        </p>
-
-        {(emotions.length > 0 || (dream.tags ?? []).length > 0) && (
-          <div className="mb-5 flex flex-wrap gap-1.5">
-            {emotions.map((emotion) => (
-              <EmotionChip key={emotion} emotion={emotion} locale={locale} />
-            ))}
-            {(dream.tags ?? []).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-[var(--color-glass-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)]"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="glass mb-5 rounded-2xl p-5">
-          <p className="text-sm leading-relaxed whitespace-pre-line text-[var(--color-text-secondary)]">
-            {dream.structured_text || dream.raw_text}
-          </p>
-        </div>
-
-        <div className="mb-6 grid grid-cols-3 gap-2">
-          <MetaChip
-            label={label('Intensité', 'Intensity')}
-            value={dream.emotional_intensity}
-            max={10}
-          />
-          <MetaChip label={label('Lucidité', 'Lucidity')} value={dream.lucidity_level} max={5} />
-          <MetaChip label={label('Sommeil', 'Sleep')} value={dream.sleep_quality} max={5} />
-        </div>
-
-        {/* Interpretation — Premium. Free members see what it would give them. */}
-        <section className="glass mb-6 rounded-2xl p-5">
-          <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
-            {label('Interprétation', 'Interpretation')}
-          </h2>
-
-          {!isPremium ? (
-            <div>
-              <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                {label(
-                  'Ton rêve est bien consigné — ça, c’est gratuit et ça le restera. Le Premium ajoute trois lectures du même rêve : une factuelle appuyée sur les neurosciences du sommeil, une symbolique nourrie des archétypes jungiens, et la synthèse des deux. Ta Lune natale colore la symbolique.',
-                  'Your dream is recorded — that part is free and stays free. Premium adds three readings of the same dream: a factual one grounded in sleep neuroscience, a symbolic one drawing on Jungian archetypes, and the synthesis of both. Your natal Moon colours the symbolic one.',
-                )}
+        {/* The account and the reading side by side once there is room: the two
+            things you came to read, both on screen at once. */}
+        <div className="mb-5 grid gap-5 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-5">
+            <div className="glass rounded-2xl p-5">
+              <p className="text-sm leading-relaxed whitespace-pre-line text-[var(--color-text-secondary)]">
+                {dream.structured_text || dream.raw_text}
               </p>
-              <Link
-                href="/premium"
-                className="btn-primary inline-block rounded-xl px-5 py-2.5 text-sm"
-                style={{
-                  background: 'linear-gradient(135deg, var(--color-accent-gold), #b8863f)',
-                }}
-              >
-                {label('Débloquer Premium — 9,99 $ ✦', 'Unlock Premium — $9.99 ✦')}
-              </Link>
             </div>
-          ) : interpreting ? (
-            <Skeleton lines={4} />
-          ) : interpretation ? (
-            <>
-              <DreamGauge
-                content={interpretation.content}
-                initialValue={dream.gauge_value ?? 0.5}
-                onCommit={commitGauge}
-                locale={locale}
-              />
-              <p className="mt-4 text-xs text-[var(--color-text-muted)]">
-                {interpretation.astro_used
-                  ? label('✦ Enrichie par ta carte natale.', '✦ Enriched by your natal chart.')
-                  : label(
-                      'Calcule ta carte natale pour que ta Lune colore la lecture spirituelle.',
-                      'Calculate your natal chart so your Moon colours the spiritual reading.',
-                    )}
-                {!interpretation.astro_used && (
-                  <>
-                    {' '}
-                    <Link
-                      href="/carte-natale"
-                      className="text-[var(--color-accent-lavender)] hover:underline"
-                    >
-                      {label('Ma carte natale →', 'My natal chart →')}
-                    </Link>
-                  </>
-                )}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-[var(--color-text-muted)]">
-              {notice ||
-                label(
-                  "L'interprétation n'est pas encore disponible.",
-                  'The interpretation is not available yet.',
-                )}
-            </p>
-          )}
-        </section>
 
-        {((dream.characters ?? []).length > 0 || (dream.places ?? []).length > 0) && (
-          <div className="mb-6 grid gap-4 sm:grid-cols-2">
-            <ListBlock
-              title={label('Personnages', 'Characters')}
-              items={dream.characters ?? []}
-              empty={label('Personne', 'Nobody')}
-            />
-            <ListBlock
-              title={label('Lieux', 'Places')}
-              items={dream.places ?? []}
-              empty={label('Nulle part', 'Nowhere')}
-            />
+            {((dream.characters ?? []).length > 0 || (dream.places ?? []).length > 0) && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ListBlock
+                  title={label('Personnages', 'Characters')}
+                  items={dream.characters ?? []}
+                  empty={label('Personne', 'Nobody')}
+                />
+                <ListBlock
+                  title={label('Lieux', 'Places')}
+                  items={dream.places ?? []}
+                  empty={label('Nulle part', 'Nowhere')}
+                />
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Interpretation — Premium. Free members see what it would give them. */}
+          <section className="glass rounded-2xl p-5">
+            <h2 className="font-cinzel mb-3 text-lg text-[var(--color-text-primary)]">
+              {label('Interprétation', 'Interpretation')}
+            </h2>
+
+            {!isPremium ? (
+              <div>
+                <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                  {label(
+                    'Ton rêve est bien consigné — ça, c’est gratuit et ça le restera. Le Premium ajoute trois lectures du même rêve : une factuelle appuyée sur les neurosciences du sommeil, une symbolique nourrie des archétypes jungiens, et la synthèse des deux. Ta Lune natale colore la symbolique.',
+                    'Your dream is recorded — that part is free and stays free. Premium adds three readings of the same dream: a factual one grounded in sleep neuroscience, a symbolic one drawing on Jungian archetypes, and the synthesis of both. Your natal Moon colours the symbolic one.',
+                  )}
+                </p>
+                <Link
+                  href="/premium"
+                  className="btn-primary inline-block rounded-xl px-5 py-2.5 text-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-accent-gold), #b8863f)',
+                  }}
+                >
+                  {label('Débloquer Premium — 9,99 $ ✦', 'Unlock Premium — $9.99 ✦')}
+                </Link>
+              </div>
+            ) : interpreting ? (
+              <Skeleton lines={4} />
+            ) : interpretation ? (
+              <>
+                <DreamGauge
+                  content={interpretation.content}
+                  initialValue={dream.gauge_value ?? 0.5}
+                  onCommit={commitGauge}
+                  locale={locale}
+                />
+                <p className="mt-4 text-xs text-[var(--color-text-muted)]">
+                  {interpretation.astro_used
+                    ? label('✦ Enrichie par ta carte natale.', '✦ Enriched by your natal chart.')
+                    : label(
+                        'Calcule ta carte natale pour que ta Lune colore la lecture spirituelle.',
+                        'Calculate your natal chart so your Moon colours the spiritual reading.',
+                      )}
+                  {!interpretation.astro_used && (
+                    <>
+                      {' '}
+                      <Link
+                        href="/carte-natale"
+                        className="text-[var(--color-accent-lavender)] hover:underline"
+                      >
+                        {label('Ma carte natale →', 'My natal chart →')}
+                      </Link>
+                    </>
+                  )}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-[var(--color-text-muted)]">
+                {notice ||
+                  label(
+                    "L'interprétation n'est pas encore disponible.",
+                    'The interpretation is not available yet.',
+                  )}
+              </p>
+            )}
+          </section>
+        </div>
 
         {error && <p className="mb-4 text-sm text-[var(--color-accent-rose)]">{error}</p>}
 
-        <p className="mb-6 text-xs leading-relaxed text-[var(--color-text-muted)]">
-          {label(
-            'Ces lectures sont des pistes de réflexion, jamais un avis médical ou psychologique.',
-            'These readings are avenues for reflection, never medical or psychological advice.',
-          )}
-        </p>
-
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!editing && (
             <button
               type="button"
@@ -552,20 +603,27 @@ export default function DreamDetailPage() {
             {label('Supprimer ce rêve', 'Delete this dream')}
           </button>
         </div>
+
+        <p className="mt-4 text-xs leading-relaxed text-[var(--color-text-muted)]">
+          {label(
+            'Ces lectures sont des pistes de réflexion, jamais un avis médical ou psychologique.',
+            'These readings are avenues for reflection, never medical or psychological advice.',
+          )}
+        </p>
       </main>
       <SiteFooter />
     </>
   )
 }
 
-function MetaChip({ label, value, max }: { label: string; value: number | null; max: number }) {
+function Meta({ label, value, max }: { label: string; value: number | null; max: number }) {
   return (
-    <div className="glass rounded-xl px-3 py-2 text-center">
-      <div className="text-[11px] text-[var(--color-text-muted)]">{label}</div>
-      <div className="font-mono text-sm text-[var(--color-accent-lavender)]">
+    <span>
+      {label}{' '}
+      <span className="font-mono tabular-nums text-[var(--color-accent-lavender)]">
         {value != null ? `${value}/${max}` : '—'}
-      </div>
-    </div>
+      </span>
+    </span>
   )
 }
 
