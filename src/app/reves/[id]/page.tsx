@@ -22,6 +22,7 @@ import {
   type DreamDetail,
 } from '@/lib/dreamClient'
 import { isEmotionKey } from '@/lib/dreams'
+import { DREAM_IMAGE_MONTHLY_LIMIT } from '@/lib/dreamLimits'
 
 const MONTHS_FR = [
   'janvier',
@@ -446,8 +447,8 @@ export default function DreamDetailPage() {
                 />
                 <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
                   {label(
-                    'Chaque nouvelle image compte dans ton quota mensuel (10 par mois).',
-                    'Each new image counts against your monthly quota (10 per month).',
+                    `Chaque nouvelle image compte dans ton quota mensuel (${DREAM_IMAGE_MONTHLY_LIMIT} par mois).`,
+                    `Each new image counts against your monthly quota (${DREAM_IMAGE_MONTHLY_LIMIT} per month).`,
                   )}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">

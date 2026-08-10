@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
 
     const quota = await consumeDreamQuota(guard.userId, 'image')
-    if (!quota.allowed) return quotaExceededResponse(quota, locale)
+    if (!quota.allowed) return quotaExceededResponse(quota, locale, 'image')
 
     // The fantastical touch comes from the symbolic reading — the one part of
     // the feature that already knows what the dream is *about*. The prototype
