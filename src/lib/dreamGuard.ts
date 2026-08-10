@@ -17,13 +17,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getDreamRateLimit } from './ratelimit'
 import type { DreamAstroContext } from './dreams'
+import {
+  DREAM_IMAGE_MONTHLY_LIMIT,
+  DREAM_LIFETIME_LIMIT,
+  DREAM_MONTHLY_LIMIT,
+  quotaMessage,
+  type QuotaKind,
+  type QuotaResult,
+} from './dreamLimits'
 
-/** Interpretations a Premium member can generate per calendar month. */
-export const DREAM_MONTHLY_LIMIT = 30
-/** Lifetime ceiling — a runaway-abuse backstop, not a product promise. */
-export const DREAM_LIFETIME_LIMIT = 300
-/** Images per calendar month (pricier than text, so a tighter cap). */
-export const DREAM_IMAGE_MONTHLY_LIMIT = 10
+// The numbers themselves live in ./dreamLimits so the UI can quote them
+// without pulling next/server and the service-role client into its bundle.
+export {
+  DREAM_IMAGE_MONTHLY_LIMIT,
+  DREAM_LIFETIME_LIMIT,
+  DREAM_MONTHLY_LIMIT,
+  type QuotaKind,
+  type QuotaResult,
+}
 
 export function getSupabaseAdmin(): SupabaseClient {
   return createClient(
@@ -81,14 +92,6 @@ export async function requirePremium(req: NextRequest): Promise<Guard> {
 
 function currentMonth(): string {
   return new Date().toISOString().slice(0, 7) // YYYY-MM
-}
-
-export type QuotaKind = 'interpretation' | 'image'
-
-export interface QuotaResult {
-  allowed: boolean
-  remaining: number
-  reason?: 'MONTHLY' | 'LIFETIME'
 }
 
 /**
@@ -159,18 +162,17 @@ export async function consumeDreamQuota(
   }
 }
 
-export function quotaExceededResponse(result: QuotaResult, locale: 'fr' | 'en'): NextResponse {
-  const lifetime = result.reason === 'LIFETIME'
-  const message =
-    locale === 'en'
-      ? lifetime
-        ? 'You have reached the overall limit for dream interpretations. Get in touch and we will sort it out.'
-        : 'You have used all your dream interpretations for this month. They renew at the start of next month.'
-      : lifetime
-        ? "Tu as atteint la limite globale d'interprétations de rêves. Écris-nous et on arrange ça."
-        : 'Tu as utilisé toutes tes interprétations de rêves ce mois-ci. Elles se renouvellent au début du mois prochain.'
+export function quotaExceededResponse(
+  result: QuotaResult,
+  locale: 'fr' | 'en',
+  kind: QuotaKind = 'interpretation',
+): NextResponse {
   return NextResponse.json(
-    { error: 'QUOTA_EXCEEDED', reason: result.reason, message },
+    {
+      error: 'QUOTA_EXCEEDED',
+      reason: result.reason,
+      message: quotaMessage(kind, result.reason, locale),
+    },
     { status: 429 },
   )
 }

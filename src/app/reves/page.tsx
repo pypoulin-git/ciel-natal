@@ -16,6 +16,7 @@ import EmotionChip from '@/components/dreams/EmotionChip'
 import { listDreamStats, listDreams } from '@/lib/dreamClient'
 import { EMOTIONS, type Dream } from '@/lib/dreams'
 import { windowStart, type StatDream } from '@/lib/dreamStats'
+import { DREAM_IMAGE_MONTHLY_LIMIT } from '@/lib/dreamLimits'
 
 const SAMPLE_DREAM_FR = `Je marchais sur une plage la nuit, et l'eau montait sans jamais me toucher. Quelqu'un que je connaissais m'appelait depuis la dune, mais chaque fois que je me retournais, la voix venait d'ailleurs.`
 
@@ -221,7 +222,7 @@ function PremiumUpsell({ locale }: { locale: string }) {
           'Trois lectures du même rêve, et un curseur pour doser entre neurosciences et archétypes.',
         ],
         ['🌙', 'Ta Lune natale colore la lecture symbolique. Personne d’autre ne peut faire ça.'],
-        ['🎨', 'Une aquarelle onirique par rêve.'],
+        ['🎨', `Une aquarelle onirique, jusqu'à ${DREAM_IMAGE_MONTHLY_LIMIT} par mois.`],
       ]
     : [
         [
@@ -233,7 +234,7 @@ function PremiumUpsell({ locale }: { locale: string }) {
           'Three readings of the same dream, and a slider to set the dose between neuroscience and archetypes.',
         ],
         ['🌙', 'Your natal Moon colours the symbolic reading. Nobody else can do that.'],
-        ['🎨', 'One dreamlike watercolour per dream.'],
+        ['🎨', `A dreamlike watercolour, up to ${DREAM_IMAGE_MONTHLY_LIMIT} a month.`],
       ]
 
   return (
@@ -302,13 +303,13 @@ function SignedOutTeaser({ locale }: { locale: string }) {
         "L'IA structure ton récit : titre, thèmes, émotions, personnages, lieux",
         'Trois lectures du même rêve — factuelle, spirituelle, mixte — avec un curseur',
         'Ta Lune natale, ton Soleil et ton Ascendant colorent la lecture symbolique',
-        'Une aquarelle onirique générée pour chaque rêve',
+        `Une aquarelle onirique générée pour ton rêve, jusqu'à ${DREAM_IMAGE_MONTHLY_LIMIT} par mois`,
       ]
     : [
         'The AI structures your account: title, themes, emotions, characters, places',
         'Three readings of the same dream — factual, spiritual, blended — with a slider',
         'Your natal Moon, Sun and Ascendant colour the symbolic reading',
-        'A dreamlike watercolour generated for each dream',
+        `A dreamlike watercolour generated for your dream, up to ${DREAM_IMAGE_MONTHLY_LIMIT} a month`,
       ]
 
   return (
