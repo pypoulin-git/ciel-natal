@@ -4,9 +4,9 @@ import { withSentryConfig } from '@sentry/nextjs'
 const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig: NextConfig = {
-  experimental: {
-    viewTransition: true,
-  },
+  // `experimental.viewTransition` a disparu de la config en Next 16.3 : la
+  // fonctionnalité a gradué, React's <ViewTransition> (layout.tsx) marche sans
+  // drapeau. Garder la clé faisait échouer le type-check du build.
   async headers() {
     return [
       {
