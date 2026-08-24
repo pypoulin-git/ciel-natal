@@ -467,3 +467,35 @@ export const SKY_EXPLAINERS = {
     en: 'A stellium is three or more planets gathered in the same sign: a concentration of energy that spotlights that theme.',
   },
 }
+
+// ── Éclipses ────────────────────────────────────────────────────────────────
+// Les éclipses sont les lunaisons les plus chargées : elles n'arrivent que
+// lorsque la Lune croise l'axe des nœuds — l'axe du chemin de vie. En
+// astrologie psychologique, elles n'annoncent rien : elles accélèrent. Ce qui
+// mûrissait sort de l'ombre, ce qui était fini se détache.
+export const ECLIPSE_INFO: {
+  lunar: { name: Bi; text: Bi }
+  solar: { name: Bi; text: Bi }
+  kind: Record<string, Bi>
+} = {
+  lunar: {
+    name: { fr: 'Éclipse de Lune', en: 'Lunar eclipse' },
+    text: {
+      fr: 'Une Pleine Lune poussée à son comble : l’ombre de la Terre passe sur la Lune et révèle ce qu’on ne voulait plus voir. Temps de culmination et de détachement — quelque chose se boucle, souvent plus vite qu’on ne l’aurait choisi.',
+      en: 'A Full Moon pushed to its extreme: Earth’s shadow crosses the Moon and reveals what we stopped looking at. A time of culmination and release — something closes, often faster than we would have chosen.',
+    },
+  },
+  solar: {
+    name: { fr: 'Éclipse de Soleil', en: 'Solar eclipse' },
+    text: {
+      fr: 'Une Nouvelle Lune amplifiée : la Lune passe devant le Soleil et éteint brièvement la lumière. Porte de départ — les intentions posées ici engagent souvent bien plus loin que prévu.',
+      en: 'An amplified New Moon: the Moon passes in front of the Sun and briefly switches off the light. A doorway — intentions set here tend to carry much further than expected.',
+    },
+  },
+  kind: {
+    total: { fr: 'totale', en: 'total' },
+    partial: { fr: 'partielle', en: 'partial' },
+    penumbral: { fr: 'par la pénombre', en: 'penumbral' },
+    annular: { fr: 'annulaire', en: 'annular' },
+  },
+}

@@ -18,6 +18,7 @@ import {
   NATURE_COLOR,
   CONFIG_INFO,
   RETRO_HEADLINE,
+  ECLIPSE_INFO,
 } from '@/data/skyInterpretations'
 
 // A slim horizontal "market ticker" under the Moon strip. It reads the same
@@ -168,6 +169,21 @@ function buildItems(now: Date, fr: boolean, locale: string): TickItem[] {
         label = fr ? `Le Soleil entre en ${sign}` : `Sun enters ${sign}`
         effect = fr ? `nouvelle saison — ${th}` : `a new season — ${th}`
         break
+      case 'eclipse-lunar':
+      case 'eclipse-solar': {
+        const solar = e.type === 'eclipse-solar'
+        const info = solar ? ECLIPSE_INFO.solar : ECLIPSE_INFO.lunar
+        const kind = e.eclipseKind ? L(ECLIPSE_INFO.kind[e.eclipseKind]) : ''
+        glyph = solar ? '◎' : '◐'
+        color = solar ? GOLD : ROSE
+        label = fr
+          ? `${L(info.name)} ${kind} en ${sign}`
+          : `${kind.charAt(0).toUpperCase() + kind.slice(1)} ${L(info.name).toLowerCase()} in ${sign}`
+        effect = solar
+          ? fr ? `porte de départ — ce qui se sème ici engage loin · ${th}` : `a doorway — what starts here carries far · ${th}`
+          : fr ? `culmination accélérée — ${th} sort de l'ombre` : `accelerated culmination — ${th} comes to light`
+        break
+      }
       case 'meteor-shower': {
         const s = e.meteorKey ? METEOR_BY_KEY[e.meteorKey] : undefined
         glyph = '☄'; color = GOLD
