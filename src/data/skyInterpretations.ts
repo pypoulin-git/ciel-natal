@@ -499,3 +499,51 @@ export const ECLIPSE_INFO: {
     annular: { fr: 'annulaire', en: 'annular' },
   },
 }
+
+// ── Observation : oppositions et plus grandes élongations ───────────────────
+// Deux rendez-vous purement observationnels, valables partout (contrairement
+// aux pluies d'étoiles, favorables au nord). À l'opposition, une planète
+// supérieure se lève au coucher du Soleil et brille toute la nuit. Mercure et
+// Vénus, elles, ne s'écartent jamais loin du Soleil : leur plus grande
+// élongation est la seule fenêtre pour les attraper.
+export const OPPOSITION_NOTE: Record<string, Bi> = {
+  Mars: {
+    fr: 'la plus rouge et la plus grosse de l’année — visible toute la nuit',
+    en: 'reddest and largest of the year — visible all night',
+  },
+  Jupiter: {
+    fr: 'éclatante toute la nuit ; des jumelles suffisent pour ses quatre lunes',
+    en: 'brilliant all night; binoculars are enough for its four moons',
+  },
+  Saturne: {
+    fr: 'à son plus près de l’année ; une petite lunette montre déjà les anneaux',
+    en: 'at its closest of the year; a small scope already shows the rings',
+  },
+  Uranus: {
+    fr: 'tout juste à la limite de l’œil nu sous un ciel très noir',
+    en: 'just at naked-eye limit under a very dark sky',
+  },
+  Neptune: {
+    fr: 'invisible à l’œil nu, mais au mieux de sa saison aux jumelles',
+    en: 'not naked-eye, but at its best of the season in binoculars',
+  },
+}
+
+export const SKY_WATCH_INFO = {
+  opposition: {
+    name: { fr: 'à l’opposition', en: 'at opposition' },
+    text: {
+      fr: 'La planète est à l’opposé du Soleil vue de la Terre : elle se lève quand le Soleil se couche, culmine à minuit et reste visible toute la nuit. C’est aussi le moment où elle est la plus proche de nous, donc la plus brillante de l’année.',
+      en: 'The planet sits opposite the Sun as seen from Earth: it rises at sunset, peaks at midnight and stays visible all night. It is also at its closest to us, and so at its brightest of the year.',
+    },
+  },
+  elongation: {
+    name: { fr: 'plus grande élongation', en: 'greatest elongation' },
+    evening: { fr: 'le soir, après le coucher du Soleil', en: 'in the evening, after sunset' },
+    morning: { fr: 'le matin, avant l’aube', en: 'in the morning, before dawn' },
+    text: {
+      fr: 'Mercure et Vénus orbitent entre nous et le Soleil : elles ne s’en écartent jamais beaucoup et restent le plus souvent noyées dans sa lumière. À leur plus grande élongation, l’écart est maximal — c’est la meilleure fenêtre de l’année pour les repérer.',
+      en: 'Mercury and Venus orbit between us and the Sun: they never stray far and usually stay drowned in its glare. At greatest elongation the gap is widest — the best window of the year to spot them.',
+    },
+  },
+}

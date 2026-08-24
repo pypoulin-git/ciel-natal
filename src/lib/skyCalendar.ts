@@ -42,6 +42,8 @@ export type CalEventType =
   | 'meteor-shower'
   | 'eclipse-lunar'
   | 'eclipse-solar'
+  | 'opposition'
+  | 'elongation'
 
 /** Lunar: total > partial > penumbral. Solar: total / annular / partial. */
 export type EclipseKind = 'total' | 'partial' | 'penumbral' | 'annular'
@@ -59,7 +61,17 @@ export interface CalEvent {
   // the UI can show it in the visitor's own local time.
   eclipseKind?: EclipseKind
   atISO?: string
+  // elongation only: signed angle to the Sun (+ = east, visible in the evening;
+  // − = west, visible before dawn). Rounded degrees.
+  elongDeg?: number
 }
+
+/** Superior planets worth an "opposition" row — the night they are closest,
+ *  brightest, and up all night long. Mercury and Venus never oppose the Sun. */
+const OPPOSITION_PLANETS = ['Mars', 'Jupiter', 'Saturne', 'Uranus', 'Neptune'] as const
+/** Inferior planets: they never stray far from the Sun, so their greatest
+ *  elongation IS the moment to catch them. */
+const ELONGATION_PLANETS = ['Mercure', 'Venus'] as const
 
 export interface CalMonth {
   year: number
@@ -191,6 +203,10 @@ export function computeCalendar(now: Date, monthsCount = 12): CalMonth[] {
   let prevSunSign = -1
   const prevLon: Record<string, number> = {}
   const prevMotionSign: Record<string, number> = {} // +1 direct, -1 retro
+  // Signed Sun-planet elongation over the last two days, to spot oppositions
+  // (sign flip at ±180°) and greatest elongations (local maximum of |angle|).
+  const prevSunElong: Record<string, number> = {}
+  const prev2SunElong: Record<string, number> = {}
 
   for (let t = start.getTime(); t <= end.getTime(); t += DAY_MS) {
     const day = noonUTC(new Date(t))
@@ -233,6 +249,57 @@ export function computeCalendar(now: Date, monthsCount = 12): CalMonth[] {
         }
         prevMotionSign[name] = sign
       }
+
+      // ── Oppositions: the elongation flips sign while sitting near 180°.
+      // The planet then rises at sunset, culminates at midnight, and is at its
+      // closest and brightest of the year — the best night to look at it.
+      for (const name of OPPOSITION_PLANETS) {
+        const cur = signedDelta(geo.Soleil, geo[name])
+        const prev = prevSunElong[name]
+        if (
+          prev !== undefined &&
+          Math.abs(prev) > 170 &&
+          Math.abs(cur) > 170 &&
+          prev > 0 !== cur > 0
+        ) {
+          events.push({
+            dateISO: isoOf(day),
+            type: 'opposition',
+            planetKey: name,
+            signKey: SIGNS[signIndex(geo[name])],
+          })
+        }
+      }
+
+      // ── Greatest elongations: Mercury and Venus hug the Sun, so the only
+      // moments they climb out of the glare are the local maxima of their
+      // angular distance from it.
+      for (const name of ELONGATION_PLANETS) {
+        const cur = signedDelta(geo.Soleil, geo[name])
+        const p1 = prevSunElong[name]
+        const p2 = prev2SunElong[name]
+        if (
+          p1 !== undefined &&
+          p2 !== undefined &&
+          Math.abs(p1) > Math.abs(p2) &&
+          Math.abs(p1) > Math.abs(cur)
+        ) {
+          // The peak is the previous day, not today.
+          const peak = new Date(day.getTime() - DAY_MS)
+          events.push({
+            dateISO: isoOf(peak),
+            type: 'elongation',
+            planetKey: name,
+            signKey: SIGNS[signIndex(prevLon[name] ?? geo[name])],
+            elongDeg: Math.round(p1),
+          })
+        }
+      }
+    }
+
+    for (const name of [...OPPOSITION_PLANETS, ...ELONGATION_PLANETS]) {
+      prev2SunElong[name] = prevSunElong[name]
+      prevSunElong[name] = signedDelta(geo.Soleil, geo[name])
     }
 
     prevDay = day
