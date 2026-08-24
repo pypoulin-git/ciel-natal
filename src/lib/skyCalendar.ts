@@ -5,7 +5,13 @@
 // for the planets (the only source that reproduces retrograde motion).
 
 import { calculateNatalChart, SIGNS } from './astro'
-import { geocentricChart, EPHEM_PLANETS } from './ephemeris'
+import {
+  geocentricChart,
+  geocentricLongitudes,
+  moonEcliptic,
+  daysSince2000At,
+  EPHEM_PLANETS,
+} from './ephemeris'
 import { METEOR_SHOWERS } from '@/data/meteorShowers'
 
 const DAY_MS = 86400000
@@ -34,6 +40,11 @@ export type CalEventType =
   | 'retro-end'
   | 'sun-ingress'
   | 'meteor-shower'
+  | 'eclipse-lunar'
+  | 'eclipse-solar'
+
+/** Lunar: total > partial > penumbral. Solar: total / annular / partial. */
+export type EclipseKind = 'total' | 'partial' | 'penumbral' | 'annular'
 
 export interface CalEvent {
   dateISO: string
@@ -44,6 +55,10 @@ export interface CalEvent {
   // (moonPct 0–100 — a full Moon washes out faint meteors).
   meteorKey?: string
   moonPct?: number
+  // eclipse-* only: severity and the exact instant of maximum (UTC, ISO), so
+  // the UI can show it in the visitor's own local time.
+  eclipseKind?: EclipseKind
+  atISO?: string
 }
 
 export interface CalMonth {
@@ -72,6 +87,98 @@ function sunMoon(d: Date): { sun: number; moon: number } {
   return { sun: c.planets[0].longitude, moon: c.planets[1].longitude }
 }
 
+// ─── Eclipses ───────────────────────────────────────────────────────────────
+// An eclipse is a syzygy (New/Full Moon) that happens close to a lunar node —
+// i.e. when the Moon's ecliptic LATITUDE is near zero. Our Schlyter lunar
+// theory gives that latitude, so eclipses are computed, not tabulated.
+//
+// Method: bisect the exact instant where the Moon–Sun elongation hits 0° (new)
+// or 180° (full), then read the Moon's latitude and distance there.
+// Validated against the real 2026–2027 eclipses (instants within minutes, and
+// every type correctly classified).
+
+const ECL_WINDOW_MS = 36 * 3600 * 1000
+
+function elongationAt(t: Date): number {
+  const d = daysSince2000At(t)
+  return norm(moonEcliptic(d).lon - geocentricLongitudes(d).Soleil)
+}
+
+/** Signed offset from the target elongation, in (-180, 180]. */
+function syzygyOffset(t: Date, target: number): number {
+  let x = norm(elongationAt(t) - target)
+  if (x > 180) x -= 360
+  return x
+}
+
+/** Exact syzygy instant near `day`, or null if none in the ±36 h window. */
+function refineSyzygy(day: Date, target: number): Date | null {
+  let lo = new Date(day.getTime() - ECL_WINDOW_MS)
+  let hi = new Date(day.getTime() + ECL_WINDOW_MS)
+  let fLo = syzygyOffset(lo, target)
+  const fHi = syzygyOffset(hi, target)
+  if (fLo === 0) return lo
+  // Bisection needs a sign change across the window.
+  if (fLo < 0 === fHi < 0) return null
+  for (let i = 0; i < 60; i++) {
+    const mid = new Date((lo.getTime() + hi.getTime()) / 2)
+    const fMid = syzygyOffset(mid, target)
+    if (fLo < 0 === fMid < 0) {
+      lo = mid
+      fLo = fMid
+    } else {
+      hi = mid
+    }
+  }
+  return new Date((lo.getTime() + hi.getTime()) / 2)
+}
+
+// Latitude limits (degrees). The Moon's horizontal parallax is ~0.95°, so an
+// ecliptic latitude of ~0.95° puts the shadow axis about one Earth radius off
+// centre — the classic limit for a central solar eclipse.
+const LUNAR_TOTAL = 0.4
+const LUNAR_PARTIAL = 1.0
+const LUNAR_PENUMBRAL = 1.55
+const SOLAR_CENTRAL = 0.94
+const SOLAR_PARTIAL = 1.47
+// Apparent-size crossover: nearer than this the Moon covers the Sun (total),
+// farther away a ring of Sun remains (annular).
+const ANNULAR_DISTANCE = 59.6 // Earth radii
+
+/** Classify the eclipse at a syzygy instant, or null if the Moon misses. */
+function classifyEclipse(
+  at: Date,
+  solar: boolean,
+): { kind: EclipseKind; moonLon: number } | null {
+  const m = moonEcliptic(daysSince2000At(at))
+  const lat = Math.abs(m.lat)
+  if (solar) {
+    if (lat > SOLAR_PARTIAL) return null
+    const kind: EclipseKind =
+      lat <= SOLAR_CENTRAL ? (m.r < ANNULAR_DISTANCE ? 'total' : 'annular') : 'partial'
+    return { kind, moonLon: m.lon }
+  }
+  if (lat > LUNAR_PENUMBRAL) return null
+  const kind: EclipseKind =
+    lat <= LUNAR_TOTAL ? 'total' : lat <= LUNAR_PARTIAL ? 'partial' : 'penumbral'
+  return { kind, moonLon: m.lon }
+}
+
+/** Build the eclipse event for a detected New/Full Moon day, if any. */
+function eclipseFor(day: Date, solar: boolean): CalEvent | null {
+  const at = refineSyzygy(day, solar ? 0 : 180)
+  if (!at) return null
+  const hit = classifyEclipse(at, solar)
+  if (!hit) return null
+  return {
+    dateISO: isoOf(at),
+    type: solar ? 'eclipse-solar' : 'eclipse-lunar',
+    signKey: SIGNS[signIndex(hit.moonLon)],
+    eclipseKind: hit.kind,
+    atISO: at.toISOString(),
+  }
+}
+
 export function computeCalendar(now: Date, monthsCount = 12): CalMonth[] {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 12, 0, 0))
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + monthsCount, 1, 12, 0, 0))
@@ -96,10 +203,16 @@ export function computeCalendar(now: Date, monthsCount = 12): CalMonth[] {
       // ── New Moon: elongation wraps 360 → 0 (drops) ──
       if (elong < prevElong) {
         events.push({ dateISO: isoOf(day), type: 'new-moon', signKey: SIGNS[signIndex(moon)] })
+        // A New Moon near a node eclipses the Sun.
+        const ecl = eclipseFor(day, true)
+        if (ecl) events.push(ecl)
       }
       // ── Full Moon: elongation crosses 180 upward ──
       if (prevElong < 180 && elong >= 180) {
         events.push({ dateISO: isoOf(day), type: 'full-moon', signKey: SIGNS[signIndex(moon)] })
+        // A Full Moon near a node passes through Earth's shadow.
+        const ecl = eclipseFor(day, false)
+        if (ecl) events.push(ecl)
       }
       // ── Sun ingress: sign index advances ──
       if (sunSign !== prevSunSign) {

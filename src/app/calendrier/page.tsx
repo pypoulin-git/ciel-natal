@@ -11,8 +11,9 @@ import { useLocale } from '@/lib/i18n'
 import { translateSign } from '@/lib/astro'
 import { computeCalendar, type CalEvent, type CalMonth } from '@/lib/skyCalendar'
 import { computeSkyToday, type SkyToday } from '@/lib/skyToday'
-import { MONTHLY_MOON, MOON_PHASES, PLANET_LABEL } from '@/data/skyInterpretations'
+import { MONTHLY_MOON, MOON_PHASES, PLANET_LABEL, ECLIPSE_INFO } from '@/data/skyInterpretations'
 import { METEOR_BY_KEY } from '@/data/meteorShowers'
+import { coordsForTimezone, moonAltitude } from '@/lib/moonTimes'
 
 const TYPE_COLOR: Record<CalEvent['type'], string> = {
   'new-moon': 'var(--color-text-muted)',
@@ -21,6 +22,8 @@ const TYPE_COLOR: Record<CalEvent['type'], string> = {
   'retro-end': '#86d9b9',
   'sun-ingress': '#9fc8e8',
   'meteor-shower': '#e8b06a',
+  'eclipse-lunar': '#d98a9a',
+  'eclipse-solar': '#e8a04e',
 }
 
 const PLANET_GLYPH: Record<string, string> = {
@@ -94,6 +97,20 @@ export default function CalendrierPage() {
       timeZone: 'UTC',
     })
 
+  // Is a lunar eclipse actually above the horizon for this visitor? The Moon
+  // must be up at maximum — that alone decides it, since Earth's shadow covers
+  // the whole night side. null when we can't tell (SSR, or no instant).
+  const eclipseVisible = (e: CalEvent): boolean | null => {
+    if (e.type !== 'eclipse-lunar' || !e.atISO || typeof window === 'undefined') return null
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Montreal'
+      const { lat, lon } = coordsForTimezone(tz)
+      return moonAltitude(new Date(e.atISO), lat, lon) > 0
+    } catch {
+      return null
+    }
+  }
+
   const eventLabel = (e: CalEvent) => {
     const sign = translateSign(e.signKey, locale)
     const planet = e.planetKey
@@ -112,6 +129,34 @@ export default function CalendrierPage() {
         return fr ? `${planet} redevient direct` : `${planet} turns direct`
       case 'sun-ingress':
         return fr ? `Saison ${SEASON_ART[e.signKey] ?? 'du'} ${sign}` : `${sign} season begins`
+      case 'eclipse-lunar':
+      case 'eclipse-solar': {
+        const solar = e.type === 'eclipse-solar'
+        const info = solar ? ECLIPSE_INFO.solar : ECLIPSE_INFO.lunar
+        const kind = e.eclipseKind ? ECLIPSE_INFO.kind[e.eclipseKind] : null
+        const name = fr ? info.name.fr : info.name.en
+        const kindLabel = kind ? (fr ? kind.fr : kind.en) : ''
+        // Local time of maximum — right for a reader in Montréal as in Paris.
+        const at = e.atISO
+          ? new Date(e.atISO).toLocaleTimeString(fr ? 'fr-CA' : 'en-CA', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : null
+        const head = fr
+          ? `${name} ${kindLabel} en ${sign}`
+          : `${kindLabel.charAt(0).toUpperCase() + kindLabel.slice(1)} ${name.toLowerCase()} in ${sign}`
+        // A lunar eclipse is visible wherever the Moon is up; a solar one only
+        // along a narrow path, so we never promise it.
+        const vis = solar
+          ? fr ? ' · selon ton lieu' : ' · depends on your location'
+          : eclipseVisible(e) === true
+            ? fr ? ' · visible chez toi' : ' · visible where you are'
+            : eclipseVisible(e) === false
+              ? fr ? ' · Lune couchée chez toi' : ' · Moon below your horizon'
+              : ''
+        return `${head}${at ? ` — ${at}` : ''}${vis}`
+      }
       case 'meteor-shower': {
         const s = e.meteorKey ? METEOR_BY_KEY[e.meteorKey] : undefined
         if (!s) return fr ? 'Pluie d’étoiles filantes' : 'Meteor shower'
@@ -130,7 +175,15 @@ export default function CalendrierPage() {
   }
 
   const EventIcon = ({ e }: { e: CalEvent }) =>
-    e.type === 'meteor-shower' ? (
+    e.type === 'eclipse-lunar' || e.type === 'eclipse-solar' ? (
+      <span
+        aria-hidden="true"
+        className="w-4 text-center text-sm shrink-0"
+        style={{ color: TYPE_COLOR[e.type] }}
+      >
+        {e.type === 'eclipse-solar' ? '\u25CE' : '\u25D0'}
+      </span>
+    ) : e.type === 'meteor-shower' ? (
       <span
         aria-hidden="true"
         className="w-4 text-center text-sm shrink-0"
@@ -206,8 +259,8 @@ export default function CalendrierPage() {
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mt-3 max-w-xl mx-auto">
             {fr
-              ? 'Nouvelles et pleines lunes, rétrogrades, passages du Soleil et pluies d’étoiles filantes — sur les douze prochains mois.'
-              : "New and full moons, retrogrades, the Sun's ingresses and meteor showers — over the next twelve months."}
+              ? 'Nouvelles et pleines lunes, éclipses, rétrogrades, passages du Soleil et pluies d’étoiles filantes — sur les douze prochains mois.'
+              : "New and full moons, eclipses, retrogrades, the Sun's ingresses and meteor showers — over the next twelve months."}
           </p>
         </div>
 

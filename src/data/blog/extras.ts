@@ -197,6 +197,16 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
     ],
     related: ['pourquoi-on-oublie-ses-reves', 'les-maisons-astrologiques', 'les-4-elements'],
   },
+  'eclipses-2026-2027': {
+    hero: 'moon',
+    references: [
+      { fr: 'Le calendrier céleste — éclipses à venir', en: 'The celestial calendar — upcoming eclipses', url: '/calendrier' },
+      { fr: 'Les nœuds lunaires, ton axe de vie', en: 'The lunar nodes: your life axis', url: '/blog/noeuds-lunaires' },
+      { fr: 'Vois où l\'éclipse tombe dans ta carte', en: 'See where the eclipse falls in your chart', url: '/carte-natale' },
+      wiki('Éclipse solaire — Wikipédia', 'Solar eclipse — Wikipedia', '%C3%89clipse_solaire'),
+    ],
+    related: ['noeuds-lunaires', 'lune-noire-lilith', 'les-maisons-astrologiques'],
+  },
 }
 
 // Safe fallback for any slug missing an entry.
