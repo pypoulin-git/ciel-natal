@@ -207,6 +207,16 @@ export const BLOG_EXTRAS: Record<string, BlogExtra> = {
     ],
     related: ['noeuds-lunaires', 'lune-noire-lilith', 'les-maisons-astrologiques'],
   },
+  'voir-les-planetes-oeil-nu': {
+    hero: 'orbits',
+    references: [
+      { fr: 'Le calendrier céleste — oppositions et élongations', en: 'The celestial calendar — oppositions and elongations', url: '/calendrier' },
+      { fr: 'Éclipses 2026-2027', en: 'Eclipses 2026-2027', url: '/blog/eclipses-2026-2027' },
+      { fr: 'Où sont ces planètes dans ta carte ?', en: 'Where are those planets in your chart?', url: '/carte-natale' },
+      wiki('Opposition (astronomie) — Wikipédia', 'Opposition (astronomy) — Wikipedia', 'Opposition_(astronomie)'),
+    ],
+    related: ['eclipses-2026-2027', 'lire-tes-aspects', 'mercure-retrograde'],
+  },
 }
 
 // Safe fallback for any slug missing an entry.

@@ -11,7 +11,14 @@ import { useLocale } from '@/lib/i18n'
 import { translateSign } from '@/lib/astro'
 import { computeCalendar, type CalEvent, type CalMonth } from '@/lib/skyCalendar'
 import { computeSkyToday, type SkyToday } from '@/lib/skyToday'
-import { MONTHLY_MOON, MOON_PHASES, PLANET_LABEL, ECLIPSE_INFO } from '@/data/skyInterpretations'
+import {
+  MONTHLY_MOON,
+  MOON_PHASES,
+  PLANET_LABEL,
+  ECLIPSE_INFO,
+  OPPOSITION_NOTE,
+  SKY_WATCH_INFO,
+} from '@/data/skyInterpretations'
 import { METEOR_BY_KEY } from '@/data/meteorShowers'
 import { coordsForTimezone, moonAltitude } from '@/lib/moonTimes'
 
@@ -24,6 +31,8 @@ const TYPE_COLOR: Record<CalEvent['type'], string> = {
   'meteor-shower': '#e8b06a',
   'eclipse-lunar': '#d98a9a',
   'eclipse-solar': '#e8a04e',
+  opposition: '#8fd3c0',
+  elongation: '#c0b6ea',
 }
 
 const PLANET_GLYPH: Record<string, string> = {
@@ -156,6 +165,22 @@ export default function CalendrierPage() {
               ? fr ? ' · Lune couchée chez toi' : ' · Moon below your horizon'
               : ''
         return `${head}${at ? ` — ${at}` : ''}${vis}`
+      }
+      case 'opposition': {
+        const note = e.planetKey ? OPPOSITION_NOTE[e.planetKey] : undefined
+        const head = fr
+          ? `${planet} ${SKY_WATCH_INFO.opposition.name.fr} en ${sign}`
+          : `${planet} ${SKY_WATCH_INFO.opposition.name.en} in ${sign}`
+        return note ? `${head} — ${fr ? note.fr : note.en}` : head
+      }
+      case 'elongation': {
+        const deg = Math.abs(e.elongDeg ?? 0)
+        // Positive = east of the Sun, so it follows it down: an evening star.
+        const evening = (e.elongDeg ?? 0) > 0
+        const when = evening ? SKY_WATCH_INFO.elongation.evening : SKY_WATCH_INFO.elongation.morning
+        return fr
+          ? `${planet} au plus loin du Soleil (${deg}\u00b0) — ${when.fr}`
+          : `${planet} at greatest elongation (${deg}\u00b0) — ${when.en}`
       }
       case 'meteor-shower': {
         const s = e.meteorKey ? METEOR_BY_KEY[e.meteorKey] : undefined

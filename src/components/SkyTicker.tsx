@@ -19,6 +19,8 @@ import {
   CONFIG_INFO,
   RETRO_HEADLINE,
   ECLIPSE_INFO,
+  OPPOSITION_NOTE,
+  SKY_WATCH_INFO,
 } from '@/data/skyInterpretations'
 
 // A slim horizontal "market ticker" under the Moon strip. It reads the same
@@ -182,6 +184,23 @@ function buildItems(now: Date, fr: boolean, locale: string): TickItem[] {
         effect = solar
           ? fr ? `porte de départ — ce qui se sème ici engage loin · ${th}` : `a doorway — what starts here carries far · ${th}`
           : fr ? `culmination accélérée — ${th} sort de l'ombre` : `accelerated culmination — ${th} comes to light`
+        break
+      }
+      case 'opposition': {
+        glyph = PLANET_GLYPH[e.planetKey ?? ''] ?? '\u25CF'
+        color = GREEN
+        label = fr ? `${planet} \u00e0 l'opposition` : `${planet} at opposition`
+        effect = e.planetKey ? L(OPPOSITION_NOTE[e.planetKey]) : ''
+        break
+      }
+      case 'elongation': {
+        const evening = (e.elongDeg ?? 0) > 0
+        glyph = PLANET_GLYPH[e.planetKey ?? ''] ?? '\u25CF'
+        color = LAV
+        label = fr
+          ? `${planet} au plus loin du Soleil (${Math.abs(e.elongDeg ?? 0)}\u00b0)`
+          : `${planet} at greatest elongation (${Math.abs(e.elongDeg ?? 0)}\u00b0)`
+        effect = L(evening ? SKY_WATCH_INFO.elongation.evening : SKY_WATCH_INFO.elongation.morning)
         break
       }
       case 'meteor-shower': {
