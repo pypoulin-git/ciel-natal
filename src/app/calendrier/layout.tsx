@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Calendrier céleste — pleines lunes, rétrogrades & passages | Natalune',
   description:
-    'Le calendrier astrologique des 12 prochains mois : nouvelles et pleines lunes, dates de Mercure rétrograde et des autres rétrogrades, passages du Soleil en signe.',
+    'Le calendrier astrologique des 12 prochains mois : nouvelles et pleines lunes, éclipses, dates de Mercure rétrograde et des autres rétrogrades, passages du Soleil en signe, pluies d’étoiles filantes et oppositions de planètes.',
   alternates: { canonical: 'https://natalune.com/calendrier' },
   openGraph: {
     title: 'Calendrier céleste — Natalune',

@@ -284,8 +284,8 @@ export default function CalendrierPage() {
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] mt-3 max-w-xl mx-auto">
             {fr
-              ? 'Nouvelles et pleines lunes, éclipses, rétrogrades, passages du Soleil et pluies d’étoiles filantes — sur les douze prochains mois.'
-              : "New and full moons, eclipses, retrogrades, the Sun's ingresses and meteor showers — over the next twelve months."}
+              ? 'Nouvelles et pleines lunes, éclipses, rétrogrades, passages du Soleil, pluies d’étoiles filantes et les soirs où les planètes sont visibles — sur les douze prochains mois.'
+              : "New and full moons, eclipses, retrogrades, the Sun's ingresses, meteor showers and the nights the planets are visible — over the next twelve months."}
           </p>
         </div>
 
