@@ -103,8 +103,15 @@ export default function SiteFooter() {
         </div>
         <div className="text-center mt-8">
           <p className="text-xs text-[var(--color-text-secondary)]/40">
-            &copy; {new Date().getFullYear()} Natalune. {t('footer.copyright')}{' '}
-            {t('footer.disclaimer')}
+            &copy; {new Date().getFullYear()} Natalune. {t('footer.copyright')} &middot;{' '}
+            {t('footer.credit')}{' '}
+            <a
+              href="https://pyweb.ca"
+              className="underline underline-offset-2 hover:text-[var(--color-text-primary)] transition"
+            >
+              pyweb.ca
+            </a>{' '}
+            &middot; {t('footer.disclaimer')}
           </p>
         </div>
       </div>
