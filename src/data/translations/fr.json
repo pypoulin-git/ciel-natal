@@ -111,7 +111,8 @@
   "footer": {
     "tagline": "Astrologie intuitive et bienveillante",
     "copyright": "Tous droits r\u00e9serv\u00e9s.",
-    "disclaimer": "L'astrologie est un outil de r\u00e9flexion, pas un substitut m\u00e9dical ou professionnel."
+    "disclaimer": "L'astrologie est un outil de r\u00e9flexion, pas un substitut m\u00e9dical ou professionnel.",
+    "credit": "Conception web :"
   },
   "geo": {
     "detect": "Me localiser",

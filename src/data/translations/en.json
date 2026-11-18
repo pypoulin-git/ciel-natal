@@ -111,7 +111,8 @@
   "footer": {
     "tagline": "Intuitive and caring astrology",
     "copyright": "All rights reserved.",
-    "disclaimer": "Astrology is a tool for reflection, not a substitute for medical or professional advice."
+    "disclaimer": "Astrology is a tool for reflection, not a substitute for medical or professional advice.",
+    "credit": "Web design:"
   },
   "geo": {
     "detect": "Locate me",
