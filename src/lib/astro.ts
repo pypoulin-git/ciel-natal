@@ -149,10 +149,11 @@ function calcAscendant(T: number, lst: number, latitude: number): number {
   const lstRad = rad(lst);
   const latRad = rad(latitude);
 
-  const y = -Math.cos(lstRad);
-  const x = Math.sin(lstRad) * Math.cos(eps) + Math.tan(latRad) * Math.sin(eps);
-  let asc = deg(Math.atan2(y, x));
-  return normalize(asc);
+  // Meeus, Astronomical Algorithms (14.3) — the quadrant matters: the
+  // atan2(−cos, …) form without the sign flip lands on the *Descendant*.
+  const y = Math.cos(lstRad);
+  const x = -(Math.sin(lstRad) * Math.cos(eps) + Math.tan(latRad) * Math.sin(eps));
+  return normalize(deg(Math.atan2(y, x)));
 }
 
 // Calculate Local Sidereal Time
@@ -166,89 +167,59 @@ function localSiderealTime(jd: number, longitude: number): number {
 // Calculate houses — Placidus system (standard professional)
 // Falls back to Equal if latitude > 66° (polar regions where Placidus fails)
 function calcHouses(ascendant: number, T?: number, lst?: number, latitude?: number): number[] {
-  // Use Equal house for missing parameters or extreme latitudes
+  const equal = () => Array.from({ length: 12 }, (_, i) => normalize(ascendant + i * 30));
+  // Placidus is undefined inside the polar circles: Equal houses there.
   if (T === undefined || lst === undefined || latitude === undefined || Math.abs(latitude) > 66) {
-    const houses: number[] = [];
-    for (let i = 0; i < 12; i++) {
-      houses.push(normalize(ascendant + i * 30));
-    }
-    return houses;
+    return equal();
   }
 
   const eps = rad(obliquity(T));
-  const latRad = rad(latitude);
-  const lstRad = rad(lst);
+  const tanLat = Math.tan(rad(latitude));
+  const ramc = lst; // right ascension of the meridian, degrees
 
-  // Ascendant is house 1 cusp
-  const houses: number[] = [ascendant];
+  // Ecliptic longitude of the point whose right ascension is `ra`.
+  const lonFromRa = (ra: number) =>
+    normalize(deg(Math.atan2(Math.sin(rad(ra)), Math.cos(rad(ra)) * Math.cos(eps))));
+  // Ascensional difference of an ecliptic point (degrees).
+  const ascDiff = (lon: number) => {
+    const decl = Math.asin(Math.sin(eps) * Math.sin(rad(lon)));
+    const x = tanLat * Math.tan(decl);
+    return deg(Math.asin(Math.max(-1, Math.min(1, x))));
+  };
 
-  // MC (Midheaven) — house 10 cusp
-  const mc = normalize(deg(Math.atan2(Math.sin(lstRad), Math.cos(lstRad) * Math.cos(eps))));
-
-  // IC (Imum Coeli) — house 4 cusp
-  const ic = normalize(mc + 180);
-
-  // Placidus intermediate cusps via trisection of semi-arcs
-  const lstVal = lst;
-
-  function placidusCusp(f: number, isAboveHorizon: boolean): number {
-    // f is the fraction of semi-arc (1/3 or 2/3)
-    // Iterative solution for Placidus cusps
-    let cusp = isAboveHorizon ? normalize(mc + f * ((ascendant + 360 - mc) % 360))
-      : normalize(ic + f * ((ascendant + 180 + 360 - ic) % 360));
-
-    for (let iter = 0; iter < 20; iter++) {
-      const cuspRad = rad(cusp);
-      const d = Math.asin(Math.sin(eps) * Math.sin(cuspRad));
-      const ad = Math.abs(deg(Math.asin(Math.tan(latRad) * Math.tan(d))));
-      const sa = isAboveHorizon ? 90 + ad : 90 - ad;
-      if (sa <= 0) break; // degenerate case
-
-      const H = normalize(lstVal - cusp);
-      const target = f * sa;
-      const diff = (isAboveHorizon ? H : normalize(H + 180)) - target;
-
-      if (Math.abs(diff) < 0.01) break;
-
-      cusp = normalize(cusp + diff * 0.5);
+  // Placidus: a cusp is the ecliptic point that has travelled a fixed
+  // fraction of its own semi-arc. Above the horizon (houses 11, 12) the
+  // fraction is of the diurnal semi-arc east of the MC; below it (houses
+  // 2, 3) of the nocturnal semi-arc west of the IC. Solved by iteration.
+  const cusp = (fraction: number, above: boolean): number => {
+    let ra = above ? ramc + fraction * 90 : ramc + 180 - fraction * 90;
+    for (let i = 0; i < 50; i++) {
+      const ad = ascDiff(lonFromRa(ra));
+      const next = above ? ramc + fraction * (90 + ad) : ramc + 180 - fraction * (90 - ad);
+      if (Math.abs(next - ra) < 1e-6) {
+        ra = next;
+        break;
+      }
+      ra = next;
     }
-    return cusp;
+    return lonFromRa(ra);
+  };
+
+  const mc = lonFromRa(ramc);
+  const h11 = cusp(1 / 3, true);
+  const h12 = cusp(2 / 3, true);
+  const h2 = cusp(2 / 3, false);
+  const h3 = cusp(1 / 3, false);
+
+  const opp = (x: number) => normalize(x + 180);
+  const houses = [ascendant, h2, h3, opp(mc), opp(h11), opp(h12), opp(ascendant), opp(h2), opp(h3), mc, h11, h12];
+
+  // Sanity: cusps must run forward around the zodiac, each house < 180°.
+  for (let i = 0; i < 12; i++) {
+    const span = normalize(houses[(i + 1) % 12] - houses[i]);
+    if (!Number.isFinite(houses[i]) || span <= 0 || span >= 180) return equal();
   }
-
-  try {
-    // Houses 11, 12 (above horizon, between MC and ASC)
-    const h11 = placidusCusp(1 / 3, true);
-    const h12 = placidusCusp(2 / 3, true);
-
-    // Houses 2, 3 (below horizon, between ASC and IC)
-    const h2 = placidusCusp(1 / 3, false);
-    const h3 = placidusCusp(2 / 3, false);
-
-    // Opposite houses: 5=11+180, 6=12+180, 8=2+180, 9=3+180
-    houses[1] = h2; // House 2
-    houses[2] = h3; // House 3
-    houses[3] = ic; // House 4
-    houses[4] = normalize(h11 + 180); // House 5
-    houses[5] = normalize(h12 + 180); // House 6
-    houses[6] = normalize(ascendant + 180); // House 7 (Descendant)
-    houses[7] = normalize(h2 + 180); // House 8
-    houses[8] = normalize(h3 + 180); // House 9
-    houses[9] = mc; // House 10
-    houses[10] = h11; // House 11
-    houses[11] = h12; // House 12
-
-    // Validate: all cusps should be between 0-360 and make sense
-    if (houses.some((h) => isNaN(h))) throw new Error("NaN in houses");
-
-    return houses;
-  } catch {
-    // Fallback to Equal house if Placidus fails
-    const equalHouses: number[] = [];
-    for (let i = 0; i < 12; i++) {
-      equalHouses.push(normalize(ascendant + i * 30));
-    }
-    return equalHouses;
-  }
+  return houses;
 }
 
 // Determine which house a planet is in
@@ -397,4 +368,28 @@ export function calculateNatalChart(
   return { planets, ascendant: ascendantPos, houses, aspects };
 }
 
-export { SIGNS, SIGN_SYMBOLS };
+/** Apparent geocentric Sun longitude (degrees) at an exact UTC instant. */
+export function sunLongitudeAtUtc(date: Date): number {
+  const jd = date.getTime() / 86400000 + 2440587.5;
+  return normalize(sunLongitude(toJulianCenturies(jd)));
+}
+
+/**
+ * Chart for an exact UTC instant. `calculateNatalChart` reads its date/time
+ * arguments as Universal Time, so this is a thin wrapper that keeps callers
+ * from re-deriving UTC components by hand.
+ */
+export function calculateChartAtUtc(date: Date, latitude: number, longitude: number): NatalChart {
+  return calculateNatalChart(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes() + date.getUTCSeconds() / 60,
+    latitude,
+    longitude,
+    true,
+  );
+}
+
+export { SIGNS, SIGN_SYMBOLS, getHouse as houseOf };

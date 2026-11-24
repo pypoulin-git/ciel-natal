@@ -7,6 +7,7 @@ import TitleSparkles from "@/components/TitleSparkles";
 import SiteFooter from "@/components/SiteFooter";
 import LatestArticles from "@/components/LatestArticles";
 import { calculateNatalChart, NatalChart, PlanetPosition, translateSign, translatePlanet } from "@/lib/astro";
+import { natalChart } from "@/lib/natal";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
@@ -306,7 +307,7 @@ export default function Home() {
   const doCalculation = () => {
     setStep(6);
     setTimeout(() => {
-      const c = calculateNatalChart(
+      const c = natalChart(
         form.annee, form.mois, form.jour,
         form.hasTime ? form.heure : 12, form.hasTime ? form.minute : 0,
         form.latitude, form.longitude, form.hasTime
@@ -351,8 +352,8 @@ export default function Home() {
     if (step === 7 && chart) {
       const now = new Date();
       const transit = calculateNatalChart(
-        now.getFullYear(), now.getMonth() + 1, now.getDate(),
-        now.getHours(), now.getMinutes(),
+        now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate(),
+        now.getUTCHours(), now.getUTCMinutes(),
         form.latitude, form.longitude, true
       );
       setTodayTransits(transit);
@@ -797,7 +798,7 @@ export default function Home() {
 
     if (loaded) {
       setForm(loaded);
-      const c = calculateNatalChart(
+      const c = natalChart(
         loaded.annee, loaded.mois, loaded.jour,
         loaded.hasTime ? loaded.heure : 12, loaded.hasTime ? loaded.minute : 0,
         loaded.latitude, loaded.longitude, loaded.hasTime

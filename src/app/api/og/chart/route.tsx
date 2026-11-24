@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
-import { calculateNatalChart, translateSign } from '@/lib/astro'
+import { translateSign } from '@/lib/astro'
+import { natalChart } from '@/lib/natal'
 import { decodeSharePayload } from '@/lib/shareParams'
 
 // Per-chart social card: decodes the same ?c= payload as the share links and
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
   let title = 'Découvre ta carte du ciel'
   if (payload) {
     const hasTime = payload.ht !== 0
-    const chart = calculateNatalChart(
+    const chart = natalChart(
       payload.a,
       payload.m,
       payload.j,

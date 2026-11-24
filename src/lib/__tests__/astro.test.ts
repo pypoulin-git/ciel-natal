@@ -90,3 +90,42 @@ describe("calculateNatalChart", () => {
     }
   });
 });
+
+describe("angles and houses (regression: Ascendant was the Descendant)", () => {
+  const MTL = { lat: 45.5017, lon: -73.5673 };
+  const gap = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180);
+
+  it("puts the Sun on the Ascendant at sunrise and on the Descendant at sunset", () => {
+    // Montréal, 15 June 2026: sunrise ≈ 09:06 UTC, sunset ≈ 00:46 UTC (16th).
+    const rise = calculateNatalChart(2026, 6, 15, 9, 6, MTL.lat, MTL.lon, true);
+    expect(gap(rise.ascendant!.longitude, rise.planets[0].longitude)).toBeLessThan(2.5);
+    const set = calculateNatalChart(2026, 6, 16, 0, 46, MTL.lat, MTL.lon, true);
+    expect(gap(set.ascendant!.longitude + 180, set.planets[0].longitude)).toBeLessThan(2.5);
+  });
+
+  it("matches a Placidus table (RAMC ≈ 10°, 45.5° N)", () => {
+    const c = calculateNatalChart(1990, 6, 15, 12, 0, MTL.lat, MTL.lon, true);
+    const [asc, h2, h3, ic, , , , , , mc, h11, h12] = c.houses;
+    expect(gap(mc, 10.8)).toBeLessThan(0.5);
+    expect(gap(h11, 48.6)).toBeLessThan(1);
+    expect(gap(h12, 87.6)).toBeLessThan(1);
+    expect(gap(asc, 119.8)).toBeLessThan(1);
+    expect(gap(h2, 138.3)).toBeLessThan(1);
+    expect(gap(h3, 161.0)).toBeLessThan(1);
+    expect(gap(ic, mc + 180)).toBeLessThan(0.01);
+  });
+
+  it("keeps cusps in zodiacal order for many times and latitudes", () => {
+    for (const lat of [-45, -20, 0, 20, 45.5, 60]) {
+      for (let h = 0; h < 24; h += 3) {
+        const c = calculateNatalChart(2001, 3, 10, h, 0, lat, 10, true);
+        expect(c.houses[0]).toBeCloseTo(c.ascendant!.longitude, 6);
+        for (let i = 0; i < 12; i++) {
+          const span = (c.houses[(i + 1) % 12] - c.houses[i] + 360) % 360;
+          expect(span).toBeGreaterThan(0);
+          expect(span).toBeLessThan(180);
+        }
+      }
+    }
+  });
+});
