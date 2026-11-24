@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { calculateNatalChart, translateSign } from '@/lib/astro'
+import { translateSign } from '@/lib/astro'
+import { natalChart } from '@/lib/natal'
 import { decodeSharePayload } from '@/lib/shareParams'
 import RedirectToChart from './RedirectToChart'
 
@@ -18,7 +19,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   if (payload) {
     const hasTime = payload.ht !== 0
-    const chart = calculateNatalChart(
+    const chart = natalChart(
       payload.a,
       payload.m,
       payload.j,

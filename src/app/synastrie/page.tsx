@@ -6,7 +6,8 @@ import SiteFooter from "@/components/SiteFooter";
 import PremiumGate from "@/components/PremiumGate";
 import PremiumBadge from "@/components/PremiumBadge";
 import { useAuth } from "@/lib/auth-context";
-import { calculateNatalChart, NatalChart, PlanetPosition, translateSign } from "@/lib/astro";
+import { NatalChart, PlanetPosition, translateSign } from "@/lib/astro";
+import { natalChart } from "@/lib/natal";
 import { useLocale } from "@/lib/i18n";
 import { synastryShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 
@@ -145,8 +146,8 @@ export default function SynastryPage() {
       Promise.resolve().then(() => {
         // We can't call compute() directly because closure captures stale
         // person state. Instead we replay the chart calculation inline.
-        const cA = calculateNatalChart(decoded.a.y, decoded.a.m, decoded.a.j, decoded.a.ht ? decoded.a.h : 12, decoded.a.ht ? decoded.a.mn : 0, decoded.a.la, decoded.a.lo, decoded.a.ht === 1);
-        const cB = calculateNatalChart(decoded.b.y, decoded.b.m, decoded.b.j, decoded.b.ht ? decoded.b.h : 12, decoded.b.ht ? decoded.b.mn : 0, decoded.b.la, decoded.b.lo, decoded.b.ht === 1);
+        const cA = natalChart(decoded.a.y, decoded.a.m, decoded.a.j, decoded.a.ht ? decoded.a.h : 12, decoded.a.ht ? decoded.a.mn : 0, decoded.a.la, decoded.a.lo, decoded.a.ht === 1);
+        const cB = natalChart(decoded.b.y, decoded.b.m, decoded.b.j, decoded.b.ht ? decoded.b.h : 12, decoded.b.ht ? decoded.b.mn : 0, decoded.b.la, decoded.b.lo, decoded.b.ht === 1);
         setChartA(cA);
         setChartB(cB);
         // Build cross aspects (duplicate of compute()'s logic — kept inline
@@ -198,8 +199,8 @@ export default function SynastryPage() {
   };
 
   const compute = () => {
-    const cA = calculateNatalChart(personA.annee, personA.mois, personA.jour, personA.hasTime ? personA.heure : 12, personA.hasTime ? personA.minute : 0, personA.latitude, personA.longitude, personA.hasTime);
-    const cB = calculateNatalChart(personB.annee, personB.mois, personB.jour, personB.hasTime ? personB.heure : 12, personB.hasTime ? personB.minute : 0, personB.latitude, personB.longitude, personB.hasTime);
+    const cA = natalChart(personA.annee, personA.mois, personA.jour, personA.hasTime ? personA.heure : 12, personA.hasTime ? personA.minute : 0, personA.latitude, personA.longitude, personA.hasTime);
+    const cB = natalChart(personB.annee, personB.mois, personB.jour, personB.hasTime ? personB.heure : 12, personB.hasTime ? personB.minute : 0, personB.latitude, personB.longitude, personB.hasTime);
     setChartA(cA);
     setChartB(cB);
 
