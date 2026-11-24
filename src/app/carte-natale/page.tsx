@@ -1974,6 +1974,24 @@ export default function Home() {
                   />
                 </div>
 
+                {/* Bridge to the year ahead — same chart, carried in ?c= */}
+                <a
+                  href={`/revolution-solaire?c=${encodeURIComponent(encodeChartParams({
+                    n: form.prenom, j: form.jour, m: form.mois, a: form.annee,
+                    h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
+                    l: form.lieu, la: form.latitude, lo: form.longitude,
+                  }))}`}
+                  className="group block max-w-xl mx-auto mb-10 rounded-2xl border border-[var(--color-accent-gold)]/30 px-6 py-5 text-left hover:border-[var(--color-accent-gold)]/70 transition"
+                >
+                  <span className="block text-xs uppercase tracking-[0.2em] text-[var(--color-accent-gold)]">
+                    {locale === "fr" ? "Révolution solaire" : "Solar return"}
+                  </span>
+                  <span className="mt-1 flex items-center justify-between gap-4 text-[var(--color-text-primary)]">
+                    {locale === "fr" ? "Et ton année, d'un anniversaire à l'autre ?" : "And your year, from one birthday to the next?"}
+                    <span aria-hidden className="transition group-hover:translate-x-1">→</span>
+                  </span>
+                </a>
+
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8 flex-wrap">
                   {/* Share anonymously (default — no name, safe for social) */}
                   <button onClick={() => {
