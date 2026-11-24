@@ -25,6 +25,7 @@ import { MOON_PHASES } from "@/data/skyInterpretations";
 import { encodeChartPayload } from "@/lib/chartLink";
 import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 import { signMetaLine } from "@/lib/signMeta";
+import { CARTES_PREMIUM } from "@/lib/offre";
 
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
@@ -692,8 +693,8 @@ export default function Home() {
           setPdfStatus("limit");
           setPdfMessage(
             locale === "fr"
-              ? `Tu as atteint la limite gratuite (${data.limit} lectures). Passe Premium pour un historique illimité.`
-              : `Free limit reached (${data.limit} readings). Go Premium for unlimited history.`
+              ? `Tu as atteint la limite gratuite (${data.limit} lectures). Premium en garde jusqu'à ${CARTES_PREMIUM}.`
+              : `Free limit reached (${data.limit} readings). Premium keeps up to ${CARTES_PREMIUM}.`
           );
           // Still trigger local download so user isn't blocked
           const link = document.createElement("a");

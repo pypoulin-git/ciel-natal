@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { escapeHtml, singleLine } from "@/lib/security";
+import { CARTES_PREMIUM, CHAT_PREMIUM_PAR_MOIS } from "@/lib/offre";
 
 /**
  * POST /api/email/premium
@@ -46,18 +47,18 @@ export async function POST(req: Request) {
 
     const featuresFr = [
       ["✦", "Interprétations complètes", "toutes les planètes, maisons et aspects décryptés pour toi"],
-      ["💬", "Chat IA illimité", "pose toutes tes questions à ton astrologue bienveillante"],
+      ["💬", "Chat avec ton astrologue IA", `${CHAT_PREMIUM_PAR_MOIS} messages par mois pour creuser ta carte`],
       ["📄", "Export PDF", "télécharge ta carte en format professionnel"],
-      ["💾", "Sauvegarde de cartes", "enregistre jusqu'à 10 cartes (amis, famille, partenaire)"],
+      ["💾", "Sauvegarde de cartes", `garde jusqu'à ${CARTES_PREMIUM} cartes (amis, famille, partenaire)`],
       ["🎧", "Narration audio", "écoute ta lecture comme si une astrologue te parlait"],
       ["💞", "Synastrie", "explore la compatibilité entre deux cartes du ciel"],
       ["🔮", "Transits personnalisés", "les mouvements planétaires actuels croisés avec ta carte"],
     ];
     const featuresEn = [
       ["✦", "Full interpretations", "all planets, houses and aspects decoded for you"],
-      ["💬", "Unlimited AI chat", "ask all your questions to a caring astrologer"],
+      ["💬", "Chat with your AI astrologer", `${CHAT_PREMIUM_PAR_MOIS} messages a month to dig into your chart`],
       ["📄", "PDF export", "download your chart in professional format"],
-      ["💾", "Save charts", "save up to 10 charts (friends, family, partner)"],
+      ["💾", "Save charts", `keep up to ${CARTES_PREMIUM} charts (friends, family, partner)`],
       ["🎧", "Audio narration", "listen to your reading as if an astrologer were speaking to you"],
       ["💞", "Synastry", "explore compatibility between two birth charts"],
       ["🔮", "Personalized transits", "current planetary movements crossed with your chart"],

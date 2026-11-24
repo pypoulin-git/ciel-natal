@@ -5,12 +5,13 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
+import { CARTES_PREMIUM, CHAT_PREMIUM_PAR_MOIS, REMBOURSEMENT_JOURS } from "@/lib/offre";
 
 const PRODUCT_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Natalune Premium",
-  description: "Lifetime access to full astrological interpretations, unlimited AI chat, PDF export, saved charts, audio narration, synastry and personalized transits.",
+  description: `Lifetime access to full astrological interpretations, AI chat (${CHAT_PREMIUM_PAR_MOIS} messages a month), PDF export, saved charts, audio narration, synastry and personalized transits.`,
   brand: { "@type": "Brand", name: "Natalune" },
   offers: {
     "@type": "Offer",
@@ -23,9 +24,9 @@ const PRODUCT_JSON_LD = {
 
 const FEATURES_FR = [
   { icon: "✦", title: "Interprétations complètes", desc: "Toutes les planètes, maisons et aspects décryptés pour toi." },
-  { icon: "💬", title: "Chat IA illimité", desc: "Pose toutes tes questions à ton astrologue bienveillante." },
+  { icon: "💬", title: "Chat avec ton astrologue IA", desc: `${CHAT_PREMIUM_PAR_MOIS} messages par mois pour creuser ta carte, question par question.` },
   { icon: "📄", title: "Export PDF", desc: "Télécharge ta carte en format professionnel." },
-  { icon: "💾", title: "Sauvegarde de cartes", desc: "Enregistre jusqu'à 10 cartes (amis, famille, partenaire)." },
+  { icon: "💾", title: "Sauvegarde de cartes", desc: `Garde jusqu'à ${CARTES_PREMIUM} cartes (amis, famille, partenaire).` },
   { icon: "🎧", title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
   { icon: "💞", title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
   { icon: "🌙", title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium les structure et en donne trois lectures, colorées par ta Lune natale." },
@@ -35,9 +36,9 @@ const FEATURES_FR = [
 
 const FEATURES_EN = [
   { icon: "✦", title: "Full interpretations", desc: "All planets, houses and aspects decoded for you." },
-  { icon: "💬", title: "Unlimited AI chat", desc: "Ask all your questions to a caring astrologer." },
+  { icon: "💬", title: "Chat with your AI astrologer", desc: `${CHAT_PREMIUM_PAR_MOIS} messages a month to dig into your chart, question by question.` },
   { icon: "📄", title: "PDF export", desc: "Download your chart in professional format." },
-  { icon: "💾", title: "Save charts", desc: "Save up to 10 charts (friends, family, partner)." },
+  { icon: "💾", title: "Save charts", desc: `Keep up to ${CARTES_PREMIUM} charts (friends, family, partner).` },
   { icon: "🎧", title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
   { icon: "💞", title: "Synastry", desc: "Explore compatibility between two birth charts." },
   { icon: "🌙", title: "AI-read dreams", desc: "Recording dreams is free. Premium structures them and gives three readings, coloured by your natal Moon." },
@@ -141,7 +142,9 @@ export default function PremiumPage() {
               {locale === "fr" ? "Paiement unique — accès à vie" : "One-time payment — lifetime access"}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] opacity-60 mb-6">
-              {locale === "fr" ? "Pas d'abonnement, pas de renouvellement" : "No subscription, no renewal"}
+              {locale === "fr"
+                ? `Pas d'abonnement, pas de renouvellement. Remboursé sur demande dans les ${REMBOURSEMENT_JOURS} jours.`
+                : `No subscription, no renewal. Refunded on request within ${REMBOURSEMENT_JOURS} days.`}
             </p>
 
             {isPremium ? (

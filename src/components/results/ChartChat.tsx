@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, FormEvent } from "react";
 import { TextStreamChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "@/lib/auth-context";
+import { CHAT_GRATUIT_PAR_JOUR, CHAT_PREMIUM_PAR_MOIS } from "@/lib/offre";
 
 interface Props {
   chartContext: string;
@@ -27,7 +28,8 @@ const SUGGESTIONS_EN = [
   "Tell me about my most important aspects.",
 ];
 
-const FREE_MSG_LIMIT = 3;
+// Same number the API enforces (per rolling 24 h).
+const FREE_MSG_LIMIT = CHAT_GRATUIT_PAR_JOUR;
 
 export default function ChartChat({ chartContext, prenom, genre, locale, voice = "sensible" }: Props) {
   const { isPremium, user, getAccessToken } = useAuth();
@@ -77,7 +79,7 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
 
   // Count user messages sent
   const userMsgCount = messages.filter((m) => m.role === "user").length;
-  const msgLimit = isPremium ? 200 : FREE_MSG_LIMIT;
+  const msgLimit = isPremium ? CHAT_PREMIUM_PAR_MOIS : FREE_MSG_LIMIT;
   const remaining = Math.max(0, msgLimit - userMsgCount);
 
   const doSend = (text: string) => {
@@ -90,11 +92,12 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
     setInputValue("");
   };
 
-  // Detect rate limit response from API (429)
+  // Quota responses. The transport puts the response *body* in
+  // error.message (not the status), so match the machine-readable code the
+  // API sends with every 429.
   useEffect(() => {
-    if (error && (error as Error & { status?: number })?.message?.includes("429")) {
-      setHitLimit(true);
-    }
+    const msg = (error as Error | undefined)?.message ?? "";
+    if (/FREE_LIMIT|PREMIUM_LIMIT|429/.test(msg)) setHitLimit(true);
   }, [error]);
 
   const handleFormSubmit = (e: FormEvent) => {
@@ -222,6 +225,14 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
           </div>
         )}
 
+        {hitLimit && isPremium && (
+          <div className="text-center text-xs text-[var(--color-text-secondary)] py-2">
+            {locale === "fr"
+              ? `Tu as atteint tes ${CHAT_PREMIUM_PAR_MOIS} messages du mois. Le compteur repart dans quelques jours.`
+              : `You've reached this month's ${CHAT_PREMIUM_PAR_MOIS} messages. The counter resets in a few days.`}
+          </div>
+        )}
+
         {error && !hitLimit && (
           <div className="text-center text-xs text-red-400/70 py-2">
             {locale === "fr" ? "Une erreur est survenue. Réessaie." : "An error occurred. Please try again."}
@@ -235,12 +246,14 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
               <span className="text-sm">✦</span>
             </div>
             <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-              {locale === "fr" ? "Tu as utilisé tes 3 messages gratuits" : "You've used your 3 free messages"}
+              {locale === "fr"
+                ? `Tu as utilisé tes ${FREE_MSG_LIMIT} messages gratuits d'aujourd'hui`
+                : `You've used today's ${FREE_MSG_LIMIT} free messages`}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] mb-3">
               {locale === "fr"
-                ? "Passe Premium pour un chat illimité avec ton astrologue."
-                : "Go Premium for unlimited chat with your astrologer."}
+                ? `Reviens demain, ou passe Premium : ${CHAT_PREMIUM_PAR_MOIS} messages par mois avec ton astrologue.`
+                : `Come back tomorrow, or go Premium: ${CHAT_PREMIUM_PAR_MOIS} messages a month with your astrologer.`}
             </p>
             <a
               href={user ? "/premium" : "/connexion"}
@@ -293,7 +306,7 @@ export default function ChartChat({ chartContext, prenom, genre, locale, voice =
         <span className="text-xs text-[var(--color-text-secondary)] opacity-50">
           {isPremium
             ? (locale === "fr" ? `${remaining} messages restants ce mois` : `${remaining} messages remaining this month`)
-            : (locale === "fr" ? `${remaining}/${FREE_MSG_LIMIT} messages gratuits restants` : `${remaining}/${FREE_MSG_LIMIT} free messages remaining`)}
+            : (locale === "fr" ? `${remaining}/${FREE_MSG_LIMIT} messages gratuits aujourd'hui` : `${remaining}/${FREE_MSG_LIMIT} free messages today`)}
         </span>
       </div>
     </div>
