@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 import { hasPendingPdf as checkPendingPdf, readPendingPdf, clearPendingPdf } from "@/lib/pending-pdf";
+import { CARTES_PREMIUM } from "@/lib/offre";
 
 function InscriptionInner() {
   const { locale } = useLocale();
@@ -291,7 +292,7 @@ function InscriptionInner() {
                       </summary>
                       <ul className="mt-2 space-y-1 text-[11px] text-[var(--color-text-secondary)]">
                         <FeatureRow>
-                          {locale === "fr" ? "Historique illimité de lectures" : "Unlimited reading history"}
+                          {locale === "fr" ? `Jusqu'à ${CARTES_PREMIUM} cartes sauvegardées` : `Up to ${CARTES_PREMIUM} saved charts`}
                         </FeatureRow>
                         <FeatureRow>
                           {locale === "fr" ? "Maisons + transits quotidiens personnalisés" : "Houses + personalized daily transits"}

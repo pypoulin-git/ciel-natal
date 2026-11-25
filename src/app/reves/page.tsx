@@ -17,6 +17,7 @@ import { listDreamStats, listDreams } from '@/lib/dreamClient'
 import { EMOTIONS, type Dream } from '@/lib/dreams'
 import { windowStart, type StatDream } from '@/lib/dreamStats'
 import { DREAM_IMAGE_MONTHLY_LIMIT } from '@/lib/dreamLimits'
+import FeatureIcon, { type FeatureIconName } from '@/components/FeatureIcons'
 
 const SAMPLE_DREAM_FR = `Je marchais sur une plage la nuit, et l'eau montait sans jamais me toucher. Quelqu'un que je connaissais m'appelait depuis la dune, mais chaque fois que je me retournais, la voix venait d'ailleurs.`
 
@@ -214,27 +215,27 @@ function PremiumUpsell({ locale }: { locale: string }) {
   const perks = fr
     ? [
         [
-          '✍️',
+          'pdf',
           "L'IA met ton récit au clair — titre, thèmes, émotions, personnages et lieux, extraits tout seuls.",
         ],
         [
-          '🔬',
+          'sparkle',
           'Trois lectures du même rêve, et un curseur pour doser entre neurosciences et archétypes.',
         ],
-        ['🌙', 'Ta Lune natale colore la lecture symbolique. Personne d’autre ne peut faire ça.'],
-        ['🎨', `Une aquarelle onirique, jusqu'à ${DREAM_IMAGE_MONTHLY_LIMIT} par mois.`],
+        ['moon', 'Ta Lune natale colore la lecture symbolique. Personne d’autre ne peut faire ça.'],
+        ['sun', `Une aquarelle onirique, jusqu'à ${DREAM_IMAGE_MONTHLY_LIMIT} par mois.`],
       ]
     : [
         [
-          '✍️',
+          'pdf',
           'The AI tidies your account — title, themes, emotions, characters and places, pulled out on their own.',
         ],
         [
-          '🔬',
+          'sparkle',
           'Three readings of the same dream, and a slider to set the dose between neuroscience and archetypes.',
         ],
-        ['🌙', 'Your natal Moon colours the symbolic reading. Nobody else can do that.'],
-        ['🎨', `A dreamlike watercolour, up to ${DREAM_IMAGE_MONTHLY_LIMIT} a month.`],
+        ['moon', 'Your natal Moon colours the symbolic reading. Nobody else can do that.'],
+        ['sun', `A dreamlike watercolour, up to ${DREAM_IMAGE_MONTHLY_LIMIT} a month.`],
       ]
 
   return (
@@ -255,8 +256,8 @@ function PremiumUpsell({ locale }: { locale: string }) {
       <ul className="mb-4 space-y-2">
         {perks.map(([icon, text]) => (
           <li key={text} className="flex gap-2.5 text-sm text-[var(--color-text-secondary)]">
-            <span aria-hidden="true" className="shrink-0">
-              {icon}
+            <span className="shrink-0 mt-0.5 text-[var(--color-accent-gold)]">
+              <FeatureIcon name={icon as FeatureIconName} size={16} />
             </span>
             <span className="leading-relaxed">{text}</span>
           </li>

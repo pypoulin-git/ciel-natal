@@ -66,7 +66,11 @@ export const SparklesCore = (props: ParticlesProps) => {
         enable: false,
         zIndex: 1,
       },
-      fpsLimit: 120,
+      // 60, not 120: halves the work on high-refresh screens for a twinkle
+      // nobody can tell apart; paused when off-screen or in a background tab.
+      fpsLimit: 60,
+      pauseOnBlur: true,
+      pauseOnOutsideViewport: true,
       interactivity: {
         events: {
           onClick: {

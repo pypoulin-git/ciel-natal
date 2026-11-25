@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { escapeHtml, singleLine } from "@/lib/security";
+import { CARTES_GRATUIT } from "@/lib/offre";
 
-// Free tier: 3 lifetime saved lectures. Premium: unlimited.
-const FREE_TIER_LIMIT = 3;
+// Free tier cap; Premium is capped by /api/charts (same table).
+const FREE_TIER_LIMIT = CARTES_GRATUIT;
 
 function getSupabaseAdmin() {
   return createClient(

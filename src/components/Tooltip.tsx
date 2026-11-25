@@ -41,7 +41,10 @@ export default function Tooltip({
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute ${pos} z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 rounded-lg border px-3 py-2 text-xs leading-relaxed shadow-xl`}
+        // display:none while hidden — an opacity-0 bubble still counts in the
+        // page's scrollable width, and tooltips near the right edge made the
+        // results page scroll sideways on phones (+28 px at 390, QA 2026-11).
+        className={`pointer-events-none absolute ${pos} z-50 hidden group-hover:block group-focus-within:block rounded-lg border px-3 py-2 text-xs leading-relaxed shadow-xl`}
         style={{
           // Dark bubble in BOTH themes → force a light text colour so it stays
           // readable on light mode (var(--color-text-primary) is near-black
@@ -51,7 +54,7 @@ export default function Tooltip({
           color: "#f3f0ff",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          maxWidth,
+          maxWidth: `min(${maxWidth}px, calc(100vw - 32px))`,
           width: "max-content",
           whiteSpace: "normal",
         }}

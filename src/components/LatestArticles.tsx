@@ -31,13 +31,13 @@ export default function LatestArticles({
     <section className="max-w-5xl mx-auto px-4 py-12">
       <div className="flex items-end justify-between mb-6 gap-4">
         <h2 className="font-cinzel text-2xl sm:text-3xl text-[var(--color-text-primary)]">
-          {title ?? (fr ? 'Du journal' : 'From the journal')}
+          {title ?? (fr ? 'Du blogue' : 'From the blog')}
         </h2>
         <Link
           href="/blog"
           className="text-sm text-[var(--color-accent-lavender)] hover:text-[var(--color-text-primary)] transition whitespace-nowrap"
         >
-          {fr ? 'Tout le journal →' : 'All articles →'}
+          {fr ? 'Tout le blogue →' : 'All articles →'}
         </Link>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">

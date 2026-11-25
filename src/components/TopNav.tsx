@@ -56,7 +56,7 @@ export default function TopNav() {
     >
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* ─── Logo ─── */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0 group" aria-label="Natalune">
+        <Link href="/" className="flex items-center gap-2.5 min-h-11 shrink-0 group" aria-label="Natalune">
           <span className="text-xl text-[var(--color-accent-gold)] leading-none transition-transform group-hover:rotate-90 duration-500">
             ✦
           </span>
@@ -66,7 +66,8 @@ export default function TopNav() {
         </Link>
 
         {/* ─── Desktop nav links (centered) ─── */}
-        <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center" aria-label="Main">
+        {/* xl, not lg: six links + theme + language + auth overflowed by 53 px at 1024 (QA 2026-11). */}
+        <nav className="hidden xl:flex items-center gap-1 flex-1 justify-center" aria-label={label('Navigation principale', 'Main navigation')}>
           {NAV_LINKS.map((link) => {
             const active = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href)
             return (
@@ -103,14 +104,14 @@ export default function TopNav() {
             <>
               <Link
                 href="/connexion"
-                className="hidden sm:inline-flex px-3 py-2 rounded-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
+                className="hidden sm:inline-flex items-center min-h-11 px-3 rounded-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
                 aria-busy={loading || undefined}
               >
                 {label('Connexion', 'Sign in')}
               </Link>
               <Link
                 href="/inscription"
-                className="px-3 py-2 rounded-full text-sm font-medium bg-[var(--color-accent-lavender)]/15 border border-[var(--color-accent-lavender)]/30 text-[var(--color-accent-lavender)] hover:bg-[var(--color-accent-lavender)]/25 transition"
+                className="inline-flex items-center min-h-11 px-4 rounded-full text-sm font-medium bg-[var(--color-accent-lavender)]/15 border border-[var(--color-accent-lavender)]/30 text-[var(--color-accent-lavender)] hover:bg-[var(--color-accent-lavender)]/25 transition"
                 aria-busy={loading || undefined}
               >
                 {label("S'inscrire", 'Sign up')}
@@ -226,9 +227,10 @@ export default function TopNav() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 -mr-2 text-[var(--color-text-secondary)]"
+            className="xl:hidden w-11 h-11 -mr-2 inline-flex items-center justify-center rounded-full text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             aria-label={label('Menu', 'Menu')}
             aria-expanded={mobileOpen}
+            aria-controls="menu-mobile"
           >
             <svg
               width="20"
@@ -258,7 +260,8 @@ export default function TopNav() {
       {/* ─── Mobile nav drawer ─── */}
       {mobileOpen && (
         <div
-          className="lg:hidden border-t px-4 py-3 space-y-1"
+          id="menu-mobile"
+          className="xl:hidden border-t px-4 py-3 space-y-1"
           style={{ background: 'var(--nav-menu-bg)', borderColor: 'var(--nav-border)' }}
         >
           {NAV_LINKS.map((link) => {
@@ -267,7 +270,8 @@ export default function TopNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`block px-3 py-2.5 rounded-lg text-sm transition ${
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center min-h-11 px-3 rounded-lg text-sm transition ${
                   active
                     ? 'text-[var(--color-accent-lavender)] bg-[var(--color-accent-lavender)]/10'
                     : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5'
@@ -277,6 +281,14 @@ export default function TopNav() {
               </Link>
             )
           })}
+          {!isPremium && (
+            <Link
+              href="/premium"
+              className="flex items-center gap-2 min-h-11 px-3 rounded-lg text-sm text-[var(--color-accent-rose)] hover:bg-[var(--color-accent-rose)]/10 transition"
+            >
+              <span aria-hidden>✦</span> {label('Premium', 'Premium')}
+            </Link>
+          )}
           <div className="pt-2 mt-2 border-t border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
@@ -285,7 +297,7 @@ export default function TopNav() {
             {!user && (
               <Link
                 href="/connexion"
-                className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                className="inline-flex items-center min-h-11 px-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               >
                 {label('Connexion', 'Sign in')}
               </Link>

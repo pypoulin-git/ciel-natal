@@ -127,7 +127,7 @@ export default function PersonalEvents({
         </div>
         <Link
           href={user ? '/premium' : '/connexion?next=/calendrier'}
-          className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-medium shrink-0"
+          className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium shrink-0"
         >
           <span aria-hidden="true">✦</span>
           {user ? (fr ? 'Passer Premium' : 'Go Premium') : fr ? 'Se connecter' : 'Sign in'}
@@ -176,7 +176,7 @@ export default function PersonalEvents({
         <button
           type="submit"
           disabled={busy || !title.trim() || !date}
-          className="btn-primary px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-30"
+          className="btn-primary px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-30"
         >
           {fr ? 'Ajouter' : 'Add'}
         </button>

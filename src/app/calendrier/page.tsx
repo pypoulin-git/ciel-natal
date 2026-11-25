@@ -290,9 +290,17 @@ export default function CalendrierPage() {
         </div>
 
         {!months || !sky ? (
-          <p className="text-center text-sm text-[var(--color-text-muted)] py-16">
-            {fr ? 'Calcul du ciel…' : 'Computing the sky…'}
-          </p>
+          // Skeleton sized like the real calendar (featured month + month
+          // cards) so the footer doesn't jump when the sky is computed after
+          // mount — that jump was a CLS of 1.17.
+          <div aria-busy="true" aria-label={fr ? 'Calcul du ciel…' : 'Computing the sky…'}>
+            <div className="skeleton h-80 rounded-2xl" />
+            <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} className="skeleton h-96 rounded-2xl" />
+              ))}
+            </div>
+          </div>
         ) : (
           <>
             {/* ── Mois en cours, en vedette ── */}

@@ -37,7 +37,11 @@ function SwipeRail({ children, count }: { children: React.ReactNode; count: numb
         <div
           ref={railRef}
           onScroll={onScroll}
-          className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          // Wide screens show every card side by side: a carousel that hides
+          // cards which would fit is friction for nothing (QA 2026-11).
+          className={`flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:grid xl:overflow-visible xl:mx-0 xl:px-0 ${
+            count === 4 ? "xl:grid-cols-4" : "xl:grid-cols-3"
+          }`}
         >
           {children}
         </div>
@@ -51,7 +55,7 @@ function SwipeRail({ children, count }: { children: React.ReactNode; count: numb
               onClick={() => goTo(active + (dir === "next" ? 1 : -1))}
               disabled={disabled}
               aria-label={dir === "next" ? "Suivant" : "Précédent"}
-              className={`hidden sm:flex absolute top-1/2 -translate-y-1/2 ${dir === "next" ? "-right-3" : "-left-3"} w-9 h-9 rounded-full items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] bg-[var(--color-glass-bg)] border border-[var(--color-glass-border)] backdrop-blur-sm transition hover:border-[var(--color-accent-lavender)]/40 disabled:opacity-0 disabled:pointer-events-none z-10`}
+              className={`hidden sm:flex xl:hidden absolute top-1/2 -translate-y-1/2 ${dir === "next" ? "-right-3" : "-left-3"} w-9 h-9 rounded-full items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] bg-[var(--color-glass-bg)] border border-[var(--color-glass-border)] backdrop-blur-sm transition hover:border-[var(--color-accent-lavender)]/40 disabled:opacity-0 disabled:pointer-events-none z-10`}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 {dir === "next" ? <path d="M9 6l6 6-6 6" /> : <path d="M15 6l-6 6 6 6" />}
@@ -60,18 +64,24 @@ function SwipeRail({ children, count }: { children: React.ReactNode; count: numb
           );
         })}
       </div>
-      <div className="flex justify-center gap-2 mt-3">
+      <div className="flex justify-center mt-2 xl:hidden">
         {Array.from({ length: count }, (_, i) => (
+          // 24 px hit area around a 6 px pill (WCAG 2.5.8).
           <button
             key={i}
             onClick={() => goTo(i)}
-            aria-label={`Carte ${i + 1}`}
-            className="h-1.5 rounded-full transition-all"
-            style={{
-              width: i === active ? 20 : 6,
-              background: i === active ? "var(--color-accent-lavender)" : "var(--color-glass-border)",
-            }}
-          />
+            aria-label={`${i + 1} / ${count}`}
+            aria-current={i === active ? "true" : undefined}
+            className="h-6 min-w-6 px-1 inline-flex items-center justify-center"
+          >
+            <span
+              className="block h-1.5 rounded-full transition-all"
+              style={{
+                width: i === active ? 20 : 6,
+                background: i === active ? "var(--color-accent-lavender)" : "var(--color-glass-border)",
+              }}
+            />
+          </button>
         ))}
       </div>
     </>
@@ -183,7 +193,7 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
             return (
               <div
                 key={el}
-                className="snap-center shrink-0 w-[86%] sm:w-[47%] lg:w-[31%] glass p-4 sm:p-5 flex flex-col"
+                className="snap-center shrink-0 w-[86%] sm:w-[47%] lg:w-[31%] xl:w-auto glass p-4 sm:p-5 flex flex-col"
                 style={{
                   borderColor: isDominant ? `${config.color}40` : undefined,
                   // Glow only on the dominant element (PY: actif/dominant seulement).
@@ -276,7 +286,7 @@ export default function ElementBalance({ planets, locale = "fr" }: Props) {
             return (
               <div
                 key={mod}
-                className="snap-center shrink-0 w-[86%] sm:w-[47%] lg:w-[31%] glass p-4 sm:p-5 flex flex-col"
+                className="snap-center shrink-0 w-[86%] sm:w-[47%] lg:w-[31%] xl:w-auto glass p-4 sm:p-5 flex flex-col"
                 style={{
                   borderColor: isDominant ? "rgba(179,167,224,0.4)" : undefined,
                   boxShadow: isDominant ? "0 0 24px rgba(179,167,224,0.2), 0 0 52px rgba(179,167,224,0.1)" : undefined,
