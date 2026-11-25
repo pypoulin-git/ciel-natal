@@ -36,7 +36,7 @@ export default function SiteFooter() {
           </div>
           <nav
             className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
-            aria-label="Footer"
+            aria-label={locale === 'fr' ? 'Liens du pied de page' : 'Footer links'}
           >
             <Link
               href="/a-propos"
@@ -108,7 +108,8 @@ export default function SiteFooter() {
           </nav>
         </div>
         <div className="text-center mt-8">
-          <p className="text-xs text-[var(--color-text-secondary)]/40">
+          {/* text-muted at full strength: the /40 secondary measured 2.76:1 (QA 2026-11). */}
+          <p className="text-xs text-[var(--color-text-muted)]">
             &copy; {new Date().getFullYear()} Natalune. {t('footer.copyright')} &middot;{' '}
             {t('footer.credit')}{' '}
             <a
@@ -119,6 +120,13 @@ export default function SiteFooter() {
             </a>{' '}
             &middot; {t('footer.disclaimer')}
           </p>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('ciel-natal:open-consent'))}
+            className="mt-2 inline-flex items-center min-h-11 px-2 text-xs text-[var(--color-text-muted)] underline underline-offset-2 hover:text-[var(--color-text-primary)] transition"
+          >
+            {locale === 'fr' ? 'Gérer les témoins' : 'Manage cookies'}
+          </button>
         </div>
       </div>
     </footer>

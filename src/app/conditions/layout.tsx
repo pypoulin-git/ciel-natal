@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Conditions d'utilisation · Natalune",
   description:
-    "Les conditions d'utilisation de Natalune : usage du service, propriété, limitation de responsabilité et nature divertissante des interprétations astrologiques.",
+    "Conditions d'utilisation de Natalune : le service, Premium et remboursement, responsabilité, propriété intellectuelle.",
   alternates: { canonical: "https://natalune.com/conditions" },
   robots: { index: true, follow: true },
 };

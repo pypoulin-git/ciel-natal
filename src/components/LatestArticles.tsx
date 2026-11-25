@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useLocale } from '@/lib/i18n'
-import { articles } from '@/data/blog/articles'
+import { articles, articlesByDate, formatArticleDate } from '@/data/blog/articles'
 import { extraFor } from '@/data/blog/extras'
 import ArticleHero from '@/components/blog/ArticleHero'
 
@@ -22,7 +22,7 @@ export default function LatestArticles({
 
   const pool = slugs
     ? slugs.map((s) => articles.find((a) => a.slug === s)).filter((a): a is (typeof articles)[number] => !!a)
-    : [...articles].sort((a, b) => b.date.localeCompare(a.date))
+    : articlesByDate()
 
   const list = pool.slice(0, limit)
   if (list.length === 0) return null
@@ -50,7 +50,7 @@ export default function LatestArticles({
             <ArticleHero variant={extraFor(a.slug).hero} rounded="" className="h-24" />
             <div className="p-4">
               <p className="text-[11px] text-[var(--color-text-muted)] mb-1.5">
-                {a.date} · {a.readingTime}
+                {formatArticleDate(a.date, fr ? 'fr' : 'en')} · {a.readingTime}
               </p>
               <h3 className="font-cinzel text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-accent-lavender)] transition leading-snug mb-1.5">
                 {fr ? a.titleFr : a.titleEn}

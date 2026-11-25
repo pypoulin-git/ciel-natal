@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { articles } from "@/data/blog/articles";
+import { articlesByDate, formatArticleDate } from "@/data/blog/articles";
 import { extraFor } from "@/data/blog/extras";
 import ArticleHero from "@/components/blog/ArticleHero";
 import Starfield from "@/components/Starfield";
@@ -41,7 +41,7 @@ export default function BlogPage() {
         </p>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          {articles.map((article) => (
+          {articlesByDate().map((article) => (
             <Link
               key={article.slug}
               href={`/blog/${article.slug}`}
@@ -50,7 +50,7 @@ export default function BlogPage() {
               <ArticleHero variant={extraFor(article.slug).hero} rounded="" className="h-28" />
               <div className="p-6">
                 <div className="flex items-center gap-3 text-xs text-[var(--color-text-secondary)] mb-3">
-                  <time dateTime={article.date}>{article.date}</time>
+                  <time dateTime={article.date}>{formatArticleDate(article.date, isFr ? "fr" : "en")}</time>
                   <span aria-hidden="true">&middot;</span>
                   <span>{article.readingTime}</span>
                 </div>

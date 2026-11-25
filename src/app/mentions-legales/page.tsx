@@ -19,7 +19,7 @@ export default function MentionsLegales() {
   return (
     <PageShell title={fr ? 'Mentions légales' : 'Legal notice'}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? 'Dernière mise à jour : 26 juin 2026' : 'Last updated: June 26, 2026'}
+        {fr ? 'Dernière mise à jour : 24 novembre 2026' : 'Last updated: November 24, 2026'}
       </p>
 
       <section>
@@ -61,8 +61,8 @@ export default function MentionsLegales() {
         </h2>
         <p>
           {fr
-            ? 'Le site est hébergé par Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis (vercel.com), avec une région de calcul située à Montréal, Canada.'
-            : 'The site is hosted by Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com), with a compute region located in Montreal, Canada.'}
+            ? 'Le site est hébergé par Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis (vercel.com), avec un point d’entrée à Montréal (Canada) et des fonctions serveur exécutées aux États-Unis (région de Washington).'
+            : 'The site is hosted by Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com), with an edge in Montreal (Canada) and server functions running in the United States (Washington region).'}
         </p>
         <p className="mt-3">
           {fr

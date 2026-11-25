@@ -555,3 +555,18 @@ export const articles: BlogArticle[] = [
     readingTime: "8 min",
   },
 ];
+
+/** Newest first — the listing used to open on the oldest article. */
+export function articlesByDate(): BlogArticle[] {
+  return [...articles].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** « 15 mars 2026 » / « March 15, 2026 » from an ISO day, timezone-proof. */
+export function formatArticleDate(iso: string, locale: "fr" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "fr" ? "fr-CA" : "en-CA", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${iso}T12:00:00Z`));
+}

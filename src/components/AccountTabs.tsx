@@ -21,7 +21,7 @@ export default function AccountTabs({
   return (
     <nav
       className="flex flex-wrap gap-1 mb-8 border-b border-[var(--color-glass-border)] -mx-1"
-      aria-label="Account tabs"
+      aria-label={locale === "fr" ? "Sections du compte" : "Account sections"}
     >
       {TABS.map((t) => {
         const active = t.key === current;

@@ -226,10 +226,10 @@ function InscriptionInner() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={locale === "fr" ? "Ton email" : "Your email"}
+                placeholder={locale === "fr" ? "Ton courriel" : "Your email"}
                 className="w-full glass-input"
                 required
-                aria-label={locale === "fr" ? "Adresse email" : "Email address"}
+                aria-label={locale === "fr" ? "Adresse courriel" : "Email address"}
               />
               <input
                 type="password"

@@ -462,6 +462,14 @@ export const SKY_EXPLAINERS = {
     fr: 'Quand deux planètes forment un angle précis, leurs énergies dialoguent — en douceur (harmonie) ou en friction (tension).',
     en: 'When two planets form a precise angle, their energies interact — gently (harmony) or with friction (tension).',
   },
+  'grand-trine': {
+    fr: 'Un grand trigone, ce sont trois planètes à 120° l’une de l’autre : un triangle d’harmonie où l’énergie circule sans effort.',
+    en: 'A grand trine is three planets 120° apart: a triangle of harmony where energy flows without effort.',
+  },
+  't-square': {
+    fr: 'Un T-carré relie trois planètes : deux s’opposent et la troisième fait un carré aux deux.',
+    en: 'A T-square links three planets: two in opposition and a third square to both.',
+  },
   stellium: {
     fr: 'Un stellium, c’est trois planètes ou plus réunies dans le même signe : une concentration d’énergie qui met ce thème en avant.',
     en: 'A stellium is three or more planets gathered in the same sign: a concentration of energy that spotlights that theme.',

@@ -14,6 +14,13 @@ export function generateStaticParams() {
   return articles.map((a) => ({ slug: a.slug }));
 }
 
+/** Search engines cut descriptions past ~155 characters: end on a whole word. */
+function metaDescription(text: string, max = 155): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:.\s]+$/, "")}…`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -24,7 +31,7 @@ export async function generateMetadata({
   if (!article) return {};
   return {
     title: `${article.titleFr} — Blog | Natalune`,
-    description: article.excerptFr,
+    description: metaDescription(article.excerptFr),
     keywords: [
       "astrologie",
       "astrology",
@@ -35,7 +42,7 @@ export async function generateMetadata({
     ],
     openGraph: {
       title: `${article.titleFr} — Natalune`,
-      description: article.excerptFr,
+      description: metaDescription(article.excerptFr),
       images: [`/api/og?title=${encodeURIComponent(article.titleFr)}`],
       type: "article",
       publishedTime: article.date,
@@ -63,7 +70,7 @@ export default async function BlogArticlePage({
     "@context": "https://schema.org",
     "@type": "Article",
     headline: article.titleFr,
-    description: article.excerptFr,
+    description: metaDescription(article.excerptFr),
     datePublished: article.date,
     author: { "@type": "Organization", name: "Natalune" },
     publisher: { "@type": "Organization", name: "Natalune", url: "https://natalune.com" },

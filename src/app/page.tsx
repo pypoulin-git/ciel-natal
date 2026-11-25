@@ -149,8 +149,8 @@ export default function HomePortal() {
           <div className="space-y-3">
             {[
               {
-                fr: { q: "Mes données sont-elles en sécurité ?", a: "Sans compte : tout reste dans ton navigateur, rien n'est envoyé ailleurs. Avec un compte : on stocke uniquement ce qui est nécessaire (email, prénom, cartes sauvegardées), et tu peux tout effacer en un clic. Détails sur la page Confidentialité." },
-                en: { q: "Is my data safe?", a: "Without an account: everything stays in your browser, nothing is sent elsewhere. With an account: we store only what's needed (email, name, saved charts), and you can erase everything in one click. See the Privacy page for details." },
+                fr: { q: "Mes données sont-elles en sécurité ?", a: "Sans compte : rien n'est enregistré, ta carte est calculée dans ton navigateur (seul le nom de ville tapé part vers la recherche OpenStreetMap). Avec un compte : on stocke uniquement ce qui est nécessaire (courriel, prénom, cartes sauvegardées), et tu peux tout effacer en un clic. Détails sur la page Confidentialité." },
+                en: { q: "Is my data safe?", a: "Without an account: nothing is saved, your chart is calculated in your browser (only the city name you type goes to OpenStreetMap search). With an account: we store only what's needed (email, name, saved charts), and you can erase everything in one click. See the Privacy page for details." },
               },
               {
                 fr: { q: "C'est de l'astrologie « sérieuse » ou un horoscope de magazine ?", a: "Astrologie psychologique inspirée de Carl Jung, Liz Greene et Howard Sasportas. Pas de prédictions, pas de fatalité. C'est un outil de réflexion sur soi, basé sur des calculs astronomiques réels." },

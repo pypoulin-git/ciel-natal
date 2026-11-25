@@ -37,6 +37,17 @@ export default function CookieBanner() {
 
   useEffect(() => {
     if (!getConsent()) setVisible(true)
+    // « Gérer les témoins » (footer) reopens the banner with the saved choice,
+    // so consent can be withdrawn as easily as it was given (Loi 25).
+    const reopen = () => {
+      const saved = getConsent()
+      setAnalytics(saved?.analytics ?? false)
+      setMarketing(saved?.marketing ?? false)
+      setShowDetails(true)
+      setVisible(true)
+    }
+    window.addEventListener('ciel-natal:open-consent', reopen)
+    return () => window.removeEventListener('ciel-natal:open-consent', reopen)
   }, [])
 
   const save = (prefs: Omit<ConsentPrefs, 'essential' | 'timestamp'>) => {
@@ -63,7 +74,7 @@ export default function CookieBanner() {
     title: locale === 'fr' ? 'Respect de ta vie privée' : 'Your privacy matters',
     message:
       locale === 'fr'
-        ? "Nous utilisons des cookies essentiels pour le fonctionnement du site, des cookies d'analyse anonyme pour l'améliorer, et des cookies marketing pour mesurer nos campagnes."
+        ? "Nous utilisons des témoins essentiels pour le fonctionnement du site, des témoins d'analyse anonyme pour l'améliorer, et des témoins marketing pour mesurer nos campagnes."
         : 'We use essential cookies to run the site, anonymous analytics cookies to improve it, and marketing cookies to measure our campaigns.',
     essential: locale === 'fr' ? 'Essentiels' : 'Essential',
     essentialDesc:
@@ -111,14 +122,15 @@ export default function CookieBanner() {
             <div className="flex flex-wrap gap-2 shrink-0 justify-center">
               <button
                 onClick={() => setShowDetails(true)}
-                className="btn-ghost text-xs px-3 py-2 min-h-[40px]"
+                className="btn-ghost text-xs px-3 py-2 min-h-11"
               >
                 {t.customize}
               </button>
-              <button onClick={declineAll} className="btn-ghost text-xs px-3 py-2 min-h-[40px]">
+              {/* Refusing weighs the same as accepting: same shape, same size. */}
+              <button onClick={declineAll} className="btn-primary text-xs px-3 py-2 min-h-11">
                 {t.decline}
               </button>
-              <button onClick={acceptAll} className="btn-primary text-xs px-3 py-2 min-h-[40px]">
+              <button onClick={acceptAll} className="btn-primary text-xs px-3 py-2 min-h-11">
                 {t.accept}
               </button>
             </div>
@@ -194,10 +206,11 @@ export default function CookieBanner() {
             </label>
 
             <div className="flex flex-wrap gap-2 justify-end pt-1">
-              <button onClick={declineAll} className="btn-ghost text-xs px-3 py-2 min-h-[40px]">
+              {/* Refusing weighs the same as accepting: same shape, same size. */}
+              <button onClick={declineAll} className="btn-primary text-xs px-3 py-2 min-h-11">
                 {t.decline}
               </button>
-              <button onClick={savePrefs} className="btn-primary text-xs px-3 py-2 min-h-[40px]">
+              <button onClick={savePrefs} className="btn-primary text-xs px-3 py-2 min-h-11">
                 {t.save}
               </button>
             </div>

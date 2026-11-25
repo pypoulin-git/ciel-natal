@@ -96,7 +96,7 @@ async function searchCities(query: string, locale: string): Promise<CityResult[]
 
 export default function SynastryPage() {
   const { t, locale } = useLocale();
-  const { isPremium } = useAuth();
+  const { isPremium, getAccessToken } = useAuth();
   const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_EN;
 
   const [personA, setPersonA] = useState<PersonData>({ ...DEFAULT_PERSON });
@@ -264,9 +264,10 @@ export default function SynastryPage() {
         .map((a) => `${a.planet1} (${a.sign1}) ${a.type.toLowerCase()} ${a.planet2} (${a.sign2}) — orbe ${a.orb}°`)
         .join("\n");
 
+      const token = await getAccessToken();
       const res = await fetch("/api/synastry-interpretation", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           contextA,
           contextB,
@@ -291,7 +292,7 @@ export default function SynastryPage() {
     } finally {
       setInterpLoading(false);
     }
-  }, [personA.prenom, personB.prenom, locale, relationType]);
+  }, [personA.prenom, personB.prenom, locale, relationType, getAccessToken]);
 
   const canCompute = personA.prenom.length >= 1 && personB.prenom.length >= 1 && personA.lieu.length >= 2 && personB.lieu.length >= 2;
 
@@ -324,8 +325,8 @@ export default function SynastryPage() {
             <p className="text-xs text-[var(--color-text-secondary)] opacity-60 flex items-center gap-1.5">
               <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               {locale === "fr"
-                ? "Tous les calculs restent sur ton appareil — aucune donnée n'est envoyée."
-                : "All calculations stay on your device — no data is sent."}
+                ? "Les calculs se font sur ton appareil et rien n'est enregistré. Seule la lecture IA (Premium) envoie les deux cartes à notre service d'interprétation."
+                : "Calculations run on your device and nothing is saved. Only the AI reading (Premium) sends both charts to our interpretation service."}
             </p>
           </div>
         )}
@@ -347,25 +348,25 @@ export default function SynastryPage() {
                     <input type="text" value={person.prenom} onChange={(e) => setPerson({ ...person, prenom: e.target.value })}
                       placeholder={t("form.step1.placeholder")} className="glass-input w-full text-sm" />
                     <div className="grid grid-cols-3 gap-2">
-                      <select value={person.jour} onChange={(e) => setPerson({ ...person, jour: parseInt(e.target.value) })}
+                      <select aria-label={locale === "fr" ? "Jour" : "Day"} value={person.jour} onChange={(e) => setPerson({ ...person, jour: parseInt(e.target.value) })}
                         className="glass-input text-sm text-center appearance-none">
                         {Array.from({ length: 31 }, (_, i) => <option key={i} value={i + 1} className="bg-[var(--color-space-deep)]">{i + 1}</option>)}
                       </select>
-                      <select value={person.mois} onChange={(e) => setPerson({ ...person, mois: parseInt(e.target.value) })}
+                      <select aria-label={locale === "fr" ? "Mois" : "Month"} value={person.mois} onChange={(e) => setPerson({ ...person, mois: parseInt(e.target.value) })}
                         className="glass-input text-sm text-center appearance-none">
                         {MONTHS.map((m, i) => <option key={i} value={i + 1} className="bg-[var(--color-space-deep)]">{m}</option>)}
                       </select>
-                      <select value={person.annee} onChange={(e) => setPerson({ ...person, annee: parseInt(e.target.value) })}
+                      <select aria-label={locale === "fr" ? "Année" : "Year"} value={person.annee} onChange={(e) => setPerson({ ...person, annee: parseInt(e.target.value) })}
                         className="glass-input text-sm text-center appearance-none">
                         {Array.from({ length: 127 }, (_, i) => <option key={i} value={2026 - i} className="bg-[var(--color-space-deep)]">{2026 - i}</option>)}
                       </select>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <select value={person.heure} onChange={(e) => setPerson({ ...person, heure: parseInt(e.target.value) })}
+                      <select aria-label={locale === "fr" ? "Heure" : "Hour"} value={person.heure} onChange={(e) => setPerson({ ...person, heure: parseInt(e.target.value) })}
                         className="glass-input text-sm text-center appearance-none">
                         {Array.from({ length: 24 }, (_, i) => <option key={i} value={i} className="bg-[var(--color-space-deep)]">{String(i).padStart(2, "0")}h</option>)}
                       </select>
-                      <select value={person.minute} onChange={(e) => setPerson({ ...person, minute: parseInt(e.target.value) })}
+                      <select aria-label={locale === "fr" ? "Minute" : "Minute"} value={person.minute} onChange={(e) => setPerson({ ...person, minute: parseInt(e.target.value) })}
                         className="glass-input text-sm text-center appearance-none">
                         {Array.from({ length: 60 }, (_, i) => <option key={i} value={i} className="bg-[var(--color-space-deep)]">{String(i).padStart(2, "0")}min</option>)}
                       </select>

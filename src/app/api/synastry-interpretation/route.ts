@@ -4,6 +4,8 @@ import { NextRequest } from "next/server";
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/interpCache";
 import { voiceBlock, genderAgreementInstruction, type VoiceKey } from "@/lib/voicePrompts";
 import { readPrefsStyleBlock } from "@/lib/readingPrefs";
+import { requirePremium } from "@/lib/dreamGuard";
+import { getPremiumRateLimit } from "@/lib/ratelimit";
 
 export type RelationType = "amour" | "amitie" | "professionnel" | "indetermine";
 
@@ -30,6 +32,21 @@ const RELATION_FRAME_EN: Record<RelationType, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  // Premium-only and rate-limited: this route calls Gemini, and it used to be
+  // callable by anyone, signed in or not (QA 2026-11).
+  const guard = await requirePremium(req);
+  if (!guard.ok) return guard.response;
+  const rl = getPremiumRateLimit();
+  if (rl) {
+    const { success } = await rl.limit(`synastry:${guard.userId}`);
+    if (!success) {
+      return new Response(JSON.stringify({ error: "RATE_LIMITED" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   try {
     const { contextA, contextB, crossAspects, prenomA, prenomB, voice, locale, genreA, genreB, relationType } =
       (await req.json()) as {

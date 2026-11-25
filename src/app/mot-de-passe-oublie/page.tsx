@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={fr ? "Ton email" : "Your email"}
+                  placeholder={fr ? "Ton courriel" : "Your email"}
                   className="w-full glass-input"
                   required
                 />

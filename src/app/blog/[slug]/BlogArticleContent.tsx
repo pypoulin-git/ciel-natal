@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n";
-import { articles, type BlogArticle } from "@/data/blog/articles";
+import { articles, formatArticleDate, type BlogArticle } from "@/data/blog/articles";
 import { extraFor } from "@/data/blog/extras";
 import ArticleHero from "@/components/blog/ArticleHero";
 import ShareButtons from "@/components/ShareButtons";
@@ -33,7 +33,7 @@ export default function BlogArticleContent({ article }: { article: BlogArticle }
       </Link>
 
       <div className="mb-4 flex items-center gap-3 text-xs text-[var(--color-text-secondary)]">
-        <time dateTime={article.date}>{article.date}</time>
+        <time dateTime={article.date}>{formatArticleDate(article.date, fr ? "fr" : "en")}</time>
         <span aria-hidden="true">&middot;</span>
         <span>{article.readingTime}</span>
       </div>
