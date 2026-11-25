@@ -842,3 +842,185 @@ textarea:focus-visible,
     opacity: 1 !important;
   }
 }
+
+/* ============================================
+   Révolution solaire — warm gold/copper register,
+   deliberately distinct from the lavender natal chart.
+   Hairlines and whitespace instead of glass cards.
+   ============================================ */
+.sr-page {
+  --sr-bg: var(--color-space-deep);
+  --sr-accent: #e3b062;
+  --sr-accent-ink: #1a1206;
+  --sr-retro: #c99a8a;
+  --sr-line: rgba(227, 176, 98, 0.16);
+  --sr-line-strong: rgba(227, 176, 98, 0.38);
+  --sr-tint: rgba(227, 176, 98, 0.08);
+  --sr-surface: rgba(255, 255, 255, 0.025);
+  background:
+    radial-gradient(60rem 30rem at 50% -8rem, rgba(227, 176, 98, 0.10), transparent 70%),
+    var(--color-space-deep);
+}
+:root[data-theme="light"] .sr-page {
+  --sr-bg: #f8f4ec;
+  --sr-accent: #9a6416;
+  --sr-accent-ink: #fffaf0;
+  --sr-retro: #9c5b48;
+  --sr-line: rgba(154, 100, 22, 0.18);
+  --sr-line-strong: rgba(154, 100, 22, 0.42);
+  --sr-tint: rgba(154, 100, 22, 0.07);
+  --sr-surface: rgba(255, 255, 255, 0.55);
+  background:
+    radial-gradient(60rem 30rem at 50% -8rem, rgba(214, 160, 80, 0.16), transparent 70%),
+    #f8f4ec;
+}
+.sr-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--sr-accent);
+}
+.sr-label {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+.sr-card {
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-line);
+  border-radius: 1.5rem;
+}
+.sr-input {
+  width: 100%;
+  min-height: 2.875rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--sr-line-strong);
+  padding: 0.5rem 0.125rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  border-radius: 0;
+  transition: border-color 0.2s ease;
+}
+.sr-input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--sr-accent);
+  box-shadow: 0 1px 0 0 var(--sr-accent);
+}
+.sr-input:disabled { opacity: 0.4; }
+.sr-input option { background: var(--color-space-card); color: var(--color-text-primary); }
+.sr-pop {
+  background: var(--color-space-card);
+  border: 1px solid var(--sr-line-strong);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+.sr-spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 2px solid var(--sr-line-strong);
+  border-top-color: var(--sr-accent);
+}
+.sr-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0 2rem;
+  border-radius: 999px;
+  background: var(--sr-accent);
+  color: var(--sr-accent-ink);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.sr-cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.sr-cta:disabled { opacity: 0.35; cursor: not-allowed; }
+.sr-cta:focus-visible, .sr-chip:focus-visible, .sr-seg button:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: 3px;
+}
+.sr-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  border: 1px solid var(--sr-line-strong);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.sr-chip:hover { background: var(--sr-tint); border-color: var(--sr-accent); }
+.sr-seg { border: 1px solid var(--sr-line-strong); }
+.sr-seg-on { background: var(--sr-accent); color: var(--sr-accent-ink); font-weight: 600; }
+.sr-note {
+  border-left: 2px solid var(--sr-accent);
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+.sr-glyph {
+  font-size: 5.5rem;
+  line-height: 1;
+  color: var(--sr-accent);
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols", "Apple Symbols", serif;
+}
+.sr-big {
+  /* var() first: next/font serves Fraunces under a generated family name. */
+  font-family: var(--font-fraunces), "Fraunces", "Cormorant Garamond", "Georgia", serif;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.15;
+  color: var(--color-text-primary);
+}
+.sr-grid {
+  background: var(--sr-line);
+  border: 1px solid var(--sr-line);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.sr-cell {
+  position: relative;
+  padding: 1rem 1rem 1.25rem;
+  background: var(--color-space-deep);
+  min-height: 5.5rem;
+}
+:root[data-theme="light"] .sr-cell { background: #f8f4ec; }
+.sr-cell .sr-bar {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.75rem;
+  height: 2px;
+  width: calc((100% - 2rem) * var(--w, 0));
+  background: var(--sr-accent);
+  opacity: 0.8;
+}
+.sr-cell-sun { box-shadow: inset 0 0 0 1px var(--sr-accent); }
+.sr-timeline { position: relative; margin-left: 0.5rem; padding-left: 1.75rem; border-left: 1px solid var(--sr-line-strong); }
+.sr-tl-item { position: relative; padding-bottom: 1.75rem; }
+.sr-tl-item:last-child { padding-bottom: 0.25rem; }
+.sr-tl-dot {
+  position: absolute;
+  left: calc(-1.75rem - 5px);
+  top: 0.2rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--sr-accent);
+}
+.sr-tl-dot-moon { background: var(--sr-bg); border: 1.5px solid var(--color-moon); }
+.sr-tl-dot-retro { background: var(--sr-retro); }
+.sr-draw {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: sr-draw 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+@keyframes sr-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sr-draw { animation: none; stroke-dashoffset: 0; }
+}
