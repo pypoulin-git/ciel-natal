@@ -221,7 +221,7 @@ export default function MercureRetrogradePage() {
             </p>
             <Link
               href="/carte-natale"
-              className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium glow-lavender"
+              className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium glow-lavender"
             >
               <span aria-hidden="true">✦</span>
               {fr ? 'Lire ma carte natale gratuite' : 'Read my free natal chart'}

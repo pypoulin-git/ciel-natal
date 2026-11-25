@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { SIGNS, translateSign } from '@/lib/astro'
 import { geocentricLongitudes, daysSince2000At } from '@/lib/ephemeris'
 import { computeSkyToday } from '@/lib/skyToday'
@@ -242,6 +243,10 @@ export default function SkyTicker() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const tapeRef = useRef<HTMLDivElement>(null)
   const paused = useRef(false) // hover or active drag
+  // Explicit pause (WCAG 2.2.2): hover-only pausing left keyboard and touch
+  // users with no way to stop the motion. Remembered per browser.
+  const [stopped, setStopped] = useState(false)
+  const stoppedRef = useRef(false)
   const drag = useRef<{ x: number; scroll: number; moved: number } | null>(null)
 
   useEffect(() => {
@@ -251,6 +256,12 @@ export default function SkyTicker() {
       if (stored === 'en' || stored === 'fr') loc = stored
     } catch { /* default fr */ }
     setLocale(loc)
+    try {
+      if (localStorage.getItem('ciel-natal-ticker-paused') === '1') {
+        setStopped(true)
+        stoppedRef.current = true
+      }
+    } catch { /* default: moving */ }
     try {
       setItems(buildItems(new Date(), loc === 'fr', loc))
     } catch {
@@ -268,7 +279,7 @@ export default function SkyTicker() {
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     let raf = 0
     const step = () => {
-      if (!paused.current && !reduce) {
+      if (!paused.current && !stoppedRef.current && !reduce && !document.hidden) {
         el.scrollLeft += 0.4
         const w = tapeRef.current?.offsetWidth ?? 0
         if (w > 0 && el.scrollLeft >= w) el.scrollLeft -= w
@@ -315,21 +326,19 @@ export default function SkyTicker() {
 
   return (
     <div
-      role="link"
-      tabIndex={0}
-      aria-label={locale === 'fr' ? 'Les énergies et rendez-vous du ciel — ouvrir le calendrier' : 'Sky energies and upcoming events — open the calendar'}
-      onKeyDown={(e) => { if (e.key === 'Enter') router.push('/calendrier') }}
       className="group block w-full border-b overflow-hidden backdrop-blur-xl transition hover:bg-white/[0.03]"
       style={{ borderColor: 'var(--nav-border)', background: 'color-mix(in srgb, var(--color-space-card) 25%, transparent)' }}
     >
       <div className="relative flex items-center py-[3px]">
         {/* Static leading tag */}
-        <span
-          className="z-10 shrink-0 pl-4 pr-3 text-[9px] uppercase tracking-widest font-semibold select-none"
+        <Link
+          href="/calendrier"
+          aria-label={locale === 'fr' ? 'Le ciel : ouvrir le calendrier' : 'The sky: open the calendar'}
+          className="z-10 shrink-0 pl-4 pr-3 text-[10px] uppercase tracking-widest font-semibold select-none hover:underline underline-offset-2"
           style={{ color: 'var(--color-accent-gold)' }}
         >
           ✦ {locale === 'fr' ? 'Le ciel' : 'The sky'}
-        </span>
+        </Link>
         {/* Draggable scroll region with edge fades */}
         <div
           ref={scrollRef}
@@ -347,6 +356,28 @@ export default function SkyTicker() {
             <Tape items={items} />
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            const next = !stopped
+            setStopped(next)
+            stoppedRef.current = next
+            try { localStorage.setItem('ciel-natal-ticker-paused', next ? '1' : '0') } catch { /* noop */ }
+          }}
+          aria-pressed={stopped}
+          aria-label={
+            stopped
+              ? (locale === 'fr' ? 'Relancer le défilement' : 'Resume scrolling')
+              : (locale === 'fr' ? 'Mettre le défilement en pause' : 'Pause scrolling')
+          }
+          className="z-10 shrink-0 w-8 h-6 mr-2 inline-flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-gold)]"
+        >
+          {stopped ? (
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden><path d="M2 1l7 4-7 4z" fill="currentColor" /></svg>
+          ) : (
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden><rect x="2" y="1" width="2" height="8" fill="currentColor" /><rect x="6" y="1" width="2" height="8" fill="currentColor" /></svg>
+          )}
+        </button>
       </div>
     </div>
   )

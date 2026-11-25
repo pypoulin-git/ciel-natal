@@ -921,7 +921,7 @@ export default function Home() {
                   // ── Returning, signed-in visitor with saved charts ──
                   <>
                     <a href="/mon-compte/lectures"
-                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender">
+                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg glow-lavender">
                       <span aria-hidden="true">&#10022;</span>
                       {locale === "fr" ? "Accéder à mes cartes natales" : "Open my natal charts"}
                     </a>
@@ -936,7 +936,7 @@ export default function Home() {
                   // ── Anonymous / first-time visitor ──
                   <>
                     <button onClick={() => setStep(1)}
-                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender">
+                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg glow-lavender">
                       <span aria-hidden="true">&#10022;</span>
                       {t("hero.cta")}
                     </button>
@@ -1055,7 +1055,7 @@ export default function Home() {
                   : "Ready to see what your sky was saying that day?"}
               </p>
               <button onClick={() => setStep(1)}
-                className="btn-primary px-8 py-4 rounded-full text-white font-medium text-base">
+                className="btn-primary px-8 py-4 rounded-full font-medium text-base">
                 {t("hero.cta")}
               </button>
             </section>

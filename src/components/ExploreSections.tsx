@@ -99,11 +99,11 @@ export default function ExploreSections({ onStart }: { onStart?: () => void }) {
     {
       href: '/blog',
       icon: <BlogIcon />,
-      title: fr ? 'Le journal' : 'The journal',
+      title: fr ? 'Le blogue' : 'The blog',
       desc: fr
         ? "Comprendre l'astrologie, article après article."
         : 'Understanding astrology, one article at a time.',
-      cta: fr ? 'Lire le journal' : 'Read the journal',
+      cta: fr ? 'Lire le blogue' : 'Read the blog',
     },
   ]
 
@@ -148,7 +148,7 @@ export default function ExploreSections({ onStart }: { onStart?: () => void }) {
         {onStart ? (
           <button
             onClick={onStart}
-            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium shrink-0 glow-lavender"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium shrink-0 glow-lavender"
           >
             <span aria-hidden="true">✦</span>
             {fr ? 'Lire ma carte natale' : 'Read my natal chart'}
@@ -156,7 +156,7 @@ export default function ExploreSections({ onStart }: { onStart?: () => void }) {
         ) : (
           <Link
             href="/carte-natale"
-            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-medium shrink-0 glow-lavender"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium shrink-0 glow-lavender"
           >
             <span aria-hidden="true">✦</span>
             {fr ? 'Lire ma carte natale' : 'Read my natal chart'}
@@ -165,13 +165,16 @@ export default function ExploreSections({ onStart }: { onStart?: () => void }) {
       </div>
 
       {/* Secondary sections */}
-      {/* 5 cards since the dream journal joined — 3 + 2 reads better than 4 + 1. */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {secondary.map((s) => (
+      {/* 5 cards: 2 wide + 3 narrow on a 6-column grid at desktop, 2 + 2 + 1
+          full-width on tablet — no row with an empty slot (QA 2026-11). */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4">
+        {secondary.map((s, i) => (
           <Link
             key={s.href}
             href={s.href}
-            className="glass p-5 flex flex-col group hover:border-[var(--color-accent-lavender)]/40 transition"
+            className={`glass p-5 flex flex-col group hover:border-[var(--color-accent-lavender)]/40 transition ${
+              i < 2 ? 'lg:col-span-3' : 'lg:col-span-2'
+            } ${secondary.length % 2 === 1 && i === secondary.length - 1 ? 'sm:col-span-2 lg:col-span-2' : ''}`}
           >
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-accent-lavender)]/12 text-[var(--color-accent-lavender)] mb-3">
               {s.icon}

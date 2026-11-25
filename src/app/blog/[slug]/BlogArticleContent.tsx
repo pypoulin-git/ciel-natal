@@ -141,7 +141,7 @@ export default function BlogArticleContent({ article }: { article: BlogArticle }
         </p>
         <Link
           href="/carte-natale"
-          className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white text-sm font-medium"
+          className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium"
         >
           <span aria-hidden="true">✦</span>
           {fr ? "Lire ma carte natale" : "Read my natal chart"}

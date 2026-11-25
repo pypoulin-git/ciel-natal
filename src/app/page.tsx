@@ -49,7 +49,7 @@ export default function HomePortal() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/carte-natale"
-                className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-medium text-lg glow-lavender"
+                className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg glow-lavender"
               >
                 <span aria-hidden="true">&#10022;</span>
                 {fr ? "Lire ma carte natale" : "Read my natal chart"}
@@ -123,7 +123,7 @@ export default function HomePortal() {
               {!isPremium && (
                 <a
                   href={user ? "/premium" : "/inscription?intent=premium"}
-                  className="btn-primary mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full text-white text-sm font-medium glow-lavender"
+                  className="btn-primary mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full text-sm font-medium glow-lavender"
                   style={{ background: "linear-gradient(135deg, var(--color-accent-gold), #b8863f)" }}
                 >
                   <span aria-hidden="true">✦</span>
@@ -183,7 +183,7 @@ export default function HomePortal() {
           <p className="text-sm text-[var(--color-text-secondary)] mb-5">
             {fr ? "Prêt·e à voir ce que ton ciel disait le jour de ta naissance ?" : "Ready to see what your sky was saying the day you were born?"}
           </p>
-          <Link href="/carte-natale" className="btn-primary inline-block px-8 py-4 rounded-full text-white font-medium text-base">
+          <Link href="/carte-natale" className="btn-primary inline-block px-8 py-4 rounded-full font-medium text-base">
             {fr ? "Lire ma carte natale" : "Read my natal chart"}
           </Link>
         </section>

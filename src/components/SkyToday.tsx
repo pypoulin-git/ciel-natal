@@ -331,19 +331,24 @@ export default function SkyToday() {
       </div>
 
       {/* Dots (mobile only) */}
-      <div className="flex md:hidden justify-center gap-2 mt-4">
+      <div className="flex md:hidden justify-center mt-3">
         {cards.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
-            aria-label={`${fr ? 'Carte' : 'Card'} ${i + 1}`}
-            className={cn(
-              'h-1.5 rounded-full transition-all',
-              i === active
-                ? 'w-5 bg-[var(--color-accent-lavender)]'
-                : 'w-1.5 bg-[var(--color-glass-border)]',
-            )}
-          />
+            aria-label={`${i + 1} / ${cards.length}`}
+            aria-current={i === active ? 'true' : undefined}
+            className="h-6 min-w-6 px-1 inline-flex items-center justify-center"
+          >
+            <span
+              className={cn(
+                'block h-1.5 rounded-full transition-all',
+                i === active
+                  ? 'w-5 bg-[var(--color-accent-lavender)]'
+                  : 'w-1.5 bg-[var(--color-glass-border)]',
+              )}
+            />
+          </button>
         ))}
       </div>
 
