@@ -14,17 +14,20 @@ import MarketingPixels from '@/components/MarketingPixels'
 export const metadata: Metadata = {
   title: 'Natalune — Découvre ta carte du ciel',
   description:
-    'Calcule ton thème natal gratuitement et découvre ce que le ciel racontait au moment de ta naissance. Interprétations psychologiques profondes, pas un horoscope de magazine.',
+    'Ta carte du ciel gratuite, lue comme un portrait psychologique, le ciel du jour et ton journal de rêves. Pas un horoscope de magazine.',
   keywords:
     'carte du ciel, thème natal, astrologie, horoscope, signe ascendant, thème astral gratuit',
   metadataBase: new URL('https://natalune.com'),
   openGraph: {
+    // A child openGraph replaces the parent one wholesale, image included:
+    // without this line the page was shared with no image (QA 2026-11).
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
     title: 'Natalune — Découvre ta carte du ciel',
     description:
       'Calcule ton thème natal gratuitement. Interprétations psychologiques profondes inspirées de Jung.',
     url: 'https://natalune.com',
     siteName: 'Natalune',
-    locale: 'fr_FR',
+    locale: 'fr_CA',
     type: 'website',
   },
   twitter: {
@@ -53,9 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `try{var t=localStorage.getItem("ciel-natal-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`,
           }}
         />
-        <link rel="alternate" hrefLang="fr" href="https://natalune.com" />
-        <link rel="alternate" hrefLang="en" href="https://natalune.com" />
-        <link rel="alternate" hrefLang="x-default" href="https://natalune.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -87,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LocaleProvider>
             <AuthProvider>
               <a href="#main-content" className="skip-link">
-                Skip to content
+                Aller au contenu
               </a>
               <TopNav />
               <MoonBanner />

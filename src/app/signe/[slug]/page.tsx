@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const sign = signs[slug];
   if (!sign) return {};
   return {
-    title: `${sign.nameFr} (${sign.glyph}) — ${sign.nameEn} | Natalune`,
-    description: `Discover the ${sign.nameEn} zodiac sign in psychological astrology: deep personality, strengths, challenges, love compatibility and career. ${sign.datesEn}. / Découvrez le signe ${sign.nameFr} : personnalité profonde, forces et défis, amour et travail. ${sign.datesFr}.`,
+    title: `${sign.nameFr} (${sign.glyph}) : personnalité, amour et travail | Natalune`,
+    description: `Le signe ${sign.nameFr} (${sign.datesFr}) en astrologie psychologique : personnalité profonde, forces, défis, amour et travail.`,
     keywords: [
       sign.nameFr,
       sign.nameEn,

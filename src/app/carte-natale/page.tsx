@@ -156,7 +156,6 @@ export default function Home() {
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const [copied, setCopied] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
@@ -174,7 +173,7 @@ export default function Home() {
   >(null);
   const autoSavedLabelRef = useRef<string | null>(null);
   const [showTabsHint, setShowTabsHint] = useState(false);
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const userLocation: UserLocation | null = null;
   const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
   useScrollReveal([step]);
   const resultsRef = useRef<HTMLDivElement | null>(null);
@@ -250,16 +249,9 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [user?.id, getAccessToken]);
 
-  // Silently request geolocation for city search bias (no UI impact if denied)
-  useEffect(() => {
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        () => { /* denied or unavailable — Canada bias will be used */ },
-        { timeout: 5000, maximumAge: 600000 }
-      );
-    }
-  }, []);
+  // No geolocation: the site's Permissions-Policy blocks it (geolocation=()),
+  // and where you are now says nothing about where you were born. City search
+  // falls back to its Canada-first ordering.
 
   const handleCitySearch = useCallback((query: string) => {
     setForm((f) => ({ ...f, lieu: query }));
@@ -320,32 +312,6 @@ export default function Home() {
       setTimeout(() => setStep(7), 2500);
     }, 1000);
   };
-
-  // ─── Geolocation ───
-  const detectLocation = useCallback(async () => {
-    if (!navigator.geolocation) return;
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=${locale}`,
-            { headers: { "User-Agent": "Natalune/1.0" } }
-          );
-          if (res.ok) {
-            const data = await res.json();
-            const city = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || "";
-            const country = data.address?.country || "";
-            setForm((f) => ({ ...f, lieu: [city, country].filter(Boolean).join(", "), latitude, longitude }));
-          }
-        } catch { /* ignore */ }
-        setGeoLoading(false);
-      },
-      () => setGeoLoading(false),
-      { timeout: 8000 }
-    );
-  }, [locale]);
 
   // ─── Calculate today's transits ───
   useEffect(() => {
@@ -1148,11 +1114,6 @@ export default function Home() {
                   <div className="relative">
                     <input type="text" value={form.lieu} onChange={(e) => handleCitySearch(e.target.value)}
                       placeholder={t("form.step4.placeholder")} className="glass-input w-full text-lg text-center" autoFocus />
-                    <button type="button" onClick={detectLocation}
-                      className="mt-3 w-full btn-ghost px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-2" disabled={geoLoading}>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m10-10h-4M6 12H2"/></svg>
-                      {geoLoading ? t("geo.detecting") : t("geo.detect")}
-                    </button>
                     {cityLoading && (
                       <div className="absolute right-4 top-5 -translate-y-1/2">
                         <div className="w-4 h-4 border-2 border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />

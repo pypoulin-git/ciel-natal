@@ -390,7 +390,8 @@ export default function SkyToday() {
                 </div>
                 <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
                   <span className="text-[var(--color-text-muted)]">
-                    {fr ? SKY_EXPLAINERS.stellium.fr : SKY_EXPLAINERS.stellium.en}
+                    {/* Explainer for *this* configuration (it used to always be the stellium one). */}
+                    {fr ? SKY_EXPLAINERS[cfg.kind].fr : SKY_EXPLAINERS[cfg.kind].en}
                   </span>
                   {cfg.kind === 'stellium' && signTheme ? (
                     <>

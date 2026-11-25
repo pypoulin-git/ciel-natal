@@ -10,7 +10,9 @@ export default function Confidentialite() {
   return (
     <PageShell title={fr ? "Politique de confidentialité" : "Privacy Policy"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 20 juillet 2026" : "Last updated: July 20, 2026"}
+        {fr
+          ? "Dernière mise à jour : 24 novembre 2026. Correction : les fonctions serveur s'exécutent aux États-Unis (et non à Montréal comme indiqué auparavant), et la recherche de ville passe par OpenStreetMap."
+          : "Last updated: November 24, 2026. Correction: server functions run in the United States (not Montreal as previously stated), and city search goes through OpenStreetMap."}
       </p>
 
       <section>
@@ -38,8 +40,8 @@ export default function Confidentialite() {
         </h3>
         <p>
           {fr
-            ? "Tu peux calculer ta carte du ciel sans créer de compte. Dans ce cas, les données saisies (prénom, date, heure et lieu de naissance) restent dans la mémoire de ton navigateur. Aucune donnée n'est enregistrée sur nos serveurs. La carte disparaît dès que tu fermes l'onglet."
-            : "You can calculate your chart without creating an account. In that case the data you enter (first name, date, time, place of birth) stays in your browser. Nothing is saved on our servers. The chart disappears the moment you close the tab."}
+            ? "Tu peux calculer ta carte du ciel sans créer de compte. Dans ce cas, les données saisies (prénom, date, heure et lieu de naissance) restent dans la mémoire de ton navigateur. Aucune donnée n'est enregistrée sur nos serveurs. La carte disparaît dès que tu fermes l'onglet. Seule exception : le nom de ville que tu tapes est envoyé au service de recherche OpenStreetMap (Nominatim) pour trouver ses coordonnées."
+            : "You can calculate your chart without creating an account. In that case the data you enter (first name, date, time, place of birth) stays in your browser. Nothing is saved on our servers. The chart disappears the moment you close the tab. One exception: the city name you type is sent to OpenStreetMap's search service (Nominatim) to find its coordinates."}
         </p>
         <h3 className="font-cinzel text-base text-[var(--color-text-primary)] mt-4 mb-2">
           {fr ? "B. Avec un compte" : "B. With an account"}
@@ -84,8 +86,8 @@ export default function Confidentialite() {
           <li>
             <strong className="text-[var(--color-text-primary)]">Vercel</strong> —{" "}
             {fr
-              ? "Hébergement du site et journaux serveur. Région de calcul principale : Montréal (Canada). Reçoit : adresse IP, métadonnées HTTP. Lien : "
-              : "Site hosting and server logs. Primary compute region: Montreal (Canada). Receives: IP address, HTTP metadata. Link: "}
+              ? "Hébergement du site et journaux serveur. Les pages sont servies depuis un point d'entrée à Montréal, mais les fonctions serveur (comptes, lectures IA, sauvegardes) s'exécutent aux États-Unis, dans la région de Washington (iad1). Reçoit : adresse IP, métadonnées HTTP. Lien : "
+              : "Site hosting and server logs. Pages are served from an edge in Montreal, but server functions (accounts, AI readings, saved charts) run in the United States, in the Washington region (iad1). Receives: IP address, HTTP metadata. Link: "}
             <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">vercel.com/legal/privacy-policy</a>
           </li>
           <li>

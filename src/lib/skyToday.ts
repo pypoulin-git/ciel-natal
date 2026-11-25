@@ -223,12 +223,14 @@ function detectConfigs(lonByName: Record<string, number>): SkyConfig[] {
 
 export function computeSkyToday(now: Date): SkyToday {
   // ── Moon phase (from the natal ephemeris — validated, fine for phase) ──
+  // The real instant, not noon UTC: the Moon moves ~13°/day, and noon made
+  // this panel disagree with the Moon banner (Taureau here, Gémeaux there).
   const natal = calculateNatalChart(
     now.getUTCFullYear(),
     now.getUTCMonth() + 1,
     now.getUTCDate(),
-    12,
-    0,
+    now.getUTCHours(),
+    now.getUTCMinutes(),
     0,
     0,
     false,

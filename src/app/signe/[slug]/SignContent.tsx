@@ -167,7 +167,7 @@ export default function SignContent({ sign }: { sign: SignDataBilingual }) {
                     href={`/signe/${SIGN_SLUG[s]}`}
                     className="text-xs px-2.5 py-1 rounded-full bg-white/[0.03] border border-[var(--color-glass-border)] text-[var(--color-text-primary)] hover:border-[var(--color-accent-lavender)]/40 transition"
                   >
-                    {fr ? s : SIGN_LABEL_EN[s]}
+                    {fr ? (SIGN_SLUG[s] ? SLUG_NAME_FR[SIGN_SLUG[s]] : s) : SIGN_LABEL_EN[s]}
                   </Link>
                 ))}
               </div>
@@ -183,7 +183,7 @@ export default function SignContent({ sign }: { sign: SignDataBilingual }) {
                     href={`/signe/${SIGN_SLUG[s]}`}
                     className="text-xs px-2.5 py-1 rounded-full bg-white/[0.03] border border-[var(--color-glass-border)] text-[var(--color-text-primary)] hover:border-[var(--color-accent-rose)]/40 transition"
                   >
-                    {fr ? s : SIGN_LABEL_EN[s]}
+                    {fr ? (SIGN_SLUG[s] ? SLUG_NAME_FR[SIGN_SLUG[s]] : s) : SIGN_LABEL_EN[s]}
                   </Link>
                 ))}
               </div>

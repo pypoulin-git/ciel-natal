@@ -47,7 +47,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       title,
       description,
       siteName: 'Natalune',
-      locale: 'fr_FR',
+      locale: 'fr_CA',
       type: 'website',
       images: [{ url: ogImage, width: 1200, height: 630 }],
     },
