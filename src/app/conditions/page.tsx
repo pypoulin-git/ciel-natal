@@ -2,6 +2,7 @@
 
 import PageShell from "@/components/PageShell";
 import { useLocale } from "@/lib/i18n";
+import { CARTES_PREMIUM, CHAT_PREMIUM_PAR_MOIS, REMBOURSEMENT_JOURS, prixAffiche } from "@/lib/offre";
 
 export default function Conditions() {
   const { locale } = useLocale();
@@ -10,7 +11,9 @@ export default function Conditions() {
   return (
     <PageShell title={fr ? "Conditions d'utilisation" : "Terms of Use"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
-        {fr ? "Dernière mise à jour : 10 juin 2026" : "Last updated: June 10, 2026"}
+        {fr
+          ? "Dernière mise à jour : 24 novembre 2026. Ajout de la section 3 (paiement unique, remboursement sous 14 jours, plafonds d'usage) et correction : Premium est un achat unique, pas un abonnement."
+          : "Last updated: November 24, 2026. Added section 3 (one-time payment, 14-day refund, usage caps) and corrected wording: Premium is a one-time purchase, not a subscription."}
       </p>
 
       <section>
@@ -35,14 +38,35 @@ export default function Conditions() {
         </p>
         <p className="mt-3">
           {fr
-            ? "L'abonnement Premium donne aussi accès à un journal de rêves : tu y consignes tes rêves, et une IA en propose une structuration puis trois lectures — une factuelle inspirée des neurosciences du sommeil, une symbolique inspirée de la psychologie analytique, et une synthèse des deux. Ces lectures relèvent de la même logique de réflexion personnelle que le reste du site."
-            : "Premium also gives access to a dream journal: you record your dreams, and an AI proposes a structured version plus three readings — a factual one drawing on sleep neuroscience, a symbolic one drawing on analytical psychology, and a synthesis of the two. These readings fall under the same personal-reflection framing as the rest of the site."}
+            ? "Le journal de rêves est gratuit ; l'accès Premium (achat unique) y ajoute les interprétations par IA : une IA propose une structuration puis trois lectures — une factuelle inspirée des neurosciences du sommeil, une symbolique inspirée de la psychologie analytique, et une synthèse des deux. Ces lectures relèvent de la même logique de réflexion personnelle que le reste du site."
+            : "The dream journal is free; Premium (a one-time purchase) adds AI readings: you record your dreams, and an AI proposes a structured version plus three readings — a factual one drawing on sleep neuroscience, a symbolic one drawing on analytical psychology, and a synthesis of the two. These readings fall under the same personal-reflection framing as the rest of the site."}
         </p>
       </section>
 
       <section>
         <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
-          {fr ? "3. Limitation de responsabilité" : "3. Limitation of liability"}
+          {fr ? "3. Premium : paiement et remboursement" : "3. Premium: payment and refunds"}
+        </h2>
+        <p>
+          {fr
+            ? `Natalune Premium coûte ${prixAffiche("fr")} CAD, payés une seule fois par Stripe. Ce n'est pas un abonnement : rien ne se renouvelle et il n'y a rien à annuler. L'accès est lié à ton compte, sans limite de durée tant que le service existe.`
+            : `Natalune Premium costs ${prixAffiche("en")} CAD, paid once through Stripe. It is not a subscription: nothing renews and there is nothing to cancel. Access is tied to your account, with no time limit for as long as the service runs.`}
+        </p>
+        <p className="mt-3">
+          {fr
+            ? `Si tu changes d'avis, écris-nous dans les ${REMBOURSEMENT_JOURS} jours suivant l'achat et nous te remboursons en entier, sans justification.`
+            : `If you change your mind, write to us within ${REMBOURSEMENT_JOURS} days of purchase and we will refund you in full, no questions asked.`}
+        </p>
+        <p className="mt-3">
+          {fr
+            ? `Les fonctions par IA ont des plafonds d'usage raisonnable : ${CHAT_PREMIUM_PAR_MOIS} messages de chat par période de 30 jours et jusqu'à ${CARTES_PREMIUM} cartes sauvegardées. Le journal de rêves a ses propres plafonds mensuels, affichés dans l'application.`
+            : `AI features have fair-use caps: ${CHAT_PREMIUM_PAR_MOIS} chat messages per 30-day period and up to ${CARTES_PREMIUM} saved charts. The dream journal has its own monthly caps, shown in the app.`}
+        </p>
+      </section>
+
+      <section>
+        <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
+          {fr ? "4. Limitation de responsabilité" : "4. Limitation of liability"}
         </h2>
         <p>
           {fr
@@ -69,7 +93,7 @@ export default function Conditions() {
 
       <section>
         <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
-          {fr ? "4. Précision des calculs" : "4. Calculation accuracy"}
+          {fr ? "5. Précision des calculs" : "5. Calculation accuracy"}
         </h2>
         <p>
           {fr
@@ -80,7 +104,7 @@ export default function Conditions() {
 
       <section>
         <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
-          {fr ? "5. Propriété intellectuelle" : "5. Intellectual property"}
+          {fr ? "6. Propriété intellectuelle" : "6. Intellectual property"}
         </h2>
         <p>
           {fr
@@ -91,7 +115,7 @@ export default function Conditions() {
 
       <section>
         <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
-          {fr ? "6. Modifications" : "6. Changes"}
+          {fr ? "7. Modifications" : "7. Changes"}
         </h2>
         <p>
           {fr
@@ -102,7 +126,7 @@ export default function Conditions() {
 
       <section>
         <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] mb-3">
-          {fr ? "7. Contact" : "7. Contact"}
+          {fr ? "8. Contact" : "8. Contact"}
         </h2>
         <p>
           {fr

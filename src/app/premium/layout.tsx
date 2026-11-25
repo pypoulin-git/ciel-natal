@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Premium — lectures illimitées & chat IA · Natalune",
+  title: "Premium — lectures complètes & chat IA · Natalune",
   description:
-    "Passez à Natalune Premium : interprétations approfondies, chat IA illimité, narration audio, synastrie et export PDF de votre carte du ciel.",
+    "Natalune Premium, 9,99 $ une seule fois : interprétations complètes, chat IA, narration audio, synastrie et export PDF de ta carte du ciel.",
   alternates: { canonical: "https://natalune.com/premium" },
   openGraph: {
-    title: "Premium — lectures illimitées & chat IA · Natalune",
+    title: "Premium — lectures complètes & chat IA · Natalune",
     description:
-      "Interprétations approfondies, chat IA illimité, narration audio, synastrie et export PDF.",
+      "Interprétations complètes, chat IA, narration audio, synastrie et export PDF. Paiement unique.",
     url: "https://natalune.com/premium",
   },
 };

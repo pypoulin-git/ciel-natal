@@ -9,6 +9,7 @@ import SiteFooter from "@/components/SiteFooter";
 import AccountTabs from "@/components/AccountTabs";
 import ThemeToggle from "@/components/ThemeToggle";
 import { chartLinksFromFormData } from "@/lib/chartLink";
+import { CARTES_PREMIUM } from "@/lib/offre";
 
 interface SavedChart {
   id: string;
@@ -196,7 +197,7 @@ export default function MonComptePage() {
                 <svg width="18" height="18" fill="none" stroke="var(--color-accent-lavender)" strokeWidth="1.5" viewBox="0 0 24 24">
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                 </svg>
-                {label("Mes cartes natales", "My natal charts")} ({charts.length}/10)
+                {label("Mes cartes natales", "My natal charts")} ({charts.length}/{CARTES_PREMIUM})
               </h2>
               <a href="/mon-compte/lectures" className="text-xs text-[var(--color-accent-lavender)] hover:underline shrink-0">
                 {label("Tout voir →", "See all →")}

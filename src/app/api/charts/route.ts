@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { CARTES_GRATUIT, CARTES_PREMIUM } from "@/lib/offre";
 
 // Premium is "unlimited" in the product copy — keep a high sanity cap only to
 // prevent runaway abuse. Free tier is a hard 3 saved readings.
-const MAX_CHARTS_PREMIUM = 200;
-const MAX_CHARTS_FREE = 3;
+const MAX_CHARTS_PREMIUM = CARTES_PREMIUM;
+const MAX_CHARTS_FREE = CARTES_GRATUIT;
 
 function getSupabaseAdmin() {
   return createClient(
