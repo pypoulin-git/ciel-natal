@@ -30,8 +30,8 @@ const nextConfig: NextConfig = {
               // MarketingPixels.tsx; these allow-list entries only let them load
               // once the user opts in — nothing fires otherwise.
               `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://connect.facebook.net https://www.googletagmanager.com`,
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
               "img-src 'self' data: blob: https://*.supabase.co https://www.facebook.com https://www.google-analytics.com https://www.googletagmanager.com",
               // AI providers (Anthropic/OpenAI) are called server-side only, so
               // they don't belong in connect-src (which governs browser fetch).

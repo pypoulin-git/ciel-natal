@@ -271,18 +271,23 @@ export default function PlanetSystem({ planets, locale, focusName, onFocus }: Pr
       </div>
 
       {/* Points de navigation */}
-      <div className="flex justify-center gap-2 mt-1">
+      <div className="flex justify-center mt-1">
         {planets.map((p, i) => (
           <button
             key={p.name}
             onClick={() => goTo(i)}
             aria-label={translatePlanet(p.name, locale)}
-            className="h-1.5 rounded-full transition-all"
-            style={{
-              width: i === focus ? 20 : 6,
-              background: i === focus ? curStyle.color : 'var(--color-glass-border)',
-            }}
-          />
+            aria-current={i === focus ? 'true' : undefined}
+            className="h-6 min-w-6 px-1 inline-flex items-center justify-center"
+          >
+            <span
+              className="block h-1.5 rounded-full transition-all"
+              style={{
+                width: i === focus ? 20 : 6,
+                background: i === focus ? curStyle.color : 'var(--color-glass-border)',
+              }}
+            />
+          </button>
         ))}
       </div>
 

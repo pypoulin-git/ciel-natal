@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
+import FeatureIcon, { type FeatureIconName } from "@/components/FeatureIcons";
 
 const PRODUCT_JSON_LD = {
   "@context": "https://schema.org",
@@ -22,27 +23,27 @@ const PRODUCT_JSON_LD = {
 };
 
 const FEATURES_FR = [
-  { icon: "✦", title: "Interprétations complètes", desc: "Toutes les planètes, maisons et aspects décryptés pour toi." },
-  { icon: "💬", title: "Chat IA illimité", desc: "Pose toutes tes questions à ton astrologue bienveillante." },
-  { icon: "📄", title: "Export PDF", desc: "Télécharge ta carte en format professionnel." },
-  { icon: "💾", title: "Sauvegarde de cartes", desc: "Enregistre jusqu'à 10 cartes (amis, famille, partenaire)." },
-  { icon: "🎧", title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
-  { icon: "💞", title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
-  { icon: "🌙", title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium les structure et en donne trois lectures, colorées par ta Lune natale." },
+  { icon: "sparkle" as FeatureIconName, title: "Interprétations complètes", desc: "Toutes les planètes, maisons et aspects décryptés pour toi." },
+  { icon: "chat" as FeatureIconName, title: "Chat IA illimité", desc: "Pose toutes tes questions à ton astrologue bienveillante." },
+  { icon: "pdf" as FeatureIconName, title: "Export PDF", desc: "Télécharge ta carte en format professionnel." },
+  { icon: "save" as FeatureIconName, title: "Sauvegarde de cartes", desc: "Enregistre jusqu'à 10 cartes (amis, famille, partenaire)." },
+  { icon: "audio" as FeatureIconName, title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
+  { icon: "synastry" as FeatureIconName, title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
+  { icon: "moon" as FeatureIconName, title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium les structure et en donne trois lectures, colorées par ta Lune natale." },
   // Révolution solaire désactivée — refonte planifiée (voir BACKLOG.md).
-  { icon: "🔮", title: "Transits personnalisés", desc: "Les mouvements planétaires actuels croisés avec ta carte." },
+  { icon: "transit" as FeatureIconName, title: "Transits personnalisés", desc: "Les mouvements planétaires actuels croisés avec ta carte." },
 ];
 
 const FEATURES_EN = [
-  { icon: "✦", title: "Full interpretations", desc: "All planets, houses and aspects decoded for you." },
-  { icon: "💬", title: "Unlimited AI chat", desc: "Ask all your questions to a caring astrologer." },
-  { icon: "📄", title: "PDF export", desc: "Download your chart in professional format." },
-  { icon: "💾", title: "Save charts", desc: "Save up to 10 charts (friends, family, partner)." },
-  { icon: "🎧", title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
-  { icon: "💞", title: "Synastry", desc: "Explore compatibility between two birth charts." },
-  { icon: "🌙", title: "AI-read dreams", desc: "Recording dreams is free. Premium structures them and gives three readings, coloured by your natal Moon." },
+  { icon: "sparkle" as FeatureIconName, title: "Full interpretations", desc: "All planets, houses and aspects decoded for you." },
+  { icon: "chat" as FeatureIconName, title: "Unlimited AI chat", desc: "Ask all your questions to a caring astrologer." },
+  { icon: "pdf" as FeatureIconName, title: "PDF export", desc: "Download your chart in professional format." },
+  { icon: "save" as FeatureIconName, title: "Save charts", desc: "Save up to 10 charts (friends, family, partner)." },
+  { icon: "audio" as FeatureIconName, title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
+  { icon: "synastry" as FeatureIconName, title: "Synastry", desc: "Explore compatibility between two birth charts." },
+  { icon: "moon" as FeatureIconName, title: "AI-read dreams", desc: "Recording dreams is free. Premium structures them and gives three readings, coloured by your natal Moon." },
   // Solar return disabled — redesign planned (see BACKLOG.md).
-  { icon: "🔮", title: "Personalized transits", desc: "Current planetary movements crossed with your chart." },
+  { icon: "transit" as FeatureIconName, title: "Personalized transits", desc: "Current planetary movements crossed with your chart." },
 ];
 
 export default function PremiumPage() {
@@ -154,7 +155,7 @@ export default function PremiumPage() {
                 <button
                   onClick={handleCheckout}
                   disabled={loading || checkoutBusy}
-                  className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
                 >
                   {loading || checkoutBusy
@@ -176,8 +177,8 @@ export default function PremiumPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {features.map((f, i) => (
               <div key={i} className="glass p-5 flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-rose)]/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-base">{f.icon}</span>
+                <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-rose)]/10 text-[var(--color-accent-rose)] flex items-center justify-center flex-shrink-0">
+                  <FeatureIcon name={f.icon} />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-0.5">{f.title}</h3>
