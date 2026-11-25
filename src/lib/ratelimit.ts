@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { getRedis } from "./redis";
+import { CHAT_GRATUIT_PAR_JOUR, CHAT_PREMIUM_PAR_MOIS } from "./offre";
 
 // Free tier: 5 messages per 24 hours (by IP)
 let _freeLimit: Ratelimit | null = null;
@@ -10,7 +11,7 @@ export function getFreeRateLimit(): Ratelimit | null {
 
   _freeLimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.fixedWindow(5, "24 h"),
+    limiter: Ratelimit.fixedWindow(CHAT_GRATUIT_PAR_JOUR, "24 h"),
     prefix: "rl:free",
     analytics: false,
   });
@@ -26,7 +27,7 @@ export function getPremiumRateLimit(): Ratelimit | null {
 
   _premiumLimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.fixedWindow(200, "30 d"),
+    limiter: Ratelimit.fixedWindow(CHAT_PREMIUM_PAR_MOIS, "30 d"),
     prefix: "rl:premium",
     analytics: false,
   });

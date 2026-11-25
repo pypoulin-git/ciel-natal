@@ -25,6 +25,7 @@ import { MOON_PHASES } from "@/data/skyInterpretations";
 import { encodeChartPayload } from "@/lib/chartLink";
 import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 import { signMetaLine } from "@/lib/signMeta";
+import { CARTES_PREMIUM } from "@/lib/offre";
 
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
@@ -692,8 +693,8 @@ export default function Home() {
           setPdfStatus("limit");
           setPdfMessage(
             locale === "fr"
-              ? `Tu as atteint la limite gratuite (${data.limit} lectures). Passe Premium pour un historique illimité.`
-              : `Free limit reached (${data.limit} readings). Go Premium for unlimited history.`
+              ? `Tu as atteint la limite gratuite (${data.limit} lectures). Premium en garde jusqu'à ${CARTES_PREMIUM}.`
+              : `Free limit reached (${data.limit} readings). Premium keeps up to ${CARTES_PREMIUM}.`
           );
           // Still trigger local download so user isn't blocked
           const link = document.createElement("a");
@@ -1973,6 +1974,24 @@ export default function Home() {
                     currentLabel={makeChartLabel(form.prenom, form.jour, form.mois, form.annee, locale)}
                   />
                 </div>
+
+                {/* Bridge to the year ahead — same chart, carried in ?c= */}
+                <a
+                  href={`/revolution-solaire?c=${encodeURIComponent(encodeChartParams({
+                    n: form.prenom, j: form.jour, m: form.mois, a: form.annee,
+                    h: form.heure, mn: form.minute, ht: form.hasTime ? 1 : 0,
+                    l: form.lieu, la: form.latitude, lo: form.longitude,
+                  }))}`}
+                  className="group block max-w-xl mx-auto mb-10 rounded-2xl border border-[var(--color-accent-gold)]/30 px-6 py-5 text-left hover:border-[var(--color-accent-gold)]/70 transition"
+                >
+                  <span className="block text-xs uppercase tracking-[0.2em] text-[var(--color-accent-gold)]">
+                    {locale === "fr" ? "Révolution solaire" : "Solar return"}
+                  </span>
+                  <span className="mt-1 flex items-center justify-between gap-4 text-[var(--color-text-primary)]">
+                    {locale === "fr" ? "Et ton année, d'un anniversaire à l'autre ?" : "And your year, from one birthday to the next?"}
+                    <span aria-hidden className="transition group-hover:translate-x-1">→</span>
+                  </span>
+                </a>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8 flex-wrap">
                   {/* Share anonymously (default — no name, safe for social) */}

@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getFreeRateLimit, getPremiumRateLimit } from "@/lib/ratelimit";
 import { readPrefsStyleBlock } from "@/lib/readingPrefs";
+import { CHAT_GRATUIT_PAR_JOUR, CHAT_PREMIUM_A_VIE, CHAT_PREMIUM_PAR_MOIS } from "@/lib/offre";
 
 // Force Node runtime so Gemini SDK + Supabase SSR work consistently.
 // (AI SDK + @ai-sdk/google support Edge too, but several of our helpers
@@ -36,10 +37,10 @@ async function verifyAuth(req: NextRequest): Promise<string | null> {
 
 // ── In-memory fallback rate limiting (when Redis unavailable) ──
 const ipLimits = new Map<string, { count: number; windowStart: number }>();
-const FREE_LIMIT = 5;
-const PREMIUM_MONTHLY_LIMIT = 200;
-const LIFETIME_LIMIT = 2000;
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour for IP-based fallback
+const FREE_LIMIT = CHAT_GRATUIT_PAR_JOUR;
+const PREMIUM_MONTHLY_LIMIT = CHAT_PREMIUM_PAR_MOIS;
+const LIFETIME_LIMIT = CHAT_PREMIUM_A_VIE;
+const WINDOW_MS = 24 * 60 * 60 * 1000; // same 24 h window as the Redis free limiter
 
 function isIpLimitedFallback(ip: string): boolean {
   const now = Date.now();
@@ -54,7 +55,13 @@ function isIpLimitedFallback(ip: string): boolean {
 }
 
 // ── Check premium user limits via Supabase ──
-async function checkPremiumLimits(userId: string): Promise<{ allowed: boolean; remaining: number }> {
+// `premium: false` means "not a Premium member": the caller falls back to the
+// free tier instead of refusing. (It used to answer allowed:false/remaining:0,
+// which the route read as "monthly quota exhausted" — every free account got
+// a 429 on its very first message.)
+async function checkPremiumLimits(
+  userId: string,
+): Promise<{ premium: boolean; allowed: boolean; remaining: number }> {
   try {
     const supabase = getSupabaseAdmin();
     const { data: profile } = await supabase
@@ -64,14 +71,14 @@ async function checkPremiumLimits(userId: string): Promise<{ allowed: boolean; r
       .single();
 
     if (!profile || !profile.is_premium) {
-      return { allowed: false, remaining: 0 };
+      return { premium: false, allowed: false, remaining: 0 };
     }
 
     // Try Redis rate limit first
     const premiumRL = getPremiumRateLimit();
     if (premiumRL) {
       const { success, remaining } = await premiumRL.limit(userId);
-      if (!success) return { allowed: false, remaining: 0 };
+      if (!success) return { premium: true, allowed: false, remaining: 0 };
 
       // Also update Supabase counters for dashboard/analytics
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -84,15 +91,15 @@ async function checkPremiumLimits(userId: string): Promise<{ allowed: boolean; r
         })
         .eq("id", userId);
 
-      return { allowed: true, remaining };
+      return { premium: true, allowed: true, remaining };
     }
 
     // Fallback: Supabase-only tracking
     const currentMonth = new Date().toISOString().slice(0, 7);
     let monthUsed = profile.chat_used || 0;
     if (profile.chat_month !== currentMonth) monthUsed = 0;
-    if ((profile.chat_lifetime || 0) >= LIFETIME_LIMIT) return { allowed: false, remaining: 0 };
-    if (monthUsed >= PREMIUM_MONTHLY_LIMIT) return { allowed: false, remaining: 0 };
+    if ((profile.chat_lifetime || 0) >= LIFETIME_LIMIT) return { premium: true, allowed: false, remaining: 0 };
+    if (monthUsed >= PREMIUM_MONTHLY_LIMIT) return { premium: true, allowed: false, remaining: 0 };
 
     await supabase
       .from("profiles")
@@ -103,10 +110,12 @@ async function checkPremiumLimits(userId: string): Promise<{ allowed: boolean; r
       })
       .eq("id", userId);
 
-    return { allowed: true, remaining: PREMIUM_MONTHLY_LIMIT - monthUsed - 1 };
+    return { premium: true, allowed: true, remaining: PREMIUM_MONTHLY_LIMIT - monthUsed - 1 };
   } catch (err) {
     console.error("Error checking premium limits:", err);
-    return { allowed: true, remaining: -1 };
+    // Signed-in caller and a broken counter: let the message through rather
+    // than lock a paying member out (same stance as dreamGuard).
+    return { premium: true, allowed: true, remaining: -1 };
   }
 }
 
@@ -122,12 +131,13 @@ export async function POST(req: NextRequest) {
 
   if (authedUserId) {
     const result = await checkPremiumLimits(authedUserId);
-    if (result.allowed) {
+    if (result.premium && result.allowed) {
       isPremium = true;
       maxTokens = 900;
-    } else if (result.remaining === 0) {
+    } else if (result.premium) {
       return new Response(
         JSON.stringify({
+          code: "PREMIUM_LIMIT",
           error: locale === "fr"
             ? "Limite de messages atteinte. Réessaie le mois prochain."
             : "Message limit reached. Try again next month.",
@@ -145,6 +155,7 @@ export async function POST(req: NextRequest) {
       if (!success) {
         return new Response(
           JSON.stringify({
+            code: "FREE_LIMIT",
             error: locale === "fr"
               ? "Tu as utilisé tes messages gratuits. Passe Premium pour continuer."
               : "You've used your free messages. Go Premium to continue.",
@@ -155,6 +166,7 @@ export async function POST(req: NextRequest) {
     } else if (isIpLimitedFallback(ip)) {
       return new Response(
         JSON.stringify({
+          code: "FREE_LIMIT",
           error: locale === "fr"
             ? "Tu as utilisé tes messages gratuits. Passe Premium pour continuer."
             : "You've used your free messages. Go Premium to continue.",

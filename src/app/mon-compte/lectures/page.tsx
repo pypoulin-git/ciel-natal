@@ -8,6 +8,7 @@ import SiteFooter from "@/components/SiteFooter";
 import AccountTabs from "@/components/AccountTabs";
 import { readPendingPdf, clearPendingPdf } from "@/lib/pending-pdf";
 import { chartLinksFromFormData } from "@/lib/chartLink";
+import { CARTES_GRATUIT, CARTES_PREMIUM } from "@/lib/offre";
 
 interface SavedChart {
   id: string;
@@ -189,8 +190,8 @@ export default function LecturesPage() {
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mb-2">
           {isPremium
-            ? locale === "fr" ? "Historique illimité. Rouvre une carte ou re-télécharge son PDF à tout moment." : "Unlimited history. Reopen a chart or re-download its PDF anytime."
-            : locale === "fr" ? `${charts.length}/3 cartes natales (compte gratuit). Passe Premium pour l'historique illimité.` : `${charts.length}/3 natal charts (free tier). Go Premium for unlimited history.`}
+            ? locale === "fr" ? `${charts.length}/${CARTES_PREMIUM} cartes. Rouvre une carte ou re-télécharge son PDF à tout moment.` : `${charts.length}/${CARTES_PREMIUM} charts. Reopen a chart or re-download its PDF anytime.`
+            : locale === "fr" ? `${charts.length}/${CARTES_GRATUIT} cartes natales (compte gratuit). Premium en garde jusqu'à ${CARTES_PREMIUM}.` : `${charts.length}/${CARTES_GRATUIT} natal charts (free tier). Premium keeps up to ${CARTES_PREMIUM}.`}
         </p>
         {/* Chaque carte est figée avec son interprétation d'origine. */}
         <p className="text-xs text-[var(--color-text-muted)] italic mb-6 leading-relaxed">
@@ -219,8 +220,8 @@ export default function LecturesPage() {
             </p>
             <p className="text-xs text-[var(--color-text-secondary)] mb-3">
               {locale === "fr"
-                ? "Passe Premium pour sauvegarder un nombre illimité de cartes natales, débloquer la synastrie et les transits quotidiens."
-                : "Go Premium for unlimited natal charts, synastry, and daily transits."}
+                ? `Passe Premium pour garder jusqu'à ${CARTES_PREMIUM} cartes natales, débloquer la synastrie et les transits quotidiens.`
+                : `Go Premium to keep up to ${CARTES_PREMIUM} natal charts, plus synastry and daily transits.`}
             </p>
             <a href="/premium" className="inline-block btn-primary px-4 py-2 rounded-lg text-xs">
               {locale === "fr" ? "Passer Premium — 9,99 $" : "Go Premium — $9.99"}

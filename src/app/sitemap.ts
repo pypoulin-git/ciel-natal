@@ -108,7 +108,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
       alternates: { languages: langs },
     },
-    // /revolution-solaire désactivée — refonte planifiée (voir BACKLOG.md).
+    {
+      url: `${BASE_URL}/revolution-solaire`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+      alternates: { languages: langs },
+    },
     {
       url: `${BASE_URL}/blog`,
       lastModified: now,
