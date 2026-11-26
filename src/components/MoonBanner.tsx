@@ -133,7 +133,6 @@ export default function MoonBanner() {
   return (
     <Link
       href="/#ciel-du-jour"
-      aria-label={fr ? 'La Lune aujourd’hui' : 'The Moon today'}
       className="block w-full border-b backdrop-blur-xl transition hover:bg-white/[0.03]"
       style={{
         background:
@@ -141,6 +140,9 @@ export default function MoonBanner() {
         borderColor: 'var(--nav-border)',
       }}
     >
+      {/* The link is named by its visible text, with this prefix for screen
+          readers (an aria-label that hid the visible words failed WCAG 2.5.3). */}
+      <span className="sr-only">{fr ? 'La Lune aujourd’hui : ' : 'The Moon today: '}</span>
       {/* One slim row — the arc is the visual centerpiece. The energy line
           only joins on wider screens (truncated) to keep the strip thin. */}
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-1 flex items-center gap-x-3">

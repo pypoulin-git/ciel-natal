@@ -15,15 +15,16 @@ import MarketingPixels from '@/components/MarketingPixels'
 // Self-hosted through next/font: preloaded, no render-blocking stylesheet,
 // no visitor IP sent to Google (the external stylesheet was the main cause of
 // the 5 s mobile LCP measured in the 2026-11 QA).
+// Fraunces italic is never used in a heading (≈70 KB saved on every first
+// visit); JetBrains Mono only labels small data, so it isn't preloaded.
 const fraunces = Fraunces({
   subsets: ['latin'],
-  style: ['normal', 'italic'],
   axes: ['opsz'],
   display: 'swap',
   variable: '--font-fraunces',
 })
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' })
-const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], display: 'swap', variable: '--font-jetbrains' })
+const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], display: 'swap', preload: false, variable: '--font-jetbrains' })
 
 export const metadata: Metadata = {
   title: 'Natalune — Découvre ta carte du ciel',
@@ -98,8 +99,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Aller au contenu
               </a>
               <TopNav />
-              <MoonBanner />
-              <SkyTicker />
+              {/* Both strips are computed in the browser ("now"); their height is
+                  reserved so the page doesn't drop 62 px when they appear (CLS
+                  ≈ 0.07 on every page, Lighthouse 2026-11). */}
+              <div className="min-h-[28px] md:min-h-[29px]">
+                <MoonBanner />
+              </div>
+              <div className="min-h-[34px] md:min-h-[38px]">
+                <SkyTicker />
+              </div>
               <ViewTransition>
                 <main id="main-content" role="main">
                   {children}

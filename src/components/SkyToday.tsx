@@ -38,6 +38,7 @@ export default function SkyToday() {
   const fr = locale === 'fr'
   const [sky, setSky] = useState<SkyData | null>(null)
   const [moonDay, setMoonDay] = useState<MoonDay | null>(null)
+  const [failed, setFailed] = useState(false)
 
   // Carousel state (mobile scroll-snap). On desktop the cards are a grid.
   const railRef = useRef<HTMLDivElement>(null)
@@ -48,11 +49,35 @@ export default function SkyToday() {
       setSky(computeSkyToday(new Date()))
       setMoonDay(computeMoonDay(new Date()))
     } catch {
-      /* leave null — section quietly stays hidden */
+      setFailed(true) // section quietly stays hidden
     }
   }, [])
 
-  if (!sky) return null
+  if (failed) return null
+
+  // The sky is computed in the browser (it depends on "now"), but the heading
+  // ships in the server HTML: it is the home page's LCP element, and returning
+  // null until after hydration put the mobile LCP at ~5 s (Lighthouse, 2026-11).
+  // Skeleton cards hold the space so nothing jumps when the data lands.
+  if (!sky) {
+    return (
+      <section id="ciel-du-jour" className="max-w-6xl mx-auto px-4 py-10 sm:py-12 min-h-[60rem]" aria-busy="true">
+        <div className="text-center mb-6">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-accent-gold)]/80 mb-2">
+            ✦ {fr ? "Le ciel aujourd'hui" : 'The sky today'}
+          </p>
+          <h2 className="font-cinzel text-2xl sm:text-3xl md:text-4xl text-[var(--color-text-primary)]">
+            {fr ? 'Ce que racontent les astres en ce moment' : 'What the stars are saying right now'}
+          </h2>
+        </div>
+        <div className="flex gap-4 overflow-hidden -mx-4 px-4 md:grid md:grid-cols-3 md:mx-0 md:px-0">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="skeleton shrink-0 w-[86%] sm:w-[60%] md:w-auto h-[29.5rem] md:h-[32rem] rounded-2xl" />
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   const phase = MOON_PHASES[sky.moon.phaseIndex]
   const monthly = MONTHLY_MOON[sky.moon.monthIndex]
