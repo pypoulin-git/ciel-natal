@@ -152,8 +152,11 @@ function CityField({
         onChange={(e) => search(e.target.value)}
         placeholder={locale === "fr" ? "Cherche une ville…" : "Search a city…"}
         className="sr-input"
+        role="combobox"
         aria-autocomplete="list"
-        aria-controls={`${id}-list`}
+        aria-expanded={results.length > 0}
+        // Only point at the list while it exists: a dangling id fails axe.
+        aria-controls={results.length > 0 ? `${id}-list` : undefined}
       />
       {loading && <span className="absolute right-1 top-[34px] sr-spinner animate-spin" aria-hidden />}
       {results.length > 0 && (
