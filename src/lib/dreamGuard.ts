@@ -18,6 +18,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getDreamRateLimit } from './ratelimit'
 import type { DreamAstroContext } from './dreams'
 import {
+  DREAM_DICTATION_MONTHLY_MINUTES,
   DREAM_IMAGE_MONTHLY_LIMIT,
   DREAM_LIFETIME_LIMIT,
   DREAM_MONTHLY_LIMIT,
@@ -158,6 +159,37 @@ export async function consumeDreamQuota(
     return { allowed: true, remaining: DREAM_MONTHLY_LIMIT - used - 1 }
   } catch (err) {
     console.error('consumeDreamQuota failed:', err)
+    return { allowed: true, remaining: -1 }
+  }
+}
+
+/**
+ * Count `minutes` of dictation against the monthly allowance. Same stance as
+ * consumeDreamQuota: a broken counter (or the 008 migration not applied yet)
+ * lets the call through rather than locking a paying member out.
+ */
+export async function consumeDictationQuota(userId: string, minutes: number): Promise<QuotaResult> {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('dream_dictation_minutes, dream_dictation_month')
+      .eq('id', userId)
+      .single()
+    if (error) throw error
+
+    const month = currentMonth()
+    const used = profile?.dream_dictation_month === month ? (profile?.dream_dictation_minutes ?? 0) : 0
+    if (used + minutes > DREAM_DICTATION_MONTHLY_MINUTES) {
+      return { allowed: false, remaining: Math.max(0, DREAM_DICTATION_MONTHLY_MINUTES - used), reason: 'MONTHLY' }
+    }
+    await supabase
+      .from('profiles')
+      .update({ dream_dictation_minutes: used + minutes, dream_dictation_month: month })
+      .eq('id', userId)
+    return { allowed: true, remaining: DREAM_DICTATION_MONTHLY_MINUTES - used - minutes }
+  } catch (err) {
+    console.error('consumeDictationQuota failed:', err)
     return { allowed: true, remaining: -1 }
   }
 }
