@@ -5,14 +5,16 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/i18n";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
-import FeatureIcon, { type FeatureIconName } from "@/components/FeatureIcons";
-import { CARTES_PREMIUM, CHAT_PREMIUM_PAR_MOIS, REMBOURSEMENT_JOURS } from "@/lib/offre";
+import OffreComparatif from "@/components/OffreComparatif";
+import { planetInHouse as pihFr } from "@/data/interpretations";
+import { planetInHouse as pihEn } from "@/data/interpretations-en";
+import { CHAT_PREMIUM_PAR_MOIS, REMBOURSEMENT_JOURS } from "@/lib/offre";
 
 const PRODUCT_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Natalune Premium",
-  description: `Lifetime access to full astrological interpretations, AI chat (${CHAT_PREMIUM_PAR_MOIS} messages a month), PDF export, saved charts, audio narration, synastry and personalized transits.`,
+  description: `One-time purchase: houses read in full, daily transits, audio narration, AI chat (${CHAT_PREMIUM_PAR_MOIS} messages a month), full solar return, synastry reading, dream dictation and AI dream readings.`,
   brand: { "@type": "Brand", name: "Natalune" },
   offers: {
     "@type": "Offer",
@@ -23,34 +25,13 @@ const PRODUCT_JSON_LD = {
   },
 };
 
-const FEATURES_FR = [
-  { icon: "sparkle" as FeatureIconName, title: "Interprétations complètes", desc: "Toutes les planètes, maisons et aspects décryptés pour toi." },
-  { icon: "chat" as FeatureIconName, title: "Chat avec ton astrologue IA", desc: `${CHAT_PREMIUM_PAR_MOIS} messages par mois pour creuser ta carte, question par question.` },
-  { icon: "pdf" as FeatureIconName, title: "Export PDF", desc: "Télécharge ta carte en format professionnel." },
-  { icon: "save" as FeatureIconName, title: "Sauvegarde de cartes", desc: `Garde jusqu'à ${CARTES_PREMIUM} cartes (amis, famille, partenaire).` },
-  { icon: "audio" as FeatureIconName, title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
-  { icon: "synastry" as FeatureIconName, title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
-  { icon: "moon" as FeatureIconName, title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium te laisse les dicter au réveil, les structure et en donne trois lectures, colorées par ta Lune natale." },
-  // Révolution solaire désactivée — refonte planifiée (voir BACKLOG.md).
-  { icon: "transit" as FeatureIconName, title: "Transits personnalisés", desc: "Les mouvements planétaires actuels croisés avec ta carte." },
-];
-
-const FEATURES_EN = [
-  { icon: "sparkle" as FeatureIconName, title: "Full interpretations", desc: "All planets, houses and aspects decoded for you." },
-  { icon: "chat" as FeatureIconName, title: "Chat with your AI astrologer", desc: `${CHAT_PREMIUM_PAR_MOIS} messages a month to dig into your chart, question by question.` },
-  { icon: "pdf" as FeatureIconName, title: "PDF export", desc: "Download your chart in professional format." },
-  { icon: "save" as FeatureIconName, title: "Save charts", desc: `Keep up to ${CARTES_PREMIUM} charts (friends, family, partner).` },
-  { icon: "audio" as FeatureIconName, title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
-  { icon: "synastry" as FeatureIconName, title: "Synastry", desc: "Explore compatibility between two birth charts." },
-  { icon: "moon" as FeatureIconName, title: "AI-read dreams", desc: "Recording dreams is free. Premium lets you dictate them on waking, structures them and gives three readings, coloured by your natal Moon." },
-  // Solar return disabled — redesign planned (see BACKLOG.md).
-  { icon: "transit" as FeatureIconName, title: "Personalized transits", desc: "Current planetary movements crossed with your chart." },
-];
-
 export default function PremiumPage() {
   const { user, isPremium, loading, getAccessToken } = useAuth();
   const { locale } = useLocale();
-  const features = locale === "en" ? FEATURES_EN : FEATURES_FR;
+  const fr = locale !== "en";
+  // Real sample, cut exactly like HousesMap cuts it for free accounts.
+  const sampleFull = (fr ? pihFr : pihEn).Venus?.[7] ?? "";
+  const sampleFree = sampleFull.match(/^[^.]+\./)?.[0] ?? sampleFull;
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
@@ -114,61 +95,60 @@ export default function PremiumPage() {
     }
   };
 
+  const CheckoutButton = () => (
+    <button
+      onClick={handleCheckout}
+      disabled={loading || checkoutBusy}
+      className="btn-primary w-full sm:w-auto px-10 py-4 min-h-12 rounded-full text-base font-semibold shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
+    >
+      {loading || checkoutBusy
+        ? fr ? "Préparation…" : "Preparing…"
+        : user
+          ? fr ? "Passer Premium ✦" : "Go Premium ✦"
+          : fr ? "Se connecter et acheter ✦" : "Sign in and purchase ✦"}
+    </button>
+  );
+
   return (
     <main className="relative min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PRODUCT_JSON_LD) }} />
       <Starfield />
       <div className="relative z-10">
-        <section className="max-w-2xl mx-auto px-4 pt-16 pb-20">
+        <section className="max-w-3xl mx-auto px-4 pt-16 pb-20">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="text-4xl mb-4 opacity-40 text-[var(--color-accent-rose)]">✦</div>
-            <h1 className="font-cinzel text-3xl sm:text-4xl text-[var(--color-text-primary)] mb-3">
-              {locale === "fr" ? "Natalune Premium" : "Natalune Premium"}
+          <div className="text-center mb-10">
+            <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-accent-rose)] mb-3">Natalune Premium</p>
+            <h1 className="font-cinzel text-3xl sm:text-5xl leading-tight text-[var(--color-text-primary)] mb-4">
+              {fr ? "Va au bout de ta carte du ciel" : "Go all the way into your chart"}
             </h1>
-            <p className="text-lg text-[var(--color-text-secondary)] max-w-md mx-auto">
-              {locale === "fr"
-                ? "Débloque toute la richesse de ta carte du ciel pour un paiement unique."
-                : "Unlock the full richness of your birth chart with a single payment."}
+            <p className="text-base sm:text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto leading-relaxed">
+              {fr
+                ? "Le cœur du site reste gratuit. Premium ajoute la voix, l'IA et tout ce qui va en profondeur : tes maisons en entier, tes transits, ton année, tes rêves."
+                : "The heart of the site stays free. Premium adds voice, AI and everything that goes deeper: your houses in full, your transits, your year, your dreams."}
             </p>
           </div>
 
           {/* Price card */}
-          <div className="glass p-8 sm:p-10 text-center mb-10 glow-rose">
+          <div className="glass p-8 sm:p-10 text-center mb-4 glow-rose max-w-xl mx-auto">
             <div className="flex items-baseline justify-center gap-1 mb-2">
               <span className="font-cinzel text-5xl text-[var(--color-text-primary)]">9,99</span>
               <span className="text-lg text-[var(--color-text-secondary)]">$ CAD</span>
             </div>
-            <p className="text-sm text-[var(--color-accent-rose)] mb-1">
-              {locale === "fr" ? "Paiement unique — accès à vie" : "One-time payment — lifetime access"}
-            </p>
-            <p className="text-xs text-[var(--color-text-secondary)] opacity-60 mb-6">
-              {locale === "fr"
-                ? `Pas d'abonnement, pas de renouvellement. Remboursé sur demande dans les ${REMBOURSEMENT_JOURS} jours.`
-                : `No subscription, no renewal. Refunded on request within ${REMBOURSEMENT_JOURS} days.`}
+            <p className="text-sm text-[var(--color-accent-rose)] mb-6">
+              {fr ? "Une seule fois, accès à vie" : "Once, lifetime access"}
             </p>
 
             {isPremium ? (
-              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/30 text-[var(--color-accent-rose)] text-sm">
-                <span>✦</span>
-                {locale === "fr" ? "Tu es déjà Premium !" : "You're already Premium!"}
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--color-accent-rose)]/10 border border-[var(--color-accent-rose)]/30 text-[var(--color-accent-rose)] text-sm">
+                <span aria-hidden="true">✦</span>
+                {fr ? "Tu es déjà Premium !" : "You're already Premium!"}
               </div>
             ) : (
               <>
-                <button
-                  onClick={handleCheckout}
-                  disabled={loading || checkoutBusy}
-                  className="btn-primary w-full sm:w-auto px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold shadow-lg shadow-[var(--color-accent-rose)]/30 hover:shadow-xl hover:shadow-[var(--color-accent-rose)]/40 hover:-translate-y-0.5 active:translate-y-0 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                  style={{ background: "linear-gradient(135deg, var(--color-accent-rose), #c87aa0)" }}
-                >
-                  {loading || checkoutBusy
-                    ? (locale === "fr" ? "Préparation…" : "Preparing…")
-                    : user
-                      ? (locale === "fr" ? "Passer Premium ✦" : "Go Premium ✦")
-                      : (locale === "fr" ? "Se connecter et acheter ✦" : "Sign in and purchase ✦")}
-                </button>
+                <CheckoutButton />
                 {checkoutError && (
-                  <div className="mt-4 mx-auto max-w-md rounded-lg border border-[var(--color-accent-rose)]/40 bg-[var(--color-accent-rose)]/10 p-3 text-sm text-[var(--color-accent-rose)]">
+                  <div role="alert" className="mt-4 mx-auto max-w-md rounded-lg border border-[var(--color-accent-rose)]/40 bg-[var(--color-accent-rose)]/10 p-3 text-sm text-[var(--color-accent-rose)]">
                     {checkoutError}
                   </div>
                 )}
@@ -176,55 +156,54 @@ export default function PremiumPage() {
             )}
           </div>
 
-          {/* Features grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {features.map((f, i) => (
-              <div key={i} className="glass p-5 flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[var(--color-accent-rose)]/10 text-[var(--color-accent-rose)] flex items-center justify-center flex-shrink-0">
-                  <FeatureIcon name={f.icon} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-0.5">{f.title}</h3>
-                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Reassurance: the three questions people ask before paying */}
+          <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[var(--color-text-secondary)] mb-14">
+            <li>{fr ? "Pas d'abonnement, rien à annuler" : "No subscription, nothing to cancel"}</li>
+            <li aria-hidden="true" className="text-[var(--color-text-muted)]">·</li>
+            <li>{fr ? `Remboursé sur demande sous ${REMBOURSEMENT_JOURS} jours` : `Refunded on request within ${REMBOURSEMENT_JOURS} days`}</li>
+            <li aria-hidden="true" className="text-[var(--color-text-muted)]">·</li>
+            <li>{fr ? "Paiement sécurisé par Stripe" : "Secure payment by Stripe"}</li>
+          </ul>
 
-          {/* Avant / Après — preview */}
-          {!isPremium && (
-            <div className="mt-10">
+          {/* Comparison */}
+          <h2 className="font-cinzel text-2xl text-[var(--color-text-primary)] text-center mb-2">
+            {fr ? "Ce qui est gratuit, ce qu'ajoute Premium" : "What's free, what Premium adds"}
+          </h2>
+          <p className="text-sm text-center text-[var(--color-text-secondary)] mb-6">
+            {fr ? "Exactement ce que le site fait, quotas compris." : "Exactly what the site does, limits included."}
+          </p>
+          <OffreComparatif locale={fr ? "fr" : "en"} />
+
+          {/* Real preview */}
+          {!isPremium && sampleFull && (
+            <div className="mt-14">
               <h2 className="font-cinzel text-xl text-[var(--color-text-primary)] text-center mb-2">
-                {locale === "fr" ? "Aperçu : gratuit vs Premium" : "Preview: free vs Premium"}
+                {fr ? "Exemple réel : Vénus en maison 7" : "Real example: Venus in the 7th house"}
               </h2>
-              <p className="text-xs text-center text-[var(--color-text-secondary)] mb-6 opacity-60">
-                {locale === "fr" ? "Exemple non personnalisé — Soleil en Bélier" : "Non-personalized example — Sun in Aries"}
+              <p className="text-xs text-center text-[var(--color-text-muted)] mb-6">
+                {fr ? "Le même texte, tel qu'il s'affiche dans ta carte." : "The same text, as it shows in your chart."}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Free version */}
-                <div className="glass p-5 relative overflow-hidden">
-                  <div className="text-xs uppercase tracking-widest text-[var(--color-text-secondary)] mb-3">
-                    {locale === "fr" ? "Version gratuite" : "Free version"}
-                  </div>
-                  <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                    {locale === "fr"
-                      ? "Ton Soleil en Bélier te confère une énergie pionnière et un besoin profond d'affirmation personnelle."
-                      : "Your Sun in Aries gives you pioneering energy and a deep need for personal assertion."}
-                  </p>
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[var(--color-space-deep)] to-transparent pointer-events-none" />
+                <div className="glass p-5">
+                  <div className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)] mb-3">{fr ? "Gratuit" : "Free"}</div>
+                  <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">{sampleFree}</p>
                 </div>
-                {/* Premium version */}
-                <div className="glass p-5 border-[var(--color-accent-rose)]/20 glow-rose">
-                  <div className="text-xs uppercase tracking-widest text-[var(--color-accent-rose)] mb-3 flex items-center gap-1">
-                    <span>✦</span> Premium
-                  </div>
-                  <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">
-                    {locale === "fr"
-                      ? "Ton Soleil en Bélier te confère une énergie pionnière et un besoin profond d'affirmation personnelle. Tu es celle qui ouvre la voie, qui ose le premier pas là où d'autres hésitent. Cette impulsion créatrice, quand elle est consciente, devient un moteur de transformation — non seulement pour toi, mais aussi pour ceux qui t'entourent. La clé réside dans l'apprentissage de la patience : canaliser ce feu intérieur sans le laisser consumer tes relations ou tes projets."
-                      : "Your Sun in Aries gives you pioneering energy and a deep need for personal assertion. You are the one who opens the path, who dares the first step where others hesitate. This creative impulse, when conscious, becomes an engine of transformation — not only for you, but also for those around you. The key lies in learning patience: channelling this inner fire without letting it consume your relationships or your projects."}
+                <div className="glass p-5 border-[var(--color-accent-rose)]/25">
+                  <div className="text-xs uppercase tracking-widest text-[var(--color-accent-rose)] mb-3">Premium</div>
+                  <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">{sampleFull}</p>
+                  <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                    {fr
+                      ? `Tu peux aussi l'écouter, et en parler avec ton astrologue IA (${CHAT_PREMIUM_PAR_MOIS} messages par mois).`
+                      : `You can also listen to it, and discuss it with your AI astrologer (${CHAT_PREMIUM_PAR_MOIS} messages a month).`}
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {!isPremium && (
+            <div className="text-center mt-12">
+              <CheckoutButton />
             </div>
           )}
 

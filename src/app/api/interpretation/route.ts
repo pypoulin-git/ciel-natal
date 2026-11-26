@@ -58,7 +58,7 @@ type Section = "portrait" | "houses" | "transits";
 
 const SECTION_PROMPT_FR: Record<Section, string> = {
   portrait:
-    "Écris un portrait cosmique long (5 à 7 paragraphes) qui tisse le Soleil, la Lune et l'Ascendant entre eux, puis ouvre sur les 3 aspects majeurs. C'est le coeur de la lecture — le lecteur doit se reconnaître, pas lire un manuel. Pas de listes. Du liant. Des phrases qui respirent.",
+    "Écris un portrait cosmique long (5 à 7 paragraphes) qui tisse le Soleil, la Lune et l'Ascendant entre eux, puis ouvre sur les 3 aspects majeurs. C'est le cœur de la lecture — le lecteur doit se reconnaître, pas lire un manuel. Pas de listes. Du liant. Des phrases qui respirent.",
   houses:
     "Écris une lecture des maisons (4 à 6 paragraphes) qui regroupe les planètes par domaine de vie (identité, ressources, liens, foyer, création, travail, couple, profondeurs, horizons, vocation, réseaux, retraits). Montre ce qui est nourri, ce qui est appelé, ce qui est en tension. Pas une maison par paragraphe — un regroupement vivant.",
   transits:
