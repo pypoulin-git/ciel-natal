@@ -146,3 +146,29 @@ export function generateDreamImage(
     body: JSON.stringify({ dreamId, locale, force, instruction }),
   })
 }
+
+/**
+ * One ≤ 60 s WAV slice → text (Premium dictation). Multipart, so it can't go
+ * through `request` (which forces a JSON content type).
+ */
+export async function transcribeSlice(
+  slice: Blob,
+  locale: string,
+  getToken: TokenGetter,
+): Promise<{ text: string; remainingMinutes?: number }> {
+  const token = await getToken()
+  if (!token) throw new DreamApiError('Not signed in', 'UNAUTHENTICATED', 401)
+  const form = new FormData()
+  form.append('audio', slice, 'dictee.wav')
+  form.append('locale', locale === 'en' ? 'en' : 'fr')
+  const res = await fetch('/api/dream-transcribe', {
+    method: 'POST',
+    body: form,
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string }
+    throw new DreamApiError(body.message ?? body.error ?? 'Request failed', body.error ?? 'UNKNOWN', res.status)
+  }
+  return (await res.json()) as { text: string; remainingMinutes?: number }
+}

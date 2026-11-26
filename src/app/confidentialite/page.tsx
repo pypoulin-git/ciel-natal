@@ -11,8 +11,8 @@ export default function Confidentialite() {
     <PageShell title={fr ? "Politique de confidentialité" : "Privacy Policy"}>
       <p className="text-[var(--color-text-secondary)] italic text-xs">
         {fr
-          ? "Dernière mise à jour : 24 novembre 2026. Correction : les fonctions serveur s'exécutent aux États-Unis (et non à Montréal comme indiqué auparavant), et la recherche de ville passe par OpenStreetMap."
-          : "Last updated: November 24, 2026. Correction: server functions run in the United States (not Montreal as previously stated), and city search goes through OpenStreetMap."}
+          ? "Dernière mise à jour : 26 novembre 2026. Ajout de la dictée des rêves (l'audio est transcrit par Google Gemini et n'est pas conservé). Retrait de Google Fonts : les polices sont désormais servies par nos propres serveurs. 24 novembre 2026 : les fonctions serveur s'exécutent aux États-Unis (et non à Montréal comme indiqué auparavant), et la recherche de ville passe par OpenStreetMap."
+          : "Last updated: November 26, 2026. Added dream dictation (audio is transcribed by Google Gemini and not kept). Removed Google Fonts: fonts are now served from our own servers. November 24, 2026: server functions run in the United States (not Montreal as previously stated), and city search goes through OpenStreetMap."}
       </p>
 
       <section>
@@ -100,8 +100,8 @@ export default function Confidentialite() {
           <li>
             <strong className="text-[var(--color-text-primary)]">Google (Gemini)</strong> —{" "}
             {fr
-              ? "Génère les interprétations astrologiques personnalisées, le chat IA, la narration audio, ainsi que la structuration, l'interprétation et l'illustration de tes rêves. Hébergement États-Unis. Reçoit : ta carte natale (positions planétaires, prénom, genre, préférences de lecture), tes messages dans le chat, et le texte des rêves que tu consignes. Google s'engage à ne pas utiliser ces données API pour entraîner ses modèles (politique « no training on API data »). Lien : "
-              : "Generates personalized astrological interpretations, AI chat, audio narration, and the structuring, interpretation and illustration of your dreams. Hosted in USA. Receives: your natal chart (planet positions, first name, gender, reading preferences), your chat messages, and the text of the dreams you record. Google commits not to use API data for training (\"no training on API data\" policy). Link: "}
+              ? "Génère les interprétations astrologiques personnalisées, le chat IA, la narration audio, ainsi que la transcription, la structuration, l'interprétation et l'illustration de tes rêves. Hébergement États-Unis. Reçoit : ta carte natale (positions planétaires, prénom, genre, préférences de lecture), tes messages dans le chat, le texte des rêves que tu consignes et, si tu dictes un rêve (Premium), l'enregistrement de ta voix. Cet enregistrement sert uniquement à la transcription : il n'est conservé ni par nous ni dans ton compte, seul le texte l'est. Google s'engage à ne pas utiliser ces données API pour entraîner ses modèles (politique « no training on API data »). Lien : "
+              : "Generates personalized astrological interpretations, AI chat, audio narration, and the transcription, structuring, interpretation and illustration of your dreams. Hosted in USA. Receives: your natal chart (planet positions, first name, gender, reading preferences), your chat messages, the text of the dreams you record and, if you dictate a dream (Premium), the recording of your voice. That recording is used only for transcription: it is kept neither by us nor in your account, only the text is. Google commits not to use API data for training (\"no training on API data\" policy). Link: "}
             <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-lavender)] hover:underline">ai.google.dev/gemini-api/terms</a>
           </li>
           <li>
@@ -157,12 +157,6 @@ export default function Confidentialite() {
             {fr
               ? "Recherche de ville (pour obtenir tes coordonnées GPS). Reçoit uniquement le nom de la ville que tu tapes."
               : "City search (to get GPS coordinates). Receives only the city name you type."}
-          </li>
-          <li>
-            <strong className="text-[var(--color-text-primary)]">Google Fonts</strong> —{" "}
-            {fr
-              ? "Chargement des polices. Reçoit ton adresse IP technique (comme n'importe quelle requête web)."
-              : "Font loading. Receives your technical IP address (like any web request)."}
           </li>
         </ul>
       </section>

@@ -30,7 +30,7 @@ const FEATURES_FR = [
   { icon: "save" as FeatureIconName, title: "Sauvegarde de cartes", desc: `Garde jusqu'à ${CARTES_PREMIUM} cartes (amis, famille, partenaire).` },
   { icon: "audio" as FeatureIconName, title: "Narration audio", desc: "Écoute ta lecture comme si une astrologue te parlait." },
   { icon: "synastry" as FeatureIconName, title: "Synastrie", desc: "Explore la compatibilité entre deux cartes du ciel." },
-  { icon: "moon" as FeatureIconName, title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium les structure et en donne trois lectures, colorées par ta Lune natale." },
+  { icon: "moon" as FeatureIconName, title: "Rêves interprétés par l'IA", desc: "Noter tes rêves est gratuit. Premium te laisse les dicter au réveil, les structure et en donne trois lectures, colorées par ta Lune natale." },
   // Révolution solaire désactivée — refonte planifiée (voir BACKLOG.md).
   { icon: "transit" as FeatureIconName, title: "Transits personnalisés", desc: "Les mouvements planétaires actuels croisés avec ta carte." },
 ];
@@ -42,7 +42,7 @@ const FEATURES_EN = [
   { icon: "save" as FeatureIconName, title: "Save charts", desc: `Keep up to ${CARTES_PREMIUM} charts (friends, family, partner).` },
   { icon: "audio" as FeatureIconName, title: "Audio narration", desc: "Listen to your reading as if an astrologer were speaking to you." },
   { icon: "synastry" as FeatureIconName, title: "Synastry", desc: "Explore compatibility between two birth charts." },
-  { icon: "moon" as FeatureIconName, title: "AI-read dreams", desc: "Recording dreams is free. Premium structures them and gives three readings, coloured by your natal Moon." },
+  { icon: "moon" as FeatureIconName, title: "AI-read dreams", desc: "Recording dreams is free. Premium lets you dictate them on waking, structures them and gives three readings, coloured by your natal Moon." },
   // Solar return disabled — redesign planned (see BACKLOG.md).
   { icon: "transit" as FeatureIconName, title: "Personalized transits", desc: "Current planetary movements crossed with your chart." },
 ];

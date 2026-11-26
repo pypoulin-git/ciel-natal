@@ -26,7 +26,17 @@ export const DREAM_LIFETIME_LIMIT = 300
  */
 export const DREAM_IMAGE_MONTHLY_LIMIT = 5
 
-export type QuotaKind = 'interpretation' | 'image'
+/**
+ * Voice dictation (Premium). Billed per started minute of audio — each
+ * ≤ 60 s slice sent for transcription counts one. Gemini audio is cheap
+ * (~0.2 ¢/min), so this is an abuse guard more than a cost line.
+ */
+export const DREAM_DICTATION_MONTHLY_MINUTES = 180
+
+/** Longest single dictation; the recorder stops itself here. */
+export const DREAM_DICTATION_MAX_SECONDS = 180
+
+export type QuotaKind = 'interpretation' | 'image' | 'dictation'
 
 export interface QuotaResult {
   allowed: boolean
@@ -50,6 +60,12 @@ export function quotaMessage(
     return en
       ? 'You have reached the overall limit for dream interpretations. Get in touch and we will sort it out.'
       : "Tu as atteint la limite globale d'interprétations de rêves. Écris-nous et on arrange ça."
+  }
+
+  if (kind === 'dictation') {
+    return en
+      ? `You have used your ${DREAM_DICTATION_MONTHLY_MINUTES} minutes of dictation for this month. You can still type your dream.`
+      : `Tu as utilisé tes ${DREAM_DICTATION_MONTHLY_MINUTES} minutes de dictée ce mois-ci. Tu peux toujours taper ton rêve.`
   }
 
   if (kind === 'image') {

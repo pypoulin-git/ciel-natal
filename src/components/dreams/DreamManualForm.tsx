@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
+import DictationButton from './DictationButton'
 import { useLocale } from '@/lib/i18n'
 import { createDream, updateDream, DreamApiError } from '@/lib/dreamClient'
 import { EMOTIONS, EMOTION_KEYS, emotionLabel, type Dream, type EmotionKey } from '@/lib/dreams'
@@ -26,7 +28,7 @@ export default function DreamManualForm({
   onSaved: (dream: Dream) => void
   onCancel?: () => void
 }) {
-  const { getAccessToken } = useAuth()
+  const { getAccessToken, isPremium } = useAuth()
   const { locale } = useLocale()
   const fr = locale !== 'en'
   const label = (frText: string, enText: string) => (fr ? frText : enText)
@@ -151,8 +153,30 @@ export default function DreamManualForm({
         placeholder={label("J'étais dans un endroit étrange…", 'I was in a strange place…')}
         className="glass-input w-full resize-y rounded-xl px-3 py-2.5 text-sm"
       />
-      <div className="mt-1 mb-4 text-right text-[11px] text-[var(--color-text-muted)]">
+      <div className="mt-1 text-right text-[11px] text-[var(--color-text-muted)]">
         {rawText.length}/5000
+      </div>
+      <div className="mb-4">
+        {isPremium ? (
+          <DictationButton
+            locale={locale}
+            onText={(text) => setRawText((t) => (t.trim() ? `${t.trimEnd()}
+${text}` : text).slice(0, 5000))}
+          />
+        ) : (
+          !initial && (
+            <Link
+              href="/premium"
+              className="mt-2 inline-flex min-h-11 items-center gap-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent-rose)]"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0014 0M12 18v3" />
+              </svg>
+              {label('Dicter ton rêve au réveil, les yeux fermés : avec Premium', 'Dictate your dream on waking, eyes still closed: with Premium')}
+            </Link>
+          )
+        )}
       </div>
 
       <fieldset className="mb-4">

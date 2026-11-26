@@ -7,6 +7,7 @@ import { useLocale } from '@/lib/i18n'
 import { createDream, structureDream, DreamApiError } from '@/lib/dreamClient'
 import { isEmotionKey, type DreamStructure } from '@/lib/dreams'
 import EmotionChip from './EmotionChip'
+import DictationButton from './DictationButton'
 
 type Step = 'input' | 'processing' | 'clarify' | 'metadata'
 
@@ -291,6 +292,10 @@ export default function DreamCapture({ onSaved }: { onSaved: (dreamId: string) =
       <div className="mt-1 text-right text-[11px] text-[var(--color-text-muted)]">
         {rawText.length}/5000
       </div>
+
+      {/* Dictation appends to whatever is already typed. */}
+      <DictationButton locale={locale} onText={(text) => setRawText((t) => (t.trim() ? `${t.trimEnd()}
+${text}` : text).slice(0, 5000))} />
 
       {error && <p className="mt-2 text-sm text-[var(--color-accent-rose)]">{error}</p>}
 
