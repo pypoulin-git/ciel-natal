@@ -1,6 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import QuickChartForm from "@/components/QuickChartForm";
+import HeroWheel, { type HeroWheelInput } from "@/components/HeroWheel";
+import { encodeChartPayload } from "@/lib/chartLink";
 import Starfield from "@/components/Starfield";
 import SiteFooter from "@/components/SiteFooter";
 import TitleSparkles from "@/components/TitleSparkles";
@@ -11,59 +16,73 @@ import { useLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import OffreComparatif from "@/components/OffreComparatif";
 
-// ─── Home = global portal ───
-// Distinct from the natal-chart experience (which lives at /carte-natale).
-// This page presents the brand, today's sky, all products, the free/premium
-// model and the latest journal — a doorway, not the calculator.
+// ─── Home ───
+// The promise, the birth form and a live wheel come first (QA 2026-11: the
+// chart used to sit behind a second landing page and a three-step wizard).
+// Then today's sky, all products, the free/premium model, the blog and FAQ.
 export default function HomePortal() {
   const { locale } = useLocale();
   const { user, isPremium } = useAuth();
   const fr = locale === "fr";
+  const router = useRouter();
+  const [preview, setPreview] = useState<HeroWheelInput>({ date: "", heure: "12:00", hasTime: true, latitude: null, longitude: null });
 
   return (
     <main className="relative">
       <Starfield />
       <div className="relative z-10">
-        {/* ═══ HERO ═══ */}
-        <section className="relative overflow-hidden min-h-[58vh] flex flex-col items-center justify-center px-4 text-center pt-10 pb-6">
+        {/* ═══ HERO — the promise, the form and the live wheel on one screen ═══ */}
+        <section id="carte" className="relative overflow-hidden px-4 pt-10 pb-12 sm:pt-14">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] max-w-[90vw] rounded-full blur-3xl opacity-50"
+            className="pointer-events-none absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2 w-[620px] h-[620px] max-w-[95vw] rounded-full blur-3xl opacity-50"
             style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--color-accent-lavender) 55%, transparent), transparent 70%)" }}
           />
-          <div className="relative animate-fade-in-up">
-            <div
-              className="text-5xl md:text-6xl mb-6 text-[var(--color-accent-gold)] animate-pulse-glow"
-              style={{ filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--color-accent-gold) 55%, transparent))" }}
-            >
-              &#10022;
-            </div>
-            <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
-              Natalune
-            </h1>
-            <TitleSparkles id="portal-sparkles" className="h-20 max-w-xl mx-auto mt-1 mb-2 -z-0" />
-            <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-lg mx-auto mb-8 font-light -mt-12 relative z-10">
-              {fr
-                ? "Ta carte du ciel, le ciel du jour, et l'astrologie qui a du sens."
-                : "Your birth chart, today's sky, and astrology that means something."}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/carte-natale"
-                className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg glow-lavender"
+          <div className="relative mx-auto max-w-6xl">
+            <div className="text-center animate-fade-in-up">
+              <div
+                className="text-4xl md:text-5xl mb-4 text-[var(--color-accent-gold)] animate-pulse-glow"
+                style={{ filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--color-accent-gold) 55%, transparent))" }}
+                aria-hidden="true"
               >
-                <span aria-hidden="true">&#10022;</span>
-                {fr ? "Lire ma carte natale" : "Read my natal chart"}
-              </Link>
-              <Link
-                href="/calendrier"
-                className="inline-flex items-center gap-2 px-6 py-4 rounded-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] border border-[var(--color-glass-border)] hover:border-[var(--color-accent-lavender)]/40 transition"
-              >
-                {fr ? "Le ciel de la semaine" : "This week's sky"}
-              </Link>
+                &#10022;
+              </div>
+              <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-accent-gold)]/90 mb-3">Natalune</p>
+              <h1 className="font-cinzel text-3xl sm:text-5xl md:text-6xl leading-[1.08] text-[var(--color-text-primary)] max-w-4xl mx-auto">
+                {fr ? "Ta carte du ciel, lue comme un portrait psychologique" : "Your birth chart, read as a psychological portrait"}
+              </h1>
+              <TitleSparkles id="portal-sparkles" className="h-16 max-w-xl mx-auto -z-0" />
+              <p className="text-base sm:text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto -mt-8 relative z-10">
+                {fr
+                  ? "Des positions calculées pour de vrai, à la minute près, et une lecture inspirée de Jung. Pas un horoscope de magazine."
+                  : "Positions truly calculated, to the minute, and a reading inspired by Jung. Not a magazine horoscope."}
+              </p>
             </div>
-            <p className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] opacity-70 tracking-wide">
-              {fr ? "Gratuit · Aucun compte requis · 3 minutes" : "Free · No account needed · 3 minutes"}
+
+            <div className="mt-10 grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
+              <div className="glass glow-lavender mx-auto w-full max-w-lg p-6 sm:p-8">
+                <QuickChartForm
+                  locale={fr ? "fr" : "en"}
+                  idPrefix="accueil"
+                  onChange={setPreview}
+                  onSubmit={(d) => {
+                    const c = encodeChartPayload({
+                      n: d.prenom, g: d.genre, j: d.jour, m: d.mois, a: d.annee,
+                      h: d.heure, mn: d.minute, ht: d.hasTime ? 1 : 0,
+                      l: d.lieu, la: d.latitude, lo: d.longitude, v: d.voice,
+                    });
+                    router.push(`/carte-natale?c=${encodeURIComponent(c)}`);
+                  }}
+                />
+              </div>
+              <HeroWheel input={preview} locale={fr ? "fr" : "en"} />
+            </div>
+
+            <p className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
+              {fr ? "Pas de date sous la main ? " : "No birth date handy? "}
+              <Link href="/calendrier" className="text-[var(--color-accent-lavender)] underline underline-offset-4 hover:text-[var(--color-text-primary)]">
+                {fr ? "Voir le ciel de la semaine" : "See this week's sky"}
+              </Link>
             </p>
           </div>
         </section>
@@ -157,9 +176,9 @@ export default function HomePortal() {
           <p className="text-sm text-[var(--color-text-secondary)] mb-5">
             {fr ? "Prêt·e à voir ce que ton ciel disait le jour de ta naissance ?" : "Ready to see what your sky was saying the day you were born?"}
           </p>
-          <Link href="/carte-natale" className="btn-primary inline-block px-8 py-4 rounded-full font-medium text-base">
+          <a href="#carte" className="btn-primary inline-block px-8 py-4 rounded-full font-medium text-base">
             {fr ? "Lire ma carte natale" : "Read my natal chart"}
-          </Link>
+          </a>
         </section>
       </div>
       <SiteFooter />

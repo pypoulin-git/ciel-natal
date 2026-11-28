@@ -11,7 +11,6 @@ import { natalChart } from "@/lib/natal";
 import { PlanetIcon, SignIcon, Sun as SunIcon, Moon as MoonIcon, AscendantIcon } from "@/components/AstroIcons";
 import { useLocale } from "@/lib/i18n";
 import { useScrollReveal } from "@/lib/useScrollReveal";
-import { searchCities, CityResult, UserLocation, CitySearchError } from "@/lib/citySearch";
 import { getCosmicPortraitSun, getCosmicPortraitMoon, getCosmicPortraitAsc, getLifeThemes, genderize, getGreeting, getIntroSentence, serializeChartForAI, Genre } from "@/lib/chartHelpers";
 import { useAuth } from "@/lib/auth-context";
 import { getPlanetInterp, getAspectInterp as getAspectInterpHelper, type InterpModule, type VoiceKey } from "@/lib/getInterp";
@@ -26,6 +25,7 @@ import { encodeChartPayload } from "@/lib/chartLink";
 import { chartShareMessage, toMailtoUrl } from "@/lib/shareMessages";
 import { signMetaLine } from "@/lib/signMeta";
 import { CARTES_PREMIUM } from "@/lib/offre";
+import QuickChartForm from "@/components/QuickChartForm";
 
 // Lazy-load heavy result components (only needed after chart calculation)
 const ZodiacWheel = dynamic(() => import("@/components/ZodiacWheel"), { ssr: false });
@@ -36,7 +36,6 @@ const ChartChat = dynamic(() => import("@/components/results/ChartChat"), { ssr:
 const AudioPlayer = dynamic(() => import("@/components/AudioPlayer"), { ssr: false });
 const SavedCharts = dynamic(() => import("@/components/SavedCharts"), { ssr: false });
 const TransitRow = dynamic(() => import("@/components/results/TransitRow"), { ssr: false });
-const DateWheelPicker = dynamic(() => import("@/components/ui/date-wheel-picker").then((m) => m.DateWheelPicker), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
@@ -99,26 +98,6 @@ const ASPECT_NATURE: Record<string, { fr: string; en: string; color: string }> =
 };
 
 // ─── Voice options (sensible / mystique / pragmatique) ─────────
-const VOICE_OPTIONS: { key: VoiceKey; labelFr: string; labelEn: string; descFr: string; descEn: string }[] = [
-  {
-    key: "sensible",
-    labelFr: "Sensible", labelEn: "Feeling",
-    descFr: "Adresse tendre, ressenti, corps. Reconnaît ce qui se vit.",
-    descEn: "Tender voice, felt sense, body-aware. Names what you live.",
-  },
-  {
-    key: "mystique",
-    labelFr: "Mystique", labelEn: "Mystic",
-    descFr: "Symboles et archétypes. Mythes, rêves, profondeurs jungiennes.",
-    descEn: "Symbols and archetypes. Myths, dreams, Jungian depths.",
-  },
-  {
-    key: "pragmatique",
-    labelFr: "Pragmatique", labelEn: "Grounded",
-    descFr: "Concret, lucide, terre à terre. Zéro jargon ésotérique.",
-    descEn: "Grounded, lucid, practical. Zero esoteric jargon.",
-  },
-];
 
 // ─── Page ────────────────────────────────────────────────────────
 export default function Home() {
@@ -143,9 +122,6 @@ export default function Home() {
     tone: 5, depth: 5, focus: 5,
   });
   const [chart, setChart] = useState<NatalChart | null>(null);
-  const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
-  const [cityLoading, setCityLoading] = useState(false);
-  const [cityError, setCityError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("portrait");
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [planetFocus, setPlanetFocus] = useState<string | null>(null);
@@ -155,9 +131,7 @@ export default function Home() {
   // "returning visitor" hero (offer to open their charts instead of starting
   // from scratch). null = unknown/not fetched yet.
   const [savedCount, setSavedCount] = useState<number | null>(null);
-  const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
   const [copied, setCopied] = useState(false);
-  const [showValidation, setShowValidation] = useState(false);
   const [showWheelAspects, setShowWheelAspects] = useState(true);
   const [todayTransits, setTodayTransits] = useState<NatalChart | null>(null);
   // Transit AI interpretation (premium only — same pattern as portrait/houses/etc.)
@@ -174,14 +148,12 @@ export default function Home() {
   >(null);
   const autoSavedLabelRef = useRef<string | null>(null);
   const [showTabsHint, setShowTabsHint] = useState(false);
-  const userLocation: UserLocation | null = null;
   const [activeBigThree, setActiveBigThree] = useState<string | null>(null);
   useScrollReveal([step]);
   const resultsRef = useRef<HTMLDivElement | null>(null);
   // Used by the PDF generator to snap the zodiac wheel SVG into a PNG.
   const zodiacWheelRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const citySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bigThreeContentRef = useRef<HTMLDivElement | null>(null);
 
   // ─── IntersectionObserver for auto-highlighting active tab ───
@@ -250,60 +222,15 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [user?.id, getAccessToken]);
 
-  // No geolocation: the site's Permissions-Policy blocks it (geolocation=()),
-  // and where you are now says nothing about where you were born. City search
-  // falls back to its Canada-first ordering.
-
-  const handleCitySearch = useCallback((query: string) => {
-    setForm((f) => ({ ...f, lieu: query }));
-    if (citySearchTimer.current) clearTimeout(citySearchTimer.current);
-    if (query.length < 2) { setCitySuggestions([]); setCityError(null); return; }
-    setCityLoading(true);
-    setCityError(null);
-    citySearchTimer.current = setTimeout(async () => {
-      try {
-        const results = await searchCities(query, userLocation);
-        setCitySuggestions(results);
-      } catch (err) {
-        setCitySuggestions([]);
-        if (err instanceof CitySearchError) {
-          if (err.code === "timeout") {
-            setCityError(locale === "fr" ? "La recherche a pris trop de temps. Réessaie." : "Search took too long. Please try again.");
-          } else if (err.code === "no_results") {
-            setCityError(locale === "fr" ? "Aucun résultat trouvé. Essaie un autre nom." : "No results found. Try a different name.");
-          } else {
-            setCityError(locale === "fr" ? "Recherche impossible. Vérifie ta connexion." : "Search failed. Check your connection.");
-          }
-        } else {
-          setCityError(locale === "fr" ? "Recherche impossible. Vérifie ta connexion." : "Search failed. Check your connection.");
-        }
-      } finally {
-        setCityLoading(false);
-      }
-    }, 350);
-  }, [userLocation, locale]);
-
-  const selectCity = useCallback((city: CityResult) => {
-    setForm((f) => ({ ...f, lieu: city.display, latitude: city.lat, longitude: city.lon }));
-    setCitySuggestions([]);
-  }, []);
-
-  const canAdvance = (): boolean => {
-    switch (step) {
-      case 1: return form.prenom.trim().length >= 1;
-      case 2: return form.annee >= 1900 && form.annee <= 2026 && form.mois >= 1 && form.mois <= 12 && form.jour >= 1 && form.jour <= 31;
-      case 3: return form.lieu.length >= 2;
-      default: return true;
-    }
-  };
-
-  const doCalculation = () => {
+  const doCalculation = (data: FormData = form) => {
+    setForm(data);
     setStep(6);
+    window.scrollTo({ top: 0 });
     setTimeout(() => {
       const c = natalChart(
-        form.annee, form.mois, form.jour,
-        form.hasTime ? form.heure : 12, form.hasTime ? form.minute : 0,
-        form.latitude, form.longitude, form.hasTime
+        data.annee, data.mois, data.jour,
+        data.hasTime ? data.heure : 12, data.hasTime ? data.minute : 0,
+        data.latitude, data.longitude, data.hasTime
       );
       setChart(c);
       // Show tabs guidance hint once per session for first-time results view
@@ -855,70 +782,48 @@ export default function Home() {
         {/* ═══ HERO ═══ */}
         {step === 0 && (
           <>
-            <section className="relative overflow-hidden min-h-[68vh] flex flex-col items-center justify-center px-4 text-center pt-10">
+            <section id="formulaire" className="relative overflow-hidden px-4 pt-10 pb-14 text-center">
               {/* Soft radial halo behind the title — adds cosmic depth. */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] max-w-[90vw] rounded-full blur-3xl opacity-50"
+                className="pointer-events-none absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] max-w-[90vw] rounded-full blur-3xl opacity-50"
                 style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--color-accent-lavender) 55%, transparent), transparent 70%)" }}
               />
               <div className="relative animate-fade-in-up">
-                {/* Pulsing star — gold-tinted glow for warmth. */}
                 <div
-                  className="text-5xl md:text-6xl mb-6 text-[var(--color-accent-gold)] animate-pulse-glow"
+                  className="text-4xl md:text-5xl mb-4 text-[var(--color-accent-gold)] animate-pulse-glow"
                   style={{ filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--color-accent-gold) 55%, transparent))" }}
+                  aria-hidden="true"
                 >
                   &#10022;
                 </div>
-                <h1 className="font-cinzel text-3xl sm:text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--color-text-primary)] to-[var(--color-accent-lavender)] bg-clip-text text-transparent leading-tight">
+                <h1 className="font-cinzel text-3xl sm:text-5xl text-[var(--color-text-primary)]">
                   {locale === "fr" ? "Ta carte natale" : "Your natal chart"}
                 </h1>
-                <TitleSparkles
-                  id="hero-sparkles"
-                  className="h-24 max-w-xl mx-auto mt-1 mb-2 -z-0"
-                />
-                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-2 font-light -mt-16 relative z-10">
-                  {t("hero.subtitle1")}
+                <TitleSparkles id="hero-sparkles" className="h-16 max-w-xl mx-auto -z-0" />
+                <p className="text-base sm:text-lg text-[var(--color-text-secondary)] max-w-md mx-auto -mt-8 relative z-10">
+                  {locale === "fr"
+                    ? "Ta date, ton heure et ton lieu de naissance suffisent. Le reste se calcule pour toi."
+                    : "Your date, time and place of birth are all it takes. The rest is calculated for you."}
                 </p>
-                <p className="text-lg sm:text-xl md:text-2xl text-[var(--color-text-secondary)] max-w-md mx-auto mb-8 font-light">
-                  {t("hero.subtitle2")}
-                </p>
-                {user && savedCount && savedCount > 0 ? (
-                  // ── Returning, signed-in visitor with saved charts ──
-                  <>
-                    <a href="/mon-compte/lectures"
-                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg glow-lavender">
-                      <span aria-hidden="true">&#10022;</span>
-                      {locale === "fr" ? "Accéder à mes cartes natales" : "Open my natal charts"}
-                    </a>
-                    <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
-                      {locale === "fr" ? "ou " : "or "}
-                      <button onClick={() => setStep(1)} className="text-[var(--color-accent-lavender)] hover:underline">
-                        {locale === "fr" ? "calcule une nouvelle carte" : "calculate a new chart"}
-                      </button>
-                    </p>
-                  </>
-                ) : (
-                  // ── Anonymous / first-time visitor ──
-                  <>
-                    <button onClick={() => setStep(1)}
-                      className="btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg glow-lavender">
-                      <span aria-hidden="true">&#10022;</span>
-                      {t("hero.cta")}
-                    </button>
-                    {/* Reassurance microline — lowers friction before the CTA commitment. */}
-                    <p className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] opacity-70 tracking-wide">
-                      {locale === "fr" ? "Gratuit · Aucun compte requis · 3 minutes" : "Free · No account needed · 3 minutes"}
-                    </p>
-                  </>
-                )}
-              </div>
 
-              {/* Scroll cue — invites exploring the sections below. */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce opacity-40" aria-hidden="true">
-                <svg width="22" height="22" fill="none" stroke="var(--color-accent-lavender)" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
+                {user && savedCount && savedCount > 0 ? (
+                  <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
+                    <a href="/mon-compte/lectures" className="text-[var(--color-accent-lavender)] underline underline-offset-4 hover:text-[var(--color-text-primary)]">
+                      {locale === "fr" ? "Rouvrir mes cartes natales" : "Reopen my natal charts"}
+                    </a>
+                    {locale === "fr" ? " ou calcule une nouvelle carte ci-dessous." : " or calculate a new chart below."}
+                  </p>
+                ) : null}
+
+                <div className="glass glow-lavender mx-auto mt-8 w-full max-w-lg p-6 sm:p-8">
+                  <QuickChartForm
+                    locale={locale === "fr" ? "fr" : "en"}
+                    idPrefix="carte"
+                    initial={form.lieu ? form : undefined}
+                    onSubmit={(d) => doCalculation({ ...form, ...d })}
+                  />
+                </div>
               </div>
             </section>
 
@@ -1020,189 +925,12 @@ export default function Home() {
                   ? "Prêt·e à voir ce que ton ciel disait ce jour-là ?"
                   : "Ready to see what your sky was saying that day?"}
               </p>
-              <button onClick={() => setStep(1)}
-                className="btn-primary px-8 py-4 rounded-full font-medium text-base">
+              <a href="#formulaire"
+                className="btn-primary inline-block px-8 py-4 rounded-full font-medium text-base">
                 {t("hero.cta")}
-              </button>
+              </a>
             </section>
           </>
-        )}
-
-        {/* ═══ FORM ═══ */}
-        {step >= 1 && step <= 3 && (
-          <section className="min-h-screen flex items-center justify-center px-4 py-8">
-            <div className="glass p-6 sm:p-8 md:p-12 max-w-lg w-full glow-lavender step-enter">
-              <div className="flex gap-1.5 mb-8">
-                {[1, 2, 3].map((s) => (
-                  <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
-                    <div className={`h-full rounded-full transition-all duration-500 ${s < step ? "bg-[var(--color-accent-lavender)]" : s === step ? "bg-[var(--color-accent-lavender)]" : ""}`}
-                      style={{ width: s <= step ? "100%" : "0%" }} />
-                  </div>
-                ))}
-              </div>
-
-              {step === 1 && (
-                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step1.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-8">{t("form.step1.subtitle")}</p>
-                  <input type="text" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                    placeholder={t("form.step1.placeholder")} className="glass-input w-full text-lg text-center" autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && canAdvance() && setStep(2)} />
-                  <div className="flex justify-center gap-2 mt-5">
-                    {([
-                      { value: "femme" as Genre, label: locale === "fr" ? "Femme" : "Woman" },
-                      { value: "homme" as Genre, label: locale === "fr" ? "Homme" : "Man" },
-                      { value: "nb" as Genre, label: locale === "fr" ? "Non-binaire" : "Non-binary" },
-                    ]).map((opt) => (
-                      <button key={opt.value}
-                        onClick={() => setForm({ ...form, genre: opt.value })}
-                        className={`px-4 py-2 rounded-full text-sm transition-all duration-200 border ${
-                          form.genre === opt.value
-                            ? "bg-[var(--color-accent-lavender)]/20 border-[var(--color-accent-lavender)]/50 text-[var(--color-text-primary)]"
-                            : "bg-white/5 border-white/10 text-[var(--color-text-secondary)] hover:border-white/20"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step2.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step2.subtitle")}</p>
-                  <div className="glass rounded-2xl px-3 py-4 mb-6">
-                    <DateWheelPicker
-                      value={new Date(form.annee, form.mois - 1, form.jour)}
-                      onChange={(d) => setForm({ ...form, annee: d.getFullYear(), mois: d.getMonth() + 1, jour: d.getDate() })}
-                      minYear={1900}
-                      maxYear={new Date().getFullYear()}
-                      size="md"
-                      locale={locale === "fr" ? "fr-FR" : "en-US"}
-                    />
-                  </div>
-                  <label className="flex items-center justify-center gap-3 mb-4 cursor-pointer group">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${form.hasTime ? "bg-[var(--color-accent-lavender)] border-[var(--color-accent-lavender)]" : "border-[var(--color-text-secondary)] bg-transparent"}`}
-                      onClick={() => setForm({ ...form, hasTime: !form.hasTime })}>
-                      {form.hasTime && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    </div>
-                    <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition">{t("form.step3.knowTime")}</span>
-                  </label>
-                  {form.hasTime ? (
-                    <input
-                      type="time"
-                      value={`${String(form.heure).padStart(2, "0")}:${String(form.minute).padStart(2, "0")}`}
-                      onChange={(e) => {
-                        const [h, m] = e.target.value.split(":").map((n) => parseInt(n, 10));
-                        if (!isNaN(h) && !isNaN(m)) setForm({ ...form, heure: h, minute: m });
-                      }}
-                      className="glass-input w-full max-w-[240px] mx-auto block text-center text-lg"
-                    />
-                  ) : (
-                    <div className="glass p-4 text-sm text-[var(--color-text-secondary)] text-center border-l-2 border-[var(--color-accent-lavender)]/30">
-                      {t("form.step3.noTime")}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className={stepDirection === "next" ? "animate-slide-in-right" : "animate-slide-in-left"}>
-                  <h2 className="font-cinzel text-xl sm:text-2xl text-center mb-2 text-[var(--color-accent-lavender)]">{t("form.step4.title")}</h2>
-                  <p className="text-xs sm:text-sm text-center text-[var(--color-text-secondary)] mb-6">{t("form.step4.subtitle")}</p>
-                  <div className="relative">
-                    <input type="text" value={form.lieu} onChange={(e) => handleCitySearch(e.target.value)}
-                      placeholder={t("form.step4.placeholder")} className="glass-input w-full text-lg text-center" autoFocus />
-                    {cityLoading && (
-                      <div className="absolute right-4 top-5 -translate-y-1/2">
-                        <div className="w-4 h-4 border-2 border-[var(--color-accent-lavender)]/30 border-t-[var(--color-accent-lavender)] rounded-full animate-spin" />
-                      </div>
-                    )}
-                    {citySuggestions.length > 0 && (
-                      <div className="mt-2 glass overflow-hidden z-20">
-                        {citySuggestions.map((city, i) => (
-                          <button key={`${city.lat}-${city.lon}-${i}`} onClick={() => selectCity(city)}
-                            className="w-full px-4 py-3 text-left hover:bg-white/5 active:bg-white/10 transition text-[var(--color-text-primary)] text-sm border-b border-[var(--color-glass-border)] last:border-0">
-                            {city.display}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {cityError && (
-                      <p className="text-xs text-[var(--color-accent-rose)] mt-3 text-center animate-fade-in" role="alert">
-                        {cityError}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-white/5">
-                    <h3 className="font-cinzel text-base text-center mb-1 text-[var(--color-text-primary)]">
-                      {locale === "fr" ? "La voix qui te parle" : "The voice that speaks to you"}
-                    </h3>
-                    <p className="text-[12px] text-center text-[var(--color-text-secondary)] mb-4">
-                      {locale === "fr"
-                        ? "Le ton de ta lecture. Les positions restent les mêmes."
-                        : "The tone of your reading. Positions remain the same."}
-                    </p>
-                    <div role="radiogroup" aria-label={locale === "fr" ? "Voix d'interprétation" : "Interpretation voice"} className="flex flex-col gap-2">
-                      {VOICE_OPTIONS.map((opt) => {
-                        const active = form.voice === opt.key;
-                        return (
-                          <button
-                            key={opt.key}
-                            type="button"
-                            role="radio"
-                            aria-checked={active}
-                            onClick={() => setForm({ ...form, voice: opt.key })}
-                            className={`text-left rounded-xl px-4 py-3 transition-all duration-200 border ${
-                              active
-                                ? "bg-[var(--color-accent-lavender)]/15 border-[var(--color-accent-lavender)]/60 shadow-[0_0_20px_-8px_var(--color-accent-lavender)]"
-                                : "bg-white/[0.03] border-white/10 hover:border-white/20"
-                            }`}
-                          >
-                            <div className={`font-cinzel text-base mb-0.5 ${active ? "text-[var(--color-accent-lavender)]" : "text-[var(--color-text-primary)]"}`}>
-                              {locale === "fr" ? opt.labelFr : opt.labelEn}
-                            </div>
-                            <div className="text-[12px] text-[var(--color-text-secondary)] leading-snug">
-                              {locale === "fr" ? opt.descFr : opt.descEn}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {showValidation && !canAdvance() && (
-                <p className="text-xs text-red-400/80 text-center mt-4 animate-fade-in" role="alert">
-                  {step === 1 && t("validation.nameRequired")}
-                  {step === 2 && t("validation.dateInvalid")}
-                  {step === 3 && t("validation.cityRequired")}
-                </p>
-              )}
-
-              <div className="flex justify-between mt-6">
-                <button
-                  onClick={() => { setStepDirection("prev"); setShowValidation(false); setStep(Math.max(0, step - 1)); }}
-                  className="btn-ghost px-5 py-2.5 rounded-xl text-sm"
-                >
-                  {t("form.back")}
-                </button>
-                {step < 3 ? (
-                  <button onClick={() => { if (canAdvance()) { setStepDirection("next"); setShowValidation(false); setStep(step + 1); } else { setShowValidation(true); } }}
-                    aria-disabled={!canAdvance()}
-                    className={`btn-primary px-6 py-2.5 rounded-xl text-sm ${!canAdvance() ? "opacity-50 cursor-not-allowed" : ""}`}>{t("form.next")}</button>
-                ) : (
-                  <button onClick={() => { if (canAdvance()) { doCalculation(); } else { setShowValidation(true); } }}
-                    aria-disabled={!canAdvance()}
-                    className={`btn-primary px-8 py-3 rounded-xl font-bold text-sm glow-lavender ${!canAdvance() ? "opacity-50 cursor-not-allowed" : ""}`}>{t("form.calculate")}</button>
-                )}
-              </div>
-            </div>
-          </section>
         )}
 
         {/* ═══ LOADING ═══ */}
