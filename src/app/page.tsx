@@ -9,6 +9,7 @@ import ExploreSections from "@/components/ExploreSections";
 import LatestArticles from "@/components/LatestArticles";
 import { useLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import OffreComparatif from "@/components/OffreComparatif";
 
 // ─── Home = global portal ───
 // Distinct from the natal-chart experience (which lives at /carte-natale).
@@ -88,51 +89,24 @@ export default function HomePortal() {
                 : "The heart of Natalune is free, no account or email. The Premium pass — a one-time payment — supports this independent project and unlocks the richest readings."}
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="glass p-5">
-              <p className="text-xs uppercase tracking-widest text-[var(--color-accent-lavender)]/70 mb-3">
-                {fr ? "Gratuit · sans compte" : "Free · no account"}
-              </p>
-              <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
-                <li>✦ {fr ? "Ta carte natale complète : roue, planètes, ascendant" : "Your full birth chart: wheel, planets, ascendant"}</li>
-                <li>✦ {fr ? "Portrait Soleil · Lune · Ascendant" : "Sun · Moon · Ascendant portrait"}</li>
-                <li>✦ {fr ? "Maisons, aspects et éléments" : "Houses, aspects and elements"}</li>
-                <li>✦ {fr ? "Le ciel du jour, le calendrier et les signes" : "The daily sky, the calendar and the signs"}</li>
-                <li>✦ {fr ? "Ton journal de rêves, noté à la main" : "Your dream journal, written by hand"}</li>
-              </ul>
-            </div>
-            <div
-              className="glass p-5"
-              style={{ borderColor: "rgba(224,169,78,0.32)", background: "linear-gradient(135deg, color-mix(in srgb, var(--color-accent-gold) 8%, transparent), transparent)" }}
-            >
-              <p className="text-xs uppercase tracking-widest text-[var(--color-accent-gold)]/85 mb-3">
-                {fr ? "✦ Passe Premium · 9,99 $ une fois" : "✦ Premium pass · $9.99 one-time"}
-              </p>
-              <ul className="text-sm text-[var(--color-text-secondary)] space-y-2 leading-relaxed">
-                <li>✦ {fr ? "Interprétations complètes et détaillées" : "Full, detailed interpretations"}</li>
-                <li>✦ {fr ? "Chat avec un astrologue IA bienveillant" : "Chat with a caring AI astrologer"}</li>
-                <li>✦ {fr ? "Synastrie — l'alchimie de deux âmes" : "Synastry — the alchemy of two souls"}</li>
-                <li>✦ {fr ? "Tes anniversaires et dates perso dans le calendrier céleste" : "Your birthdays and personal dates in the celestial calendar"}</li>
-                <li>✦ {fr ? "Tes rêves interprétés par l'IA, colorés par ta Lune natale" : "Your dreams interpreted by AI, coloured by your natal Moon"}</li>
-                <li>✦ {fr ? "Narration audio de ta lecture" : "Audio narration of your reading"}</li>
-                <li>✦ {fr ? "Sauvegarde de tes cartes + PDF par courriel" : "Save your charts + PDF by email"}</li>
-              </ul>
-              <p className="mt-3 text-xs text-[var(--color-text-secondary)]/70 italic">
-                {fr ? "Paiement unique, à vie — et tu soutiens un projet indépendant. 💛" : "One-time, forever — and you support an independent project. 💛"}
-              </p>
-              {!isPremium && (
-                <a
-                  href={user ? "/premium" : "/inscription?intent=premium"}
-                  className="btn-primary mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full text-sm font-medium glow-lavender"
-                  style={{ background: "linear-gradient(135deg, var(--color-accent-gold), #b8863f)" }}
-                >
-                  <span aria-hidden="true">✦</span>
-                  {fr
-                    ? user ? "Débloquer Premium — 9,99 $" : "Créer mon compte Premium — 9,99 $"
-                    : user ? "Unlock Premium — $9.99" : "Create my Premium account — $9.99"}
-                </a>
-              )}
-            </div>
+          {/* Same source of truth as /premium: the rows people decide on. */}
+          <OffreComparatif locale={fr ? "fr" : "en"} compact />
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {!isPremium && (
+              <a
+                href={user ? "/premium" : "/inscription?intent=premium"}
+                className="btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium"
+                style={{ background: "linear-gradient(135deg, var(--color-accent-gold), #b8863f)" }}
+              >
+                <span aria-hidden="true">✦</span>
+                {fr
+                  ? user ? "Débloquer Premium, 9,99 $" : "Créer mon compte Premium, 9,99 $"
+                  : user ? "Unlock Premium, $9.99" : "Create my Premium account, $9.99"}
+              </a>
+            )}
+            <a href="/premium" className="inline-flex items-center min-h-11 px-3 text-sm text-[var(--color-text-secondary)] underline underline-offset-4 hover:text-[var(--color-text-primary)]">
+              {fr ? "Voir tout le comparatif" : "See the full comparison"}
+            </a>
           </div>
         </section>
 
